@@ -21,30 +21,30 @@ Requirements:
 
 Usage:
 
-1. Instrument your application apk. file for testing:
-Note: Current instrumentation only inserts logs into run methods.
+1. Instrument your application apk. file for testing
+  Note: Current instrumentation only inserts logs into run methods.
 
-In instrumentAndroidApk folder:
+  In instrumentAndroidApk folder:
 
-```
-javac -cp ./lib/android.jar:./lib/coffer.jar:./lib/jasminclasses.jar:./lib/java_cup.jar:./lib/JFlex.jar:./lib/pao.jar:./lib/polygot.jar:./lib/pth.jar:./lib/soot.jar:./lib/sootclasses.jar ./src/*.java
+  ```
+  javac -cp ./lib/android.jar:./lib/coffer.jar:./lib/jasminclasses.jar:./lib/java_cup.jar:./lib/JFlex.jar:./lib/pao.jar:./lib/polygot.jar:./lib/pth.jar:./lib/soot.jar:./lib/sootclasses.jar ./src/*.java
 
-java -cp ./lib/android.jar:./lib/coffer.jar:./lib/jasminclasses.jar:./lib/java_cup.jar:./lib/JFlex.jar:./lib/pao.jar:./lib/polygot.jar:./lib/pth.jar:./lib/soot.jar:./lib/sootclasses.jar:./src AndroidInstrument <fullPathToApkFile> <fullPathToAndroidSDKPlatformsFolder> <fullPathToThisSrcFile> 
-```
+  java -cp ./lib/android.jar:./lib/coffer.jar:./lib/jasminclasses.jar:./lib/java_cup.jar:./lib/JFlex.jar:./lib/pao.jar:./lib/polygot.jar:./lib/pth.jar:./lib/soot.jar:./lib/sootclasses.jar:./src AndroidInstrument <fullPathToApkFile> <fullPathToAndroidSDKPlatformsFolder> <fullPathToThisSrcFile> 
+  ```
 
-After execution, sootOutput directory will be created having the instrumented apk file inside.
+  After execution, sootOutput directory will be created having the instrumented apk file inside.
 
-2. Test the instrumented application:
-Note: Currently test input invokes UI events in the order of their ids in AndroidViewClient.
+2. Test the instrumented application
+  Note: Currently test input invokes UI events in the order of their ids in AndroidViewClient.
 
-In invokeTestingApk folder:
+  In invokeTestingApk folder:
 
-```
-javac -cp ./lib/jython-standalone-2.5.3.jar ./src/ApkExecutor.java
+  ``` 
+  javac -cp ./lib/jython-standalone-2.5.3.jar ./src/ApkExecutor.java
 
-java -cp ./lib/jython-standalone-2.5.3.jar:./src ApkExecutor <fullPathToInstrumentedApkFile> <appPackageName> <appMainActivity>
-```
-(Package name and the main activity name can be found from the manifest file of the application project.)
+  java -cp ./lib/jython-standalone-2.5.3.jar:./src ApkExecutor <fullPathToInstrumentedApkFile> <appPackageName> <appMainActivity>
+  ```
+  (Package name and the main activity name can be found from the manifest file of the application project.)
 
    
    
