@@ -21,8 +21,8 @@ Requirements:
 
 Usage:
 
-1. Instrument you application apk. file for testing:
-   // Current instrumentation only inserts logs into run methods.
+# Instrument you application apk. file for testing:
+Note: Current instrumentation only inserts logs into run methods.
 
 In instrumentAndroidApk folder:
 
@@ -34,15 +34,15 @@ java -cp ./lib/android.jar:./lib/coffer.jar:./lib/jasminclasses.jar:./lib/java_c
 
 After execution, sootOutput directory will be created having the instrumented apk file inside.
 
-2. Test the instrumented application:
-	// Currently test input invokes UI events in the order of their ids in AndroidViewClient.
+# Test the instrumented application:
+Note: Currently test input invokes UI events in the order of their ids in AndroidViewClient.
 
 In invokeTestingApk folder:
 
 ```
 javac -cp ./lib/jython-standalone-2.5.3.jar ./src/ApkExecutor.java
 
-java -cp ./lib/jython-standalone-2.5.3.jar:./src ApkExecutor <fullPathTo/sdk/platform-tools/adb> <fullPathToInstrumentedApkFile> <appPackageName> <appMainActivity>
+java -cp ./lib/jython-standalone-2.5.3.jar:./src ApkExecutor <fullPathToInstrumentedApkFile> <appPackageName> <appMainActivity>
 ```
 (Package name and the main activity name can be found from the manifest file of the application project.)
 
