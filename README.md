@@ -22,6 +22,7 @@ Requirements:
 Usage:
 
 1. Instrument your application apk. file for testing
+  
   Note: Current instrumentation only inserts logs into run methods.
 
   In instrumentAndroidApk folder:
@@ -35,6 +36,7 @@ Usage:
   After execution, sootOutput directory will be created having the instrumented apk file inside.
 
 2. Test the instrumented application
+  
   Note: Currently test input invokes UI events in the order of their ids in AndroidViewClient.
 
   In invokeTestingApk folder:
