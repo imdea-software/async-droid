@@ -8,8 +8,8 @@ Requirements:
   - (Optional) Eclipse + ADT plugin
   - Android SDK Tools
   - Android Platform-tools
-  - Android platform (android-16 is used in this project)
-  - Android system image for the emulator (android-16 is used in this project)
+  - Android platform
+  - Android system image for the emulator
   (Make sure that you added sdk/tools and sdk/platform-tools directories in your system path.)
 
 - Python (v.2.7.5) 
@@ -26,7 +26,9 @@ Usage:
   
   Note: Current instrumentation only inserts logs into run methods.
 
-  The instrumentation uses [Soot framework](https://github.com/Sable/soot). Soot looks for the android.jar in sdk/platforms/android-9/ folder. Make sure you have this folder in your platforms directory (e.g. you can rename your platform directory to "android-9"). (Todo: Look for options to change this default directory)
+  The instrumentation uses [Soot framework](https://github.com/Sable/soot). 
+  
+  Soot parameter -android-jars option (that is called in our instrumenter file) looks in the path to the "platforms" folder of the Android SDK that is the target SDK version defined in your app's manifest file. So, make sure that the target platform exists in your platforms folder. 
 
   In instrumentAndroidApk folder:
 
