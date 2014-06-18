@@ -15,6 +15,7 @@ public class AndroidInstrument {
 		List<String> processDirs = new ArrayList<>();
 		processDirs.add(args[0]);
 		Options.v().set_src_prec(Options.src_prec_apk);
+		Options.v().set_output_format(Options.output_format_dex);
 		Options.v().set_android_jars(args[1]);
 		Options.v().set_soot_classpath(args[2]); 
 		Options.v().set_prepend_classpath(true);
