@@ -41,10 +41,10 @@ Usage:
 
   After execution, sootOutput directory will be created having the instrumented apk file inside.
 
-2. (Optional) You can view the jimple versions of your application code by providing -output-format jimple in the instrumentation command. (The last two arguments are directly passed to Soot and any output format accepted by soot can be  given as the last argument).
+2. (Optional) You can view the jimple versions of your application code by executing the same AndroidInstrument file with -output-format jimple as the last two arguments. (The last two arguments are directly passed to Soot and any output format accepted by Soot can be  given as the last argument).
 
   ```
-/FullPathTo/sdk/platforms/android.jar:./lib/coffer.jar:./lib/jasminclasses.jar:./lib/java_cup.jar:./lib/JFlex.jar:./lib/pao.jar:./lib/polygot.jar:./lib/pth.jar:./lib/soot.jar:./lib/sootclasses.jar:./src AndroidInstrument <fullPathToApkFile> <fullPathToAndroidSDKPlatformsFolder> <fullPathToThisSrcFile> -output-format jimple
+  java -cp /FullPathTo/sdk/platforms/android.jar:./lib/coffer.jar:./lib/jasminclasses.jar:./lib/java_cup.jar:./lib/JFlex.jar:./lib/pao.jar:./lib/polygot.jar:./lib/pth.jar:./lib/soot.jar:./lib/sootclasses.jar:./src AndroidInstrument <fullPathToApkFile> <fullPathToAndroidSDKPlatformsFolder> <fullPathToThisSrcFile> -output-format jimple
   ```
 
   To compare the jimple files before and after instrumentation:
