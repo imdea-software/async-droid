@@ -55,7 +55,21 @@ Usage:
 
   If you want to view the instrumented code in Java format, you can translate the classes.dex file in the instrumented .apk into .jar file using [dex2jar] (https://code.google.com/p/dex2jar/) and then any java decompiler. 
 
-3. Test the instrumented application
+3. Sign the instrumented .apk file.
+
+  1. Generate a private/public key pair using keytool (included in the Java SDK)
+
+  ```
+keytool -genkey -v -keystore my -release -key.keystore -alias alias_name -keyalg RSA -keysize 2048 -validity 10000
+  ```
+
+  2. Sign the instrumented .apk with the private key generated with keytool (included in the Java JDK)
+
+  ```
+jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore 2 my -release -key. keystore my_application.apk alias_name
+  ```
+
+4. Test the instrumented application
   
   Note: Currently test input invokes UI events in the order of their ids in AndroidViewClient.
 
@@ -85,7 +99,13 @@ The commands to execute that project are:
   java -cp /FullPathTo/sdk/platforms/android.jar:./lib/coffer.jar:./lib/jasminclasses.jar:./lib/java_cup.jar:./lib/JFlex.jar:./lib/pao.jar:./lib/polygot.jar:./lib/pth.jar:./lib/soot.jar:./lib/sootclasses.jar:./src myInstrumentor/AndroidInstrument "/fullPathTo/HelloWorldApp.apk" "/fullPathTo/sdk/platforms" "/fullPathTo/projects/instrumentAndroidApk/src" -output-format dex
   ```
 
-2. For testing:
+2. For signing:
+
+  ```
+jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore my-release-key.keystore /fullPathTo/HelloWorldApp.apk mykey
+  ```
+
+3. For testing:
 
   ``` 
   javac -cp ./lib/jython-standalone-2.5.3.jar ./src/ApkExecutor.java
