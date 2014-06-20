@@ -1,0 +1,20 @@
+public final class my.example.HelloWorld.R$id extends java.lang.Object
+{
+    public static final int action_settings;
+    public static final int container;
+    public static final int edit_message1;
+    public static final int edit_message2;
+    public static final int edit_message3;
+    public static final int edit_message4;
+    public static final int edit_message5;
+    public static final int edit_message6;
+
+    public void <init>()
+    {
+        my.example.HelloWorld.R$id $r0;
+
+        $r0 := @this: my.example.HelloWorld.R$id;
+        specialinvoke $r0.<java.lang.Object: void <init>()>();
+        return;
+    }
+}

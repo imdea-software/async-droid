@@ -1,0 +1,13 @@
+public final class my.example.HelloWorld.BuildConfig extends java.lang.Object
+{
+    public static final boolean DEBUG;
+
+    public void <init>()
+    {
+        my.example.HelloWorld.BuildConfig $r0;
+
+        $r0 := @this: my.example.HelloWorld.BuildConfig;
+        specialinvoke $r0.<java.lang.Object: void <init>()>();
+        return;
+    }
+}

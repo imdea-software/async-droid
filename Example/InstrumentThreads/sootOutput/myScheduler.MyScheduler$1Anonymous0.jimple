@@ -1,0 +1,72 @@
+public final class myScheduler.MyScheduler$1Anonymous0 extends java.lang.Object implements java.lang.Runnable
+{
+
+    public final void run()
+    {
+        myScheduler.MyScheduler$1Anonymous0 this;
+        java.lang.StringBuffer temp$0, temp$15;
+        java.lang.Thread temp$1, temp$3, temp$16;
+        java.lang.String temp$2, temp$5, temp$18;
+        long temp$4, temp$17;
+        int temp$6, temp$9, temp$11, temp$12, temp$13, temp$14, temp$19;
+        java.util.ArrayList temp$7, temp$10;
+        boolean temp$8;
+
+        this := @this: myScheduler.MyScheduler$1Anonymous0;
+        staticinvoke <myScheduler.MyScheduler: void waitMyTurn()>();
+        temp$0 = new java.lang.StringBuffer;
+        specialinvoke temp$0.<java.lang.StringBuffer: void <init>()>();
+        virtualinvoke temp$0.<java.lang.StringBuffer: java.lang.StringBuffer append(java.lang.Object)>("Scheduler has started in thread: ");
+        temp$1 = staticinvoke <java.lang.Thread: java.lang.Thread currentThread()>();
+        temp$2 = virtualinvoke temp$1.<java.lang.Thread: java.lang.String getName()>();
+        virtualinvoke temp$0.<java.lang.StringBuffer: java.lang.StringBuffer append(java.lang.Object)>(temp$2);
+        virtualinvoke temp$0.<java.lang.StringBuffer: java.lang.StringBuffer append(java.lang.Object)>(" Id: ");
+        temp$3 = staticinvoke <java.lang.Thread: java.lang.Thread currentThread()>();
+        temp$4 = virtualinvoke temp$3.<java.lang.Thread: long getId()>();
+        virtualinvoke temp$0.<java.lang.StringBuffer: java.lang.StringBuffer append(long)>(temp$4);
+        temp$5 = virtualinvoke temp$0.<java.lang.StringBuffer: java.lang.String toString()>();
+        temp$6 = staticinvoke <android.util.Log: int i(java.lang.String,java.lang.String)>("MyScheduler", temp$5);
+        staticinvoke <myScheduler.MyScheduler: void gainControl$access$0()>();
+
+     label1:
+        nop;
+        temp$7 = staticinvoke <myScheduler.MyScheduler: java.util.ArrayList get$threads$access$1()>();
+        temp$8 = virtualinvoke temp$7.<java.util.ArrayList: boolean isEmpty()>();
+        if temp$8 == 0 goto label2;
+
+        goto label3;
+
+     label2:
+        nop;
+        temp$9 = staticinvoke <myScheduler.MyScheduler: int get$currentIndex$access$3()>();
+        temp$10 = staticinvoke <myScheduler.MyScheduler: java.util.ArrayList get$threads$access$1()>();
+        temp$11 = virtualinvoke temp$10.<java.util.ArrayList: int size()>();
+        temp$12 = temp$9 + 1;
+        temp$13 = temp$12 % temp$11;
+        temp$14 = staticinvoke <myScheduler.MyScheduler: int set$currentIndex$access$2(int)>(temp$13);
+        staticinvoke <myScheduler.MyScheduler: void notifyNext$access$4()>();
+        staticinvoke <myScheduler.MyScheduler: void gainControl$access$0()>();
+        goto label1;
+
+     label3:
+        nop;
+        temp$15 = new java.lang.StringBuffer;
+        specialinvoke temp$15.<java.lang.StringBuffer: void <init>()>();
+        virtualinvoke temp$15.<java.lang.StringBuffer: java.lang.StringBuffer append(java.lang.Object)>("Scheduler has completed. Thread: ");
+        temp$16 = staticinvoke <java.lang.Thread: java.lang.Thread currentThread()>();
+        temp$17 = virtualinvoke temp$16.<java.lang.Thread: long getId()>();
+        virtualinvoke temp$15.<java.lang.StringBuffer: java.lang.StringBuffer append(long)>(temp$17);
+        temp$18 = virtualinvoke temp$15.<java.lang.StringBuffer: java.lang.String toString()>();
+        temp$19 = staticinvoke <android.util.Log: int i(java.lang.String,java.lang.String)>("MyScheduler", temp$18);
+        return;
+    }
+
+    public void <init>()
+    {
+        myScheduler.MyScheduler$1Anonymous0 this;
+
+        this := @this: myScheduler.MyScheduler$1Anonymous0;
+        specialinvoke this.<java.lang.Object: void <init>()>();
+        return;
+    }
+}

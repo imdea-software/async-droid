@@ -1,0 +1,37 @@
+class my.example.HelloWorld.MainActivity$HelloHandlerThread extends android.os.HandlerThread
+{
+    android.os.Handler mHandler;
+
+    void <init>(java.lang.String)
+    {
+        my.example.HelloWorld.MainActivity$HelloHandlerThread $r0;
+        java.lang.String $r1;
+        android.os.Looper $r2;
+        android.os.Handler $r3;
+
+        $r0 := @this: my.example.HelloWorld.MainActivity$HelloHandlerThread;
+        $r1 := @parameter0: java.lang.String;
+        specialinvoke $r0.<android.os.HandlerThread: void <init>(java.lang.String)>($r1);
+        $r0.<my.example.HelloWorld.MainActivity$HelloHandlerThread: android.os.Handler mHandler> = null;
+        virtualinvoke $r0.<my.example.HelloWorld.MainActivity$HelloHandlerThread: void start()>();
+        $r3 = new android.os.Handler;
+        $r2 = virtualinvoke $r0.<my.example.HelloWorld.MainActivity$HelloHandlerThread: android.os.Looper getLooper()>();
+        specialinvoke $r3.<android.os.Handler: void <init>(android.os.Looper)>($r2);
+        $r0.<my.example.HelloWorld.MainActivity$HelloHandlerThread: android.os.Handler mHandler> = $r3;
+        return;
+    }
+
+    void postSleepAndPrint()
+    {
+        my.example.HelloWorld.MainActivity$HelloHandlerThread $r0;
+        android.os.Handler $r1;
+        my.example.HelloWorld.MainActivity$HelloHandlerThread$1 $r2;
+
+        $r0 := @this: my.example.HelloWorld.MainActivity$HelloHandlerThread;
+        $r1 = $r0.<my.example.HelloWorld.MainActivity$HelloHandlerThread: android.os.Handler mHandler>;
+        $r2 = new my.example.HelloWorld.MainActivity$HelloHandlerThread$1;
+        specialinvoke $r2.<my.example.HelloWorld.MainActivity$HelloHandlerThread$1: void <init>(my.example.HelloWorld.MainActivity$HelloHandlerThread)>($r0);
+        virtualinvoke $r1.<android.os.Handler: boolean post(java.lang.Runnable)>($r2);
+        return;
+    }
+}

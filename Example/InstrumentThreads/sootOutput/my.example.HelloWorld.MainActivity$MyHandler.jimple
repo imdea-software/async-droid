@@ -1,0 +1,58 @@
+final class my.example.HelloWorld.MainActivity$MyHandler extends android.os.Handler
+{
+    final my.example.HelloWorld.MainActivity this$0;
+
+    public void <init>(my.example.HelloWorld.MainActivity, android.os.Looper)
+    {
+        my.example.HelloWorld.MainActivity$MyHandler $r0;
+        my.example.HelloWorld.MainActivity $r1;
+        android.os.Looper $r2;
+
+        $r0 := @this: my.example.HelloWorld.MainActivity$MyHandler;
+        $r1 := @parameter0: my.example.HelloWorld.MainActivity;
+        $r2 := @parameter1: android.os.Looper;
+        $r0.<my.example.HelloWorld.MainActivity$MyHandler: my.example.HelloWorld.MainActivity this$0> = $r1;
+        specialinvoke $r0.<android.os.Handler: void <init>(android.os.Looper)>($r2);
+        return;
+    }
+
+    public void handleMessage(android.os.Message)
+    {
+        my.example.HelloWorld.MainActivity$MyHandler $r0;
+        android.os.Message $r1;
+        java.lang.InterruptedException $r2;
+        long $l0;
+        java.lang.StringBuilder $r3;
+        java.lang.String $r4;
+        int $i1;
+        java.lang.Thread $r6;
+
+        $r0 := @this: my.example.HelloWorld.MainActivity$MyHandler;
+        staticinvoke <myScheduler.MyScheduler: void waitMyTurn()>();
+        $r1 := @parameter0: android.os.Message;
+
+     label1:
+        staticinvoke <java.lang.Thread: void sleep(long)>(2000L);
+
+     label2:
+        $r3 = new java.lang.StringBuilder;
+        specialinvoke $r3.<java.lang.StringBuilder: void <init>(java.lang.String)>("Message #");
+        $i1 = $r1.<android.os.Message: int what>;
+        $r3 = virtualinvoke $r3.<java.lang.StringBuilder: java.lang.StringBuilder append(int)>($i1);
+        $r3 = virtualinvoke $r3.<java.lang.StringBuilder: java.lang.StringBuilder append(java.lang.String)>(" is processed in Thread ");
+        $r6 = staticinvoke <java.lang.Thread: java.lang.Thread currentThread()>();
+        $l0 = virtualinvoke $r6.<java.lang.Thread: long getId()>();
+        $r3 = virtualinvoke $r3.<java.lang.StringBuilder: java.lang.StringBuilder append(long)>($l0);
+        $r4 = virtualinvoke $r3.<java.lang.StringBuilder: java.lang.String toString()>();
+        staticinvoke <android.util.Log: int i(java.lang.String,java.lang.String)>("HandlerThread", $r4);
+        staticinvoke <myScheduler.MyScheduler: void notifyCompletion()>();
+        return;
+
+     label3:
+        $r2 := @caughtexception;
+        virtualinvoke $r2.<java.lang.InterruptedException: void printStackTrace()>();
+        goto label2;
+
+        catch java.lang.InterruptedException from label1 to label2 with label3;
+    }
+}

@@ -1,0 +1,41 @@
+public class myScheduler.ThreadData extends java.lang.Object
+{
+    private final java.lang.Object signal;
+    private long id;
+
+    public void <init>(long)
+    {
+        myScheduler.ThreadData this;
+        long id;
+        java.lang.Object temp$0;
+
+        this := @this: myScheduler.ThreadData;
+        id := @parameter0: long;
+        specialinvoke this.<java.lang.Object: void <init>()>();
+        temp$0 = new java.lang.Object;
+        specialinvoke temp$0.<java.lang.Object: void <init>()>();
+        this.<myScheduler.ThreadData: java.lang.Object signal> = temp$0;
+        this.<myScheduler.ThreadData: long id> = id;
+        return;
+    }
+
+    public java.lang.Object getStartSignal()
+    {
+        myScheduler.ThreadData this;
+        java.lang.Object temp$0;
+
+        this := @this: myScheduler.ThreadData;
+        temp$0 = this.<myScheduler.ThreadData: java.lang.Object signal>;
+        return temp$0;
+    }
+
+    public long getId()
+    {
+        myScheduler.ThreadData this;
+        long temp$0;
+
+        this := @this: myScheduler.ThreadData;
+        temp$0 = this.<myScheduler.ThreadData: long id>;
+        return temp$0;
+    }
+}

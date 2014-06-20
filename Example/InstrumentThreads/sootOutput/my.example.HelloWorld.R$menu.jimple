@@ -1,0 +1,14 @@
+public final class my.example.HelloWorld.R$menu extends java.lang.Object
+{
+    public static final int display_message;
+    public static final int main;
+
+    public void <init>()
+    {
+        my.example.HelloWorld.R$menu $r0;
+
+        $r0 := @this: my.example.HelloWorld.R$menu;
+        specialinvoke $r0.<java.lang.Object: void <init>()>();
+        return;
+    }
+}

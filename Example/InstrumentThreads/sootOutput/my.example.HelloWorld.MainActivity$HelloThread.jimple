@@ -1,0 +1,58 @@
+class my.example.HelloWorld.MainActivity$HelloThread extends java.lang.Thread
+{
+    private final int id;
+    final my.example.HelloWorld.MainActivity this$0;
+
+    public void <init>(my.example.HelloWorld.MainActivity, int)
+    {
+        my.example.HelloWorld.MainActivity$HelloThread $r0;
+        my.example.HelloWorld.MainActivity $r1;
+        int $i0;
+
+        $r0 := @this: my.example.HelloWorld.MainActivity$HelloThread;
+        $r1 := @parameter0: my.example.HelloWorld.MainActivity;
+        $i0 := @parameter1: int;
+        $r0.<my.example.HelloWorld.MainActivity$HelloThread: my.example.HelloWorld.MainActivity this$0> = $r1;
+        specialinvoke $r0.<java.lang.Thread: void <init>()>();
+        $r0.<my.example.HelloWorld.MainActivity$HelloThread: int id> = $i0;
+        return;
+    }
+
+    public void run()
+    {
+        my.example.HelloWorld.MainActivity$HelloThread $r0;
+        java.lang.InterruptedException $r1;
+        long $l0;
+        java.lang.StringBuilder $r2;
+        java.lang.String $r3;
+        int $i1;
+        java.lang.Thread $r5;
+
+        $r0 := @this: my.example.HelloWorld.MainActivity$HelloThread;
+        staticinvoke <myScheduler.MyScheduler: void waitMyTurn()>();
+
+     label1:
+        staticinvoke <java.lang.Thread: void sleep(long)>(3000L);
+
+     label2:
+        $r2 = new java.lang.StringBuilder;
+        specialinvoke $r2.<java.lang.StringBuilder: void <init>(java.lang.String)>("Worker instance #");
+        $i1 = $r0.<my.example.HelloWorld.MainActivity$HelloThread: int id>;
+        $r2 = virtualinvoke $r2.<java.lang.StringBuilder: java.lang.StringBuilder append(int)>($i1);
+        $r2 = virtualinvoke $r2.<java.lang.StringBuilder: java.lang.StringBuilder append(java.lang.String)>(" is running on thread ");
+        $r5 = staticinvoke <java.lang.Thread: java.lang.Thread currentThread()>();
+        $l0 = virtualinvoke $r5.<java.lang.Thread: long getId()>();
+        $r2 = virtualinvoke $r2.<java.lang.StringBuilder: java.lang.StringBuilder append(long)>($l0);
+        $r3 = virtualinvoke $r2.<java.lang.StringBuilder: java.lang.String toString()>();
+        staticinvoke <android.util.Log: int i(java.lang.String,java.lang.String)>("HelloThread", $r3);
+        staticinvoke <myScheduler.MyScheduler: void notifyCompletion()>();
+        return;
+
+     label3:
+        $r1 := @caughtexception;
+        virtualinvoke $r1.<java.lang.InterruptedException: void printStackTrace()>();
+        goto label2;
+
+        catch java.lang.InterruptedException from label1 to label2 with label3;
+    }
+}

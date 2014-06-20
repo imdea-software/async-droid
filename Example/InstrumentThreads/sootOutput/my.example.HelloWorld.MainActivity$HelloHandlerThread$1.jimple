@@ -1,0 +1,50 @@
+class my.example.HelloWorld.MainActivity$HelloHandlerThread$1 extends java.lang.Object implements java.lang.Runnable
+{
+    final my.example.HelloWorld.MainActivity$HelloHandlerThread this$1;
+
+    void <init>(my.example.HelloWorld.MainActivity$HelloHandlerThread)
+    {
+        my.example.HelloWorld.MainActivity$HelloHandlerThread$1 $r0;
+        my.example.HelloWorld.MainActivity$HelloHandlerThread $r1;
+
+        $r0 := @this: my.example.HelloWorld.MainActivity$HelloHandlerThread$1;
+        $r1 := @parameter0: my.example.HelloWorld.MainActivity$HelloHandlerThread;
+        $r0.<my.example.HelloWorld.MainActivity$HelloHandlerThread$1: my.example.HelloWorld.MainActivity$HelloHandlerThread this$1> = $r1;
+        specialinvoke $r0.<java.lang.Object: void <init>()>();
+        return;
+    }
+
+    public void run()
+    {
+        my.example.HelloWorld.MainActivity$HelloHandlerThread$1 $r0;
+        java.lang.InterruptedException $r1;
+        long $l0;
+        java.lang.StringBuilder $r2;
+        java.lang.String $r3;
+        java.lang.Thread $r4;
+
+        $r0 := @this: my.example.HelloWorld.MainActivity$HelloHandlerThread$1;
+        staticinvoke <myScheduler.MyScheduler: void waitMyTurn()>();
+
+     label1:
+        staticinvoke <java.lang.Thread: void sleep(long)>(2000L);
+
+     label2:
+        $r2 = new java.lang.StringBuilder;
+        specialinvoke $r2.<java.lang.StringBuilder: void <init>(java.lang.String)>("Runnable is processed in Thread ");
+        $r4 = staticinvoke <java.lang.Thread: java.lang.Thread currentThread()>();
+        $l0 = virtualinvoke $r4.<java.lang.Thread: long getId()>();
+        $r2 = virtualinvoke $r2.<java.lang.StringBuilder: java.lang.StringBuilder append(long)>($l0);
+        $r3 = virtualinvoke $r2.<java.lang.StringBuilder: java.lang.String toString()>();
+        staticinvoke <android.util.Log: int i(java.lang.String,java.lang.String)>("HandlerThread", $r3);
+        staticinvoke <myScheduler.MyScheduler: void notifyCompletion()>();
+        return;
+
+     label3:
+        $r1 := @caughtexception;
+        virtualinvoke $r1.<java.lang.InterruptedException: void printStackTrace()>();
+        goto label2;
+
+        catch java.lang.InterruptedException from label1 to label2 with label3;
+    }
+}

@@ -1,0 +1,14 @@
+public final class my.example.HelloWorld.R$dimen extends java.lang.Object
+{
+    public static final int activity_horizontal_margin;
+    public static final int activity_vertical_margin;
+
+    public void <init>()
+    {
+        my.example.HelloWorld.R$dimen $r0;
+
+        $r0 := @this: my.example.HelloWorld.R$dimen;
+        specialinvoke $r0.<java.lang.Object: void <init>()>();
+        return;
+    }
+}

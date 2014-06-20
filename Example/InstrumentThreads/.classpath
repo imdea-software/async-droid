@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry exported="true" kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7"/>
+	<classpathentry kind="lib" path="/Users/burcu.ozkan/Documents/workspace/addClassIntoAndroid/lib/coffer.jar"/>
+	<classpathentry kind="lib" path="/Users/burcu.ozkan/Documents/workspace/addClassIntoAndroid/lib/jasminclasses.jar"/>
+	<classpathentry kind="lib" path="/Users/burcu.ozkan/Documents/workspace/addClassIntoAndroid/lib/java_cup.jar"/>
+	<classpathentry kind="lib" path="/Users/burcu.ozkan/Documents/workspace/addClassIntoAndroid/lib/JFlex.jar"/>
+	<classpathentry kind="lib" path="/Users/burcu.ozkan/Documents/workspace/addClassIntoAndroid/lib/pao.jar"/>
+	<classpathentry kind="lib" path="/Users/burcu.ozkan/Documents/workspace/addClassIntoAndroid/lib/polyglot.jar"/>
+	<classpathentry kind="lib" path="/Users/burcu.ozkan/Documents/workspace/addClassIntoAndroid/lib/pth.jar"/>
+	<classpathentry kind="lib" path="/Users/burcu.ozkan/Documents/workspace/addClassIntoAndroid/lib/soot.jar" sourcepath="/Users/burcu.ozkan/Documents/workspace/Soot Sources"/>
+	<classpathentry kind="lib" path="/Users/burcu.ozkan/Documents/workspace/addClassIntoAndroid/lib/sootclasses.jar"/>
+	<classpathentry kind="lib" path="/Users/burcu.ozkan/Desktop/adt-bundle-mac-x86_64-20140321/sdk/platforms/android-9/android.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

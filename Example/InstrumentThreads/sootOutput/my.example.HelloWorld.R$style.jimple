@@ -1,0 +1,14 @@
+public final class my.example.HelloWorld.R$style extends java.lang.Object
+{
+    public static final int AppBaseTheme;
+    public static final int AppTheme;
+
+    public void <init>()
+    {
+        my.example.HelloWorld.R$style $r0;
+
+        $r0 := @this: my.example.HelloWorld.R$style;
+        specialinvoke $r0.<java.lang.Object: void <init>()>();
+        return;
+    }
+}

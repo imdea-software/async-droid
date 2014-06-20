@@ -1,0 +1,624 @@
+public class myScheduler.MyScheduler extends java.lang.Object
+{
+    private static java.util.ArrayList threads;
+    private static final java.lang.Object schedulerSignal;
+    private static long scheduled;
+    private static int currentIndex;
+    private static boolean initiated;
+
+    static void <clinit>()
+    {
+        java.util.ArrayList temp$0;
+        java.lang.Object temp$1;
+        long temp$2;
+        int temp$3;
+        boolean temp$4;
+
+        temp$0 = new java.util.ArrayList;
+        specialinvoke temp$0.<java.util.ArrayList: void <init>()>();
+        <myScheduler.MyScheduler: java.util.ArrayList threads> = temp$0;
+        temp$1 = new java.lang.Object;
+        specialinvoke temp$1.<java.lang.Object: void <init>()>();
+        <myScheduler.MyScheduler: java.lang.Object schedulerSignal> = temp$1;
+        temp$2 = 0L;
+        <myScheduler.MyScheduler: long scheduled> = temp$2;
+        temp$3 = -1;
+        <myScheduler.MyScheduler: int currentIndex> = temp$3;
+        temp$4 = 0;
+        <myScheduler.MyScheduler: boolean initiated> = temp$4;
+        return;
+    }
+
+    public static void initiateScheduler()
+    {
+        boolean temp$0, temp$1;
+
+        temp$0 = <myScheduler.MyScheduler: boolean initiated>;
+        if temp$0 == 0 goto label1;
+
+        goto label2;
+
+     label1:
+        nop;
+        staticinvoke <myScheduler.MyScheduler: void schedule()>();
+        staticinvoke <myScheduler.MyScheduler: void sendThreadInfo()>();
+        staticinvoke <myScheduler.MyScheduler: void notifyScheduler()>();
+        temp$1 = 1;
+        <myScheduler.MyScheduler: boolean initiated> = temp$1;
+
+     label2:
+        nop;
+        return;
+    }
+
+    public static void schedule()
+    {
+        java.lang.Thread t, temp$0;
+        myScheduler.MyScheduler$1Anonymous0 temp$1;
+
+        temp$0 = new java.lang.Thread;
+        temp$1 = new myScheduler.MyScheduler$1Anonymous0;
+        specialinvoke temp$1.<myScheduler.MyScheduler$1Anonymous0: void <init>()>();
+        specialinvoke temp$0.<java.lang.Thread: void <init>(java.lang.Runnable)>(temp$1);
+        t = temp$0;
+        virtualinvoke t.<java.lang.Thread: void setName(java.lang.String)>("MySchedulerThread");
+        virtualinvoke t.<java.lang.Thread: void start()>();
+        return;
+    }
+
+    private static final void notifyNext()
+    {
+        myScheduler.ThreadData current, temp$4;
+        java.util.ArrayList temp$0, temp$1;
+        int temp$2, temp$10;
+        java.lang.Object temp$3, temp$11, temp$12, temp$13;
+        java.lang.Throwable temp$5, temp$14;
+        long temp$6, temp$8;
+        java.lang.StringBuffer temp$7;
+        java.lang.String temp$9;
+
+        temp$0 = <myScheduler.MyScheduler: java.util.ArrayList threads>;
+        entermonitor temp$0;
+
+     label1:
+        nop;
+        temp$1 = <myScheduler.MyScheduler: java.util.ArrayList threads>;
+        temp$2 = <myScheduler.MyScheduler: int currentIndex>;
+        temp$3 = virtualinvoke temp$1.<java.util.ArrayList: java.lang.Object get(int)>(temp$2);
+        temp$4 = (myScheduler.ThreadData) temp$3;
+        current = temp$4;
+        exitmonitor temp$0;
+        goto label3;
+
+     label2:
+        nop;
+        temp$5 := @caughtexception;
+        exitmonitor temp$0;
+        throw temp$5;
+
+     label3:
+        nop;
+        temp$6 = virtualinvoke current.<myScheduler.ThreadData: long getId()>();
+        <myScheduler.MyScheduler: long scheduled> = temp$6;
+        temp$7 = new java.lang.StringBuffer;
+        specialinvoke temp$7.<java.lang.StringBuffer: void <init>()>();
+        virtualinvoke temp$7.<java.lang.StringBuffer: java.lang.StringBuffer append(java.lang.Object)>("Scheduled thread id: ");
+        temp$8 = <myScheduler.MyScheduler: long scheduled>;
+        virtualinvoke temp$7.<java.lang.StringBuffer: java.lang.StringBuffer append(long)>(temp$8);
+        temp$9 = virtualinvoke temp$7.<java.lang.StringBuffer: java.lang.String toString()>();
+        temp$10 = staticinvoke <android.util.Log: int i(java.lang.String,java.lang.String)>("MyScheduler", temp$9);
+        temp$11 = virtualinvoke current.<myScheduler.ThreadData: java.lang.Object getStartSignal()>();
+        temp$12 = temp$11;
+        entermonitor temp$12;
+
+     label4:
+        nop;
+        temp$13 = virtualinvoke current.<myScheduler.ThreadData: java.lang.Object getStartSignal()>();
+        virtualinvoke temp$13.<java.lang.Object: void notify()>();
+        exitmonitor temp$12;
+        goto label6;
+
+     label5:
+        nop;
+        temp$14 := @caughtexception;
+        exitmonitor temp$12;
+        throw temp$14;
+
+     label6:
+        nop;
+        return;
+
+        catch java.lang.Throwable from label1 to label3 with label2;
+        catch java.lang.Throwable from label4 to label6 with label5;
+    }
+
+    private static final void gainControl()
+    {
+        java.lang.Object temp$0, temp$3;
+        long temp$1;
+        int temp$2;
+        java.lang.InterruptedException e;
+        java.lang.Throwable temp$4;
+
+        temp$0 = <myScheduler.MyScheduler: java.lang.Object schedulerSignal>;
+        entermonitor temp$0;
+
+     label1:
+        nop;
+
+     label2:
+        nop;
+        temp$1 = <myScheduler.MyScheduler: long scheduled>;
+        temp$2 = temp$1 cmp -1L;
+        if temp$2 == 0 goto label7;
+
+        goto label3;
+
+     label3:
+        nop;
+
+     label4:
+        nop;
+        temp$3 = <myScheduler.MyScheduler: java.lang.Object schedulerSignal>;
+        virtualinvoke temp$3.<java.lang.Object: void wait()>();
+        goto label6;
+
+     label5:
+        nop;
+        e := @caughtexception;
+        virtualinvoke e.<java.lang.InterruptedException: void printStackTrace()>();
+        nop;
+        goto label6;
+
+     label6:
+        nop;
+        goto label2;
+
+     label7:
+        nop;
+        exitmonitor temp$0;
+        goto label9;
+
+     label8:
+        nop;
+        temp$4 := @caughtexception;
+        exitmonitor temp$0;
+        throw temp$4;
+
+     label9:
+        nop;
+        return;
+
+        catch java.lang.InterruptedException from label4 to label5 with label5;
+        catch java.lang.Throwable from label1 to label9 with label8;
+    }
+
+    public static void waitMyTurn()
+    {
+        myScheduler.ThreadData me, temp$2;
+        java.lang.Thread temp$0;
+        long temp$1, temp$6, temp$7;
+        int temp$3, temp$8;
+        java.lang.Object mySignal, temp$4, temp$5;
+        java.lang.InterruptedException e;
+        java.lang.Throwable temp$9;
+
+        staticinvoke <myScheduler.MyScheduler: void sendThreadInfo()>();
+        temp$0 = staticinvoke <java.lang.Thread: java.lang.Thread currentThread()>();
+        temp$1 = virtualinvoke temp$0.<java.lang.Thread: long getId()>();
+        temp$2 = staticinvoke <myScheduler.MyScheduler: myScheduler.ThreadData getThreadById(long)>(temp$1);
+        me = temp$2;
+        if me == null goto label01;
+
+        goto label02;
+
+     label01:
+        nop;
+        temp$3 = staticinvoke <android.util.Log: int i(java.lang.String,java.lang.String)>("MyScheduler", "ThreadData not in the listtttt ");
+
+     label02:
+        nop;
+        temp$4 = virtualinvoke me.<myScheduler.ThreadData: java.lang.Object getStartSignal()>();
+        mySignal = temp$4;
+        temp$5 = mySignal;
+        entermonitor temp$5;
+
+     label03:
+        nop;
+
+     label04:
+        nop;
+        temp$6 = virtualinvoke me.<myScheduler.ThreadData: long getId()>();
+        temp$7 = <myScheduler.MyScheduler: long scheduled>;
+        temp$8 = temp$7 cmp temp$6;
+        if temp$8 == 0 goto label09;
+
+        goto label05;
+
+     label05:
+        nop;
+
+     label06:
+        nop;
+        virtualinvoke mySignal.<java.lang.Object: void wait()>();
+        goto label08;
+
+     label07:
+        nop;
+        e := @caughtexception;
+        virtualinvoke e.<java.lang.InterruptedException: void printStackTrace()>();
+        nop;
+        goto label08;
+
+     label08:
+        nop;
+        goto label04;
+
+     label09:
+        nop;
+        exitmonitor temp$5;
+        goto label11;
+
+     label10:
+        nop;
+        temp$9 := @caughtexception;
+        exitmonitor temp$5;
+        throw temp$9;
+
+     label11:
+        nop;
+        return;
+
+        catch java.lang.InterruptedException from label06 to label07 with label07;
+        catch java.lang.Throwable from label03 to label11 with label10;
+    }
+
+    public static void sendThreadInfo()
+    {
+        java.util.ArrayList temp$0, temp$4;
+        long id, temp$2, temp$11;
+        java.lang.Thread temp$1, temp$8, temp$10;
+        boolean temp$3, temp$6;
+        myScheduler.ThreadData temp$5;
+        java.lang.StringBuffer temp$7;
+        java.lang.String temp$9, temp$12;
+        int temp$13;
+        java.lang.Throwable temp$14;
+
+        temp$0 = <myScheduler.MyScheduler: java.util.ArrayList threads>;
+        entermonitor temp$0;
+
+     label1:
+        nop;
+        temp$1 = staticinvoke <java.lang.Thread: java.lang.Thread currentThread()>();
+        temp$2 = virtualinvoke temp$1.<java.lang.Thread: long getId()>();
+        id = temp$2;
+        temp$3 = staticinvoke <myScheduler.MyScheduler: boolean capturedBefore(long)>(id);
+        if temp$3 == 0 goto label2;
+
+        goto label3;
+
+     label2:
+        nop;
+        temp$4 = <myScheduler.MyScheduler: java.util.ArrayList threads>;
+        temp$5 = new myScheduler.ThreadData;
+        specialinvoke temp$5.<myScheduler.ThreadData: void <init>(long)>(id);
+        temp$6 = virtualinvoke temp$4.<java.util.ArrayList: boolean add(java.lang.Object)>(temp$5);
+        temp$7 = new java.lang.StringBuffer;
+        specialinvoke temp$7.<java.lang.StringBuffer: void <init>()>();
+        virtualinvoke temp$7.<java.lang.StringBuffer: java.lang.StringBuffer append(java.lang.Object)>("I got ");
+        temp$8 = staticinvoke <java.lang.Thread: java.lang.Thread currentThread()>();
+        temp$9 = virtualinvoke temp$8.<java.lang.Thread: java.lang.String getName()>();
+        virtualinvoke temp$7.<java.lang.StringBuffer: java.lang.StringBuffer append(java.lang.Object)>(temp$9);
+        virtualinvoke temp$7.<java.lang.StringBuffer: java.lang.StringBuffer append(java.lang.Object)>(" Id: ");
+        temp$10 = staticinvoke <java.lang.Thread: java.lang.Thread currentThread()>();
+        temp$11 = virtualinvoke temp$10.<java.lang.Thread: long getId()>();
+        virtualinvoke temp$7.<java.lang.StringBuffer: java.lang.StringBuffer append(long)>(temp$11);
+        temp$12 = virtualinvoke temp$7.<java.lang.StringBuffer: java.lang.String toString()>();
+        temp$13 = staticinvoke <android.util.Log: int i(java.lang.String,java.lang.String)>("MyScheduler", temp$12);
+
+     label3:
+        nop;
+        exitmonitor temp$0;
+        goto label5;
+
+     label4:
+        nop;
+        temp$14 := @caughtexception;
+        exitmonitor temp$0;
+        throw temp$14;
+
+     label5:
+        nop;
+        return;
+
+        catch java.lang.Throwable from label1 to label5 with label4;
+    }
+
+    private static final boolean capturedBefore(long)
+    {
+        long id, temp$5;
+        java.util.ArrayList temp$0, temp$1;
+        java.util.Iterator temp$2;
+        myScheduler.ThreadData td;
+        boolean temp$3, temp$7, temp$9;
+        java.lang.Object temp$4;
+        int temp$6;
+        java.lang.Throwable temp$8;
+
+        id := @parameter0: long;
+        temp$0 = <myScheduler.MyScheduler: java.util.ArrayList threads>;
+        entermonitor temp$0;
+
+     label1:
+        nop;
+        temp$1 = <myScheduler.MyScheduler: java.util.ArrayList threads>;
+        temp$2 = interfaceinvoke temp$1.<java.lang.Iterable: java.util.Iterator iterator()>();
+
+     label2:
+        nop;
+        temp$3 = interfaceinvoke temp$2.<java.util.Iterator: boolean hasNext()>();
+        if temp$3 == 0 goto label6;
+
+        temp$4 = interfaceinvoke temp$2.<java.util.Iterator: java.lang.Object next()>();
+        td = (myScheduler.ThreadData) temp$4;
+        temp$5 = virtualinvoke td.<myScheduler.ThreadData: long getId()>();
+        temp$6 = temp$5 cmp id;
+        if temp$6 != 0 goto label5;
+
+        goto label3;
+
+     label3:
+        nop;
+        temp$7 = 1;
+        exitmonitor temp$0;
+
+     label4:
+        nop;
+        return temp$7;
+
+     label5:
+        nop;
+        nop;
+        goto label2;
+
+     label6:
+        nop;
+        exitmonitor temp$0;
+        goto label8;
+
+     label7:
+        nop;
+        temp$8 := @caughtexception;
+        exitmonitor temp$0;
+        throw temp$8;
+
+     label8:
+        nop;
+        temp$9 = 0;
+        return temp$9;
+
+        catch java.lang.Throwable from label1 to label4 with label7;
+        catch java.lang.Throwable from label5 to label8 with label7;
+    }
+
+    public static void notifyScheduler()
+    {
+        java.lang.Object temp$0, temp$2;
+        long temp$1;
+        java.lang.Throwable temp$3;
+
+        temp$0 = <myScheduler.MyScheduler: java.lang.Object schedulerSignal>;
+        entermonitor temp$0;
+
+     label1:
+        nop;
+        temp$1 = -1L;
+        <myScheduler.MyScheduler: long scheduled> = temp$1;
+        temp$2 = <myScheduler.MyScheduler: java.lang.Object schedulerSignal>;
+        virtualinvoke temp$2.<java.lang.Object: void notify()>();
+        exitmonitor temp$0;
+        goto label3;
+
+     label2:
+        nop;
+        temp$3 := @caughtexception;
+        exitmonitor temp$0;
+        throw temp$3;
+
+     label3:
+        nop;
+        return;
+
+        catch java.lang.Throwable from label1 to label3 with label2;
+    }
+
+    public static void yield()
+    {
+        staticinvoke <myScheduler.MyScheduler: void notifyScheduler()>();
+        staticinvoke <myScheduler.MyScheduler: void waitMyTurn()>();
+        return;
+    }
+
+    public static void notifyCompletion()
+    {
+        java.lang.Object temp$0, temp$15;
+        java.lang.StringBuffer temp$1;
+        long temp$2, temp$8, temp$14;
+        java.lang.String temp$3;
+        int temp$4, temp$11, temp$12;
+        java.util.ArrayList temp$5, temp$6;
+        java.lang.Thread temp$7;
+        myScheduler.ThreadData temp$9;
+        boolean temp$10;
+        java.lang.Throwable temp$13, temp$16;
+
+        temp$0 = <myScheduler.MyScheduler: java.lang.Object schedulerSignal>;
+        entermonitor temp$0;
+
+     label1:
+        nop;
+        temp$1 = new java.lang.StringBuffer;
+        specialinvoke temp$1.<java.lang.StringBuffer: void <init>()>();
+        virtualinvoke temp$1.<java.lang.StringBuffer: java.lang.StringBuffer append(java.lang.Object)>("Thread has completed. Id: ");
+        temp$2 = <myScheduler.MyScheduler: long scheduled>;
+        virtualinvoke temp$1.<java.lang.StringBuffer: java.lang.StringBuffer append(long)>(temp$2);
+        temp$3 = virtualinvoke temp$1.<java.lang.StringBuffer: java.lang.String toString()>();
+        temp$4 = staticinvoke <android.util.Log: int i(java.lang.String,java.lang.String)>("MyScheduler", temp$3);
+        temp$5 = <myScheduler.MyScheduler: java.util.ArrayList threads>;
+        entermonitor temp$5;
+
+     label2:
+        nop;
+        temp$6 = <myScheduler.MyScheduler: java.util.ArrayList threads>;
+        temp$7 = staticinvoke <java.lang.Thread: java.lang.Thread currentThread()>();
+        temp$8 = virtualinvoke temp$7.<java.lang.Thread: long getId()>();
+        temp$9 = staticinvoke <myScheduler.MyScheduler: myScheduler.ThreadData getThreadById(long)>(temp$8);
+        temp$10 = virtualinvoke temp$6.<java.util.ArrayList: boolean remove(java.lang.Object)>(temp$9);
+        temp$11 = <myScheduler.MyScheduler: int currentIndex>;
+        temp$12 = temp$11 + -1;
+        <myScheduler.MyScheduler: int currentIndex> = temp$12;
+        exitmonitor temp$5;
+        goto label4;
+
+     label3:
+        nop;
+        temp$13 := @caughtexception;
+        exitmonitor temp$5;
+        throw temp$13;
+
+     label4:
+        nop;
+        temp$14 = -1L;
+        <myScheduler.MyScheduler: long scheduled> = temp$14;
+        temp$15 = <myScheduler.MyScheduler: java.lang.Object schedulerSignal>;
+        virtualinvoke temp$15.<java.lang.Object: void notify()>();
+        exitmonitor temp$0;
+        goto label6;
+
+     label5:
+        nop;
+        temp$16 := @caughtexception;
+        exitmonitor temp$0;
+        throw temp$16;
+
+     label6:
+        nop;
+        return;
+
+        catch java.lang.Throwable from label2 to label4 with label3;
+        catch java.lang.Throwable from label1 to label6 with label5;
+    }
+
+    public static myScheduler.ThreadData getThreadById(long)
+    {
+        long id, temp$5;
+        java.util.ArrayList temp$0, temp$1;
+        java.util.Iterator temp$2;
+        myScheduler.ThreadData td, temp$8;
+        boolean temp$3;
+        java.lang.Object temp$4;
+        int temp$6;
+        java.lang.Throwable temp$7;
+
+        id := @parameter0: long;
+        temp$0 = <myScheduler.MyScheduler: java.util.ArrayList threads>;
+        entermonitor temp$0;
+
+     label1:
+        nop;
+        temp$1 = <myScheduler.MyScheduler: java.util.ArrayList threads>;
+        temp$2 = interfaceinvoke temp$1.<java.lang.Iterable: java.util.Iterator iterator()>();
+
+     label2:
+        nop;
+        temp$3 = interfaceinvoke temp$2.<java.util.Iterator: boolean hasNext()>();
+        if temp$3 == 0 goto label6;
+
+        temp$4 = interfaceinvoke temp$2.<java.util.Iterator: java.lang.Object next()>();
+        td = (myScheduler.ThreadData) temp$4;
+        temp$5 = virtualinvoke td.<myScheduler.ThreadData: long getId()>();
+        temp$6 = temp$5 cmp id;
+        if temp$6 != 0 goto label5;
+
+        goto label3;
+
+     label3:
+        nop;
+        exitmonitor temp$0;
+
+     label4:
+        nop;
+        return td;
+
+     label5:
+        nop;
+        nop;
+        goto label2;
+
+     label6:
+        nop;
+        exitmonitor temp$0;
+        goto label8;
+
+     label7:
+        nop;
+        temp$7 := @caughtexception;
+        exitmonitor temp$0;
+        throw temp$7;
+
+     label8:
+        nop;
+        temp$8 = null;
+        return temp$8;
+
+        catch java.lang.Throwable from label1 to label4 with label7;
+        catch java.lang.Throwable from label5 to label8 with label7;
+    }
+
+    public void <init>()
+    {
+        myScheduler.MyScheduler this;
+
+        this := @this: myScheduler.MyScheduler;
+        specialinvoke this.<java.lang.Object: void <init>()>();
+        return;
+    }
+
+    public static void gainControl$access$0()
+    {
+        staticinvoke <myScheduler.MyScheduler: void gainControl()>();
+        return;
+    }
+
+    public static java.util.ArrayList get$threads$access$1()
+    {
+        java.util.ArrayList temp$0;
+
+        temp$0 = <myScheduler.MyScheduler: java.util.ArrayList threads>;
+        return temp$0;
+    }
+
+    public static int set$currentIndex$access$2(int)
+    {
+        int value;
+
+        value := @parameter0: int;
+        <myScheduler.MyScheduler: int currentIndex> = value;
+        return value;
+    }
+
+    public static int get$currentIndex$access$3()
+    {
+        int temp$0;
+
+        temp$0 = <myScheduler.MyScheduler: int currentIndex>;
+        return temp$0;
+    }
+
+    public static void notifyNext$access$4()
+    {
+        staticinvoke <myScheduler.MyScheduler: void notifyNext()>();
+        return;
+    }
+}

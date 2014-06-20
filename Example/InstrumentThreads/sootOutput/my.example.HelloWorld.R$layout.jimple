@@ -1,0 +1,15 @@
+public final class my.example.HelloWorld.R$layout extends java.lang.Object
+{
+    public static final int activity_display_message;
+    public static final int activity_main;
+    public static final int fragment_main;
+
+    public void <init>()
+    {
+        my.example.HelloWorld.R$layout $r0;
+
+        $r0 := @this: my.example.HelloWorld.R$layout;
+        specialinvoke $r0.<java.lang.Object: void <init>()>();
+        return;
+    }
+}
