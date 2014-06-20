@@ -24,9 +24,9 @@ Requirements:
 
 Usage:
 
-1. Instrument your application apk. file for testing
+1. Instrument your application .apk file for testing
   
-  Note: Current instrumentation schedules the threads in an application in their registration order to our scheduler.
+  Note: Current instrumentation schedules the application threads in their registration order to our scheduler.
 
   The instrumentation uses [Soot framework](https://github.com/Sable/soot). Soot option -android-jars (that is set in our instrumentor code) looks into the "platforms" folder for the Android SDK that is the target SDK version defined in the application's manifest file. So, make sure that your target platform exists in your platforms folder. (You can use "Android SDK Manager" to install necessary platform SDKs.)
 
