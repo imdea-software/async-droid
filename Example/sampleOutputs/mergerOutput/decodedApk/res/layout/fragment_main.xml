@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical" android:layout_width="fill_parent" android:layout_height="fill_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <LinearLayout android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content">
+        <EditText android:id="@id/edit_message1" android:layout_width="0.0dip" android:layout_height="wrap_content" android:hint="@string/blank" android:layout_weight="1.0" />
+        <Button android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/processUI" android:onClick="processUI" />
+    </LinearLayout>
+    <LinearLayout android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content">
+        <EditText android:id="@id/edit_message2" android:layout_width="0.0dip" android:layout_height="wrap_content" android:hint="@string/blank" android:layout_weight="1.0" />
+        <Button android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/sendMessage" android:onClick="sendMessage" />
+    </LinearLayout>
+    <LinearLayout android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content">
+        <EditText android:id="@id/edit_message3" android:layout_width="0.0dip" android:layout_height="wrap_content" android:hint="@string/blank" android:layout_weight="1.0" />
+        <Button android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/postRunnable" android:onClick="postRunnable" />
+    </LinearLayout>
+    <LinearLayout android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content">
+        <EditText android:id="@id/edit_message4" android:layout_width="0.0dip" android:layout_height="wrap_content" android:hint="@string/blank" android:layout_weight="1.0" />
+        <Button android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/newAsyncTask" android:onClick="createAsyncTask" />
+    </LinearLayout>
+    <LinearLayout android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content">
+        <EditText android:id="@id/edit_message5" android:layout_width="0.0dip" android:layout_height="wrap_content" android:hint="@string/blank" android:layout_weight="1.0" />
+        <Button android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/AsyncTaskExecutor" android:onClick="createAsyncTaskOnExecutor" />
+    </LinearLayout>
+    <LinearLayout android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content">
+        <EditText android:id="@id/edit_message6" android:layout_width="0.0dip" android:layout_height="wrap_content" android:hint="@string/blank" android:layout_weight="1.0" />
+        <Button android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/newThread" android:onClick="createThread" />
+    </LinearLayout>
+</LinearLayout>

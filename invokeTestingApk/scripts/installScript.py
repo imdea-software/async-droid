@@ -1,5 +1,6 @@
 # Imports the monkeyrunner modules used by this program
 from com.android.monkeyrunner import MonkeyRunner, MonkeyDevice
+from sys import exit
 
 import sys
 
@@ -12,6 +13,9 @@ print "Application apk file: " + sys.argv[1]
 device = MonkeyRunner.waitForConnection()
 
 # Installs the Android package
-device.installPackage(sys.argv[1])
+installed = device.installPackage(sys.argv[1])
 
 
+if(installed == False):
+    print "Could not install the application. "
+    exit(1)

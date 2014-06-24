@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <public type="drawable" name="ic_launcher" id="0x7f020000" />
+    <public type="layout" name="activity_display_message" id="0x7f030000" />
+    <public type="layout" name="activity_main" id="0x7f030001" />
+    <public type="layout" name="fragment_main" id="0x7f030002" />
+    <public type="dimen" name="activity_horizontal_margin" id="0x7f040000" />
+    <public type="dimen" name="activity_vertical_margin" id="0x7f040001" />
+    <public type="string" name="app_name" id="0x7f050000" />
+    <public type="string" name="blank" id="0x7f050001" />
+    <public type="string" name="edit_message" id="0x7f050002" />
+    <public type="string" name="newThread" id="0x7f050003" />
+    <public type="string" name="processUI" id="0x7f050004" />
+    <public type="string" name="sendMessage" id="0x7f050005" />
+    <public type="string" name="postRunnable" id="0x7f050006" />
+    <public type="string" name="newAsyncTask" id="0x7f050007" />
+    <public type="string" name="AsyncTaskExecutor" id="0x7f050008" />
+    <public type="string" name="action_settings" id="0x7f050009" />
+    <public type="string" name="title_activity_main" id="0x7f05000a" />
+    <public type="string" name="title_activity_display_message" id="0x7f05000b" />
+    <public type="string" name="hello_world" id="0x7f05000c" />
+    <public type="style" name="AppBaseTheme" id="0x7f060000" />
+    <public type="style" name="AppTheme" id="0x7f060001" />
+    <public type="menu" name="display_message" id="0x7f070000" />
+    <public type="menu" name="main" id="0x7f070001" />
+    <public type="id" name="container" id="0x7f080000" />
+    <public type="id" name="edit_message1" id="0x7f080001" />
+    <public type="id" name="edit_message2" id="0x7f080002" />
+    <public type="id" name="edit_message3" id="0x7f080003" />
+    <public type="id" name="edit_message4" id="0x7f080004" />
+    <public type="id" name="edit_message5" id="0x7f080005" />
+    <public type="id" name="edit_message6" id="0x7f080006" />
+    <public type="id" name="action_settings" id="0x7f080007" />
+</resources>

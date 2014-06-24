@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">HelloWorldApp</string>
+    <string name="blank">Blank Text Field</string>
+    <string name="edit_message">Some message</string>
+    <string name="newThread">newThread</string>
+    <string name="processUI">processUI</string>
+    <string name="sendMessage">sendMessage</string>
+    <string name="postRunnable">postRunnable</string>
+    <string name="newAsyncTask">newAsyncTask</string>
+    <string name="AsyncTaskExecutor">AsyncTaskExecutor</string>
+    <string name="action_settings">Settings</string>
+    <string name="title_activity_main">MainActivity</string>
+    <string name="title_activity_display_message">Hello World</string>
+    <string name="hello_world">Hello world!</string>
+</resources>

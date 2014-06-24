@@ -1,0 +1,13 @@
+version: 1.5.2
+apkFileName: HelloWorldApp.apk
+isFrameworkApk: false
+usesFramework:
+  ids:
+  - 1
+sdkInfo:
+  minSdkVersion: '16'
+  targetSdkVersion: '19'
+packageInfo:
+  cur_package: my.example.HelloWorld
+  orig_package: my.example.HelloWorld
+compressionType: false
