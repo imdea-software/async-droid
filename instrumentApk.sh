@@ -18,7 +18,10 @@
 
  MERGER_CLASSPATH="${CLASSPATH}:${ANDROID_JAR}:${PWD}/lib/libForMergingDex/dx.jar:${PWD}/instrumentAndroidApk/mergeDexes/src"
  INSTRUMENTOR_LIB="${PWD}/lib/libForInstrumentor"
- INSTRUMENTOR_CLASSPATH="${CLASSPATH}:${ANDROID_JAR}:${INSTRUMENTOR_LIB}/lib/coffer.jar:${INSTRUMENTOR_LIB}/jasminclasses.jar::${INSTRUMENTOR_LIB}/java_cup.jar::${INSTRUMENTOR_LIB}/JFlex.jar::${INSTRUMENTOR_LIB}/pao.jar::${INSTRUMENTOR_LIB}/polygot.jar::${INSTRUMENTOR_LIB}/pth.jar:.:${INSTRUMENTOR_LIB}/soot.jar::${INSTRUMENTOR_LIB}/sootclasses.jar:${PWD}/instrumentAndroidApk/instrumentApk/src/myInstrumentor"
+ INSTRUMENTOR_CLASSPATH="${CLASSPATH}:${ANDROID_JAR}:${INSTRUMENTOR_LIB}/lib/coffer.jar:${INSTRUMENTOR_LIB}/jasminclasses.jar:\
+${INSTRUMENTOR_LIB}/java_cup.jar:${INSTRUMENTOR_LIB}/JFlex.jar:${INSTRUMENTOR_LIB}/pao.jar:\
+${INSTRUMENTOR_LIB}/polygot.jar:${INSTRUMENTOR_LIB}/pth.jar:${INSTRUMENTOR_LIB}/soot.jar:\
+${INSTRUMENTOR_LIB}/sootclasses.jar:${PWD}/instrumentAndroidApk/instrumentApk/src/myInstrumentor"
 
  # Extract the .apk file to get classes.dex
  echo Extracting "${APK_PATH}/${APK_NAME}" using apktool.

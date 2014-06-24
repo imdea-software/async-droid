@@ -6,7 +6,7 @@
  # NOTE: Package name and the main activity name can be found from the manifest file of the application project. 
  
  PATH_TO_SIGNED_APK= # full path to your instrumented application file
- ## PATH_TO_SIGNED_APK="${PWD}/example/sampleOutputs/signedHelloWorld/HelloWorldApp.apk"
+ ## PATH_TO_SIGNED_APK="${PWD}/example/signedHelloWorld/HelloWorldApp.apk"
  PACKAGE_NAME= # package name of your app
  ## PACKAGE_NAME="my.example.HelloWorld"
  MAIN_ACTIVITY= # main activity name of your app

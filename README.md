@@ -1,7 +1,7 @@
 # Android App Schedule Enumerator
 
 
-Requirements:
+**Requirements:**
 
 - Android SDK ADT Bundle:
 (http://developer.android.com/sdk/index.html)
@@ -23,7 +23,7 @@ Requirements:
 
 - You also must have created and started an AVD (Android Virtual Device) before executing step 3 - testing the instrumented application.
 
-Usage:
+**Usage:**
 
 1. Instrument your application .apk file for testing
   
@@ -64,9 +64,9 @@ jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore 2 my -release -
   sudo ./invokeTestingApk.sh
   ```
 
-Example:
+**Example:**
 
-In the "example" directory, We provide a simple HelloWorld application together with the outputs it generates. HelloWorld creates AsyncTasks, Threads, a HandlerThread, sends runnables and messages to the message queue of the HandlerThread depending on the user inputs. 
+In the *example* directory, we provide a simple HelloWorld application (together with its signed version) that creates AsyncTasks, Threads, a HandlerThread, sends runnables and messages to the message queue of the HandlerThread depending on the user inputs. 
 
 You can run instrument and test this example application by uncommenting the lines beginning with "##" in the script files.
 
