@@ -19,7 +19,6 @@ import re, sys, os
 
 from com.dtmilano.android.viewclient import ViewClient
 
-
 kwargs1 = {'verbose': True, 'ignoresecuredevice': False}
 device, serialno = ViewClient.connectToDeviceOrExit(**kwargs1)
 kwargs2 = {'startviewserver': True, 'forceviewserveruse': False, 'autodump': False, 'ignoreuiautomatorkilled': True}
