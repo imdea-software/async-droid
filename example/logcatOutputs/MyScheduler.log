@@ -1,0 +1,362 @@
+--------- beginning of /dev/log/system
+--------- beginning of /dev/log/main
+I/MyScheduler( 2401): I got main Id: 1
+I/MyScheduler( 2401): I am releasing to scheduler. I am:1
+I/MyScheduler( 2401): Scheduler has started in thread: MySchedulerThread Id: 89
+I/MyScheduler( 2401): Scheduler wants to gain control 
+I/MyScheduler( 2401): Scheduler gained control 
+I/MyScheduler( 2401): Scheduled thread id: 1
+I/MyScheduler( 2401): Scheduler is waiting for control
+I/MyScheduler( 2401): Scheduler wants to gain control 
+I/MyScheduler( 2401): I am waiting: 1
+I/MyScheduler( 2401): I am executing 1
+I/MyScheduler( 2401): Thread has completed. Id: 1
+I/MyScheduler( 2401): Scheduler gained control 
+I/MyScheduler( 2401): Scheduler has control
+I/MyScheduler( 2401): Scheduled thread id: 1
+I/MyScheduler( 2401): Scheduler is waiting for control
+I/MyScheduler( 2401): Scheduler wants to gain control 
+I/MyScheduler( 2401): I got AsyncTask #1 Id: 91
+I/MyScheduler( 2401): I am waiting: 91
+I/MyScheduler( 2401): I got HelloHandlerThread Id: 90
+I/MyScheduler( 2401): I am waiting: 90
+I/MyScheduler( 2401): I am waiting: 1
+I/MyScheduler( 2401): I am executing 1
+I/MyScheduler( 2401): Thread has completed. Id: 1
+I/MyScheduler( 2401): Scheduler gained control 
+I/MyScheduler( 2401): Scheduler has control
+I/MyScheduler( 2401): Scheduled thread id: 91
+I/MyScheduler( 2401): Scheduler is waiting for control
+I/MyScheduler( 2401): Scheduler wants to gain control 
+I/MyScheduler( 2401): I am executing 91
+I/MyScheduler( 2401): I am waiting: 91
+I/MyScheduler( 2401): I am executing 91
+I/MyScheduler( 2401): I got AsyncTask #2 Id: 92
+I/MyScheduler( 2401): I am waiting: 92
+I/MyScheduler( 2401): I am waiting: 1
+I/MyScheduler( 2401): Thread has completed. Id: 91
+I/MyScheduler( 2401): Scheduler gained control 
+I/MyScheduler( 2401): Scheduler has control
+I/MyScheduler( 2401): Scheduled thread id: 90
+I/MyScheduler( 2401): Scheduler is waiting for control
+I/MyScheduler( 2401): Scheduler wants to gain control 
+I/MyScheduler( 2401): I am executing 90
+I/MyScheduler( 2401): Thread has completed. Id: 90
+I/MyScheduler( 2401): Scheduler gained control 
+I/MyScheduler( 2401): Scheduler has control
+I/MyScheduler( 2401): Scheduled thread id: 90
+I/MyScheduler( 2401): Scheduler is waiting for control
+I/MyScheduler( 2401): Scheduler wants to gain control 
+I/MyScheduler( 2401): Thread has completed. Id: 90
+I/MyScheduler( 2401): Scheduler gained control 
+I/MyScheduler( 2401): Scheduler has control
+I/MyScheduler( 2401): Scheduled thread id: 92
+I/MyScheduler( 2401): Scheduler is waiting for control
+I/MyScheduler( 2401): Scheduler wants to gain control 
+I/MyScheduler( 2401): I am executing 92
+I/MyScheduler( 2401): I am waiting: 92
+I/MyScheduler( 2401): I am executing 92
+I/MyScheduler( 2401): I got HelloHandlerThread Id: 90
+I/MyScheduler( 2401): I am waiting: 90
+I/MyScheduler( 2401): Thread has completed. Id: 92
+I/MyScheduler( 2401): Thread has completed. Id: -1
+I/MyScheduler( 2401): Scheduler gained control 
+I/MyScheduler( 2401): Scheduler has control
+I/MyScheduler( 2401): Scheduled thread id: 1
+I/MyScheduler( 2401): Scheduler is waiting for control
+I/MyScheduler( 2401): Scheduler wants to gain control 
+I/MyScheduler( 2401): I am executing 1
+I/MyScheduler( 2401): I am waiting: 1
+I/MyScheduler( 2401): I am executing 1
+I/MyScheduler( 2401): Thread has completed. Id: 1
+I/MyScheduler( 2401): Thread has completed. Id: -1
+I/MyScheduler( 2401): Scheduler gained control 
+I/MyScheduler( 2401): Scheduler has control
+I/MyScheduler( 2401): Scheduled thread id: 90
+I/MyScheduler( 2401): Scheduler is waiting for control
+I/MyScheduler( 2401): Scheduler wants to gain control 
+I/MyScheduler( 2401): I am executing 90
+I/MyScheduler( 2401): I am waiting: 1
+I/MyScheduler( 2401): Thread has completed. Id: 90
+I/MyScheduler( 2401): Scheduler gained control 
+I/MyScheduler( 2401): Scheduler has control
+I/MyScheduler( 2401): Scheduled thread id: 1
+I/MyScheduler( 2401): Scheduler is waiting for control
+I/MyScheduler( 2401): Scheduler wants to gain control 
+I/MyScheduler( 2401): I am executing 1
+I/MyScheduler( 2401): I am waiting: 1
+I/MyScheduler( 2401): I am executing 1
+I/MyScheduler( 2401): Thread has completed. Id: 1
+I/MyScheduler( 2401): Thread has completed. Id: -1
+I/MyScheduler( 2401): I am waiting: 1
+I/MyScheduler( 2401): Scheduler gained control 
+I/MyScheduler( 2401): Scheduler has control
+I/MyScheduler( 2401): Scheduled thread id: 1
+I/MyScheduler( 2401): Scheduler is waiting for control
+I/MyScheduler( 2401): Scheduler wants to gain control 
+I/MyScheduler( 2401): I am executing 1
+I/MyScheduler( 2401): I am waiting: 1
+I/MyScheduler( 2401): I am executing 1
+I/MyScheduler( 2401): Thread has completed. Id: 1
+I/MyScheduler( 2401): Thread has completed. Id: -1
+I/MyScheduler( 2401): I am waiting: 1
+I/MyScheduler( 2401): Scheduler gained control 
+I/MyScheduler( 2401): Scheduler has control
+I/MyScheduler( 2401): Scheduled thread id: 1
+I/MyScheduler( 2401): Scheduler is waiting for control
+I/MyScheduler( 2401): Scheduler wants to gain control 
+I/MyScheduler( 2401): I am executing 1
+I/MyScheduler( 2401): I am waiting: 1
+I/MyScheduler( 2401): I am executing 1
+I/MyScheduler( 2401): Thread has completed. Id: 1
+I/MyScheduler( 2401): Thread has completed. Id: -1
+I/MyScheduler( 2401): Scheduler gained control 
+I/MyScheduler( 2401): Scheduler has control
+I/MyScheduler( 2401): Scheduled thread id: 1
+I/MyScheduler( 2401): Scheduler is waiting for control
+I/MyScheduler( 2401): Scheduler wants to gain control 
+I/MyScheduler( 2835): I got main Id: 1
+I/MyScheduler( 2835): I am releasing to scheduler. I am:1
+I/MyScheduler( 2835): Scheduler has started in thread: MySchedulerThread Id: 92
+I/MyScheduler( 2835): Scheduler wants to gain control 
+I/MyScheduler( 2835): Scheduler gained control 
+I/MyScheduler( 2835): Scheduled thread id: 1
+I/MyScheduler( 2835): Scheduler is waiting for control
+I/MyScheduler( 2835): Scheduler wants to gain control 
+I/MyScheduler( 2835): I am waiting: 1
+I/MyScheduler( 2835): I am executing 1
+I/MyScheduler( 2835): Thread has completed. Id: 1
+I/MyScheduler( 2835): Scheduler gained control 
+I/MyScheduler( 2835): Scheduler has control
+I/MyScheduler( 2835): Scheduled thread id: 1
+I/MyScheduler( 2835): Scheduler is waiting for control
+I/MyScheduler( 2835): Scheduler wants to gain control 
+I/MyScheduler( 2835): I got AsyncTask #1 Id: 94
+I/MyScheduler( 2835): I am waiting: 94
+I/MyScheduler( 2835): I got HelloHandlerThread Id: 93
+I/MyScheduler( 2835): I am waiting: 93
+I/MyScheduler( 2835): I am waiting: 1
+I/MyScheduler( 2835): I am executing 1
+I/MyScheduler( 2835): Thread has completed. Id: 1
+I/MyScheduler( 2835): Scheduler gained control 
+I/MyScheduler( 2835): Scheduler has control
+I/MyScheduler( 2835): Scheduled thread id: 94
+I/MyScheduler( 2835): Scheduler is waiting for control
+I/MyScheduler( 2835): Scheduler wants to gain control 
+I/MyScheduler( 2835): I am executing 94
+I/MyScheduler( 2835): I am waiting: 94
+I/MyScheduler( 2835): I am executing 94
+I/MyScheduler( 2835): I got AsyncTask #2 Id: 95
+I/MyScheduler( 2835): I am waiting: 95
+I/MyScheduler( 2835): I am waiting: 1
+I/MyScheduler( 2835): Thread has completed. Id: 94
+I/MyScheduler( 2835): Thread has completed. Id: -1
+I/MyScheduler( 2835): Scheduler gained control 
+I/MyScheduler( 2835): Scheduler has control
+I/MyScheduler( 2835): Scheduled thread id: 1
+I/MyScheduler( 2835): Scheduler is waiting for control
+I/MyScheduler( 2835): Scheduler wants to gain control 
+I/MyScheduler( 2835): I am executing 1
+I/MyScheduler( 2835): I am waiting: 1
+I/MyScheduler( 2835): I am executing 1
+I/MyScheduler( 2835): Thread has completed. Id: 1
+I/MyScheduler( 2835): Thread has completed. Id: -1
+I/MyScheduler( 2835): I am waiting: 1
+I/MyScheduler( 2835): Scheduler gained control 
+I/MyScheduler( 2835): Scheduler has control
+I/MyScheduler( 2835): Scheduled thread id: 93
+I/MyScheduler( 2835): Scheduler is waiting for control
+I/MyScheduler( 2835): Scheduler wants to gain control 
+I/MyScheduler( 2835): I am executing 93
+I/MyScheduler( 2835): Thread has completed. Id: 93
+I/MyScheduler( 2835): I got HelloHandlerThread Id: 93
+I/MyScheduler( 2835): I am waiting: 93
+I/MyScheduler( 2835): Scheduler gained control 
+I/MyScheduler( 2835): Scheduler has control
+I/MyScheduler( 2835): Scheduled thread id: 95
+I/MyScheduler( 2835): Scheduler is waiting for control
+I/MyScheduler( 2835): Scheduler wants to gain control 
+I/MyScheduler( 2835): I am executing 95
+I/MyScheduler( 2835): I am waiting: 95
+I/MyScheduler( 2835): I am executing 95
+I/MyScheduler( 2835): Thread has completed. Id: 95
+I/MyScheduler( 2835): Scheduler gained control 
+I/MyScheduler( 2835): Scheduler has control
+I/MyScheduler( 2835): Scheduled thread id: 93
+I/MyScheduler( 2835): Scheduler is waiting for control
+I/MyScheduler( 2835): Scheduler wants to gain control 
+I/MyScheduler( 2835): I am executing 93
+I/MyScheduler( 2835): Thread has completed. Id: 93
+I/MyScheduler( 2835): Scheduler gained control 
+I/MyScheduler( 2835): Scheduler has control
+I/MyScheduler( 2835): Scheduled thread id: 93
+I/MyScheduler( 2835): Scheduler is waiting for control
+I/MyScheduler( 2835): Scheduler wants to gain control 
+I/MyScheduler( 2835): Thread has completed. Id: 93
+I/MyScheduler( 2835): Scheduler gained control 
+I/MyScheduler( 2835): Scheduler has control
+I/MyScheduler( 2835): Scheduled thread id: 1
+I/MyScheduler( 2835): Scheduler is waiting for control
+I/MyScheduler( 2835): Scheduler wants to gain control 
+I/MyScheduler( 2835): I am executing 1
+I/MyScheduler( 2835): I am waiting: 1
+I/MyScheduler( 2835): I am executing 1
+I/MyScheduler( 2835): Thread has completed. Id: 1
+I/MyScheduler( 2835): Thread has completed. Id: -1
+I/MyScheduler( 2835): Scheduler gained control 
+I/MyScheduler( 2835): Scheduler has control
+I/MyScheduler( 2835): Scheduled thread id: 1
+I/MyScheduler( 2835): Scheduler is waiting for control
+I/MyScheduler( 2835): Scheduler wants to gain control 
+I/MyScheduler( 2835): I am waiting: 1
+I/MyScheduler( 2835): I am executing 1
+I/MyScheduler( 2835): I am waiting: 1
+I/MyScheduler( 2835): I am executing 1
+I/MyScheduler( 2835): Thread has completed. Id: 1
+I/MyScheduler( 2835): Scheduler gained control 
+I/MyScheduler( 2835): Scheduler has control
+I/MyScheduler( 2835): Scheduled thread id: 1
+I/MyScheduler( 2835): Scheduler is waiting for control
+I/MyScheduler( 2835): Scheduler wants to gain control 
+I/MyScheduler( 2835): Thread has completed. Id: 1
+I/MyScheduler( 2835): Scheduler gained control 
+I/MyScheduler( 2835): Scheduler has control
+I/MyScheduler( 2835): Scheduled thread id: 1
+I/MyScheduler( 2835): Scheduler is waiting for control
+I/MyScheduler( 2835): Scheduler wants to gain control 
+I/MyScheduler( 2835): I am waiting: 1
+I/MyScheduler( 2835): I am executing 1
+I/MyScheduler( 2835): I am waiting: 1
+I/MyScheduler( 2835): I am executing 1
+I/MyScheduler( 2835): Thread has completed. Id: 1
+I/MyScheduler( 2835): Scheduler gained control 
+I/MyScheduler( 2835): Scheduler has control
+I/MyScheduler( 2835): Scheduled thread id: 1
+I/MyScheduler( 2835): Scheduler is waiting for control
+I/MyScheduler( 2835): Scheduler wants to gain control 
+I/MyScheduler( 2835): Thread has completed. Id: 1
+I/MyScheduler( 2835): Scheduler gained control 
+I/MyScheduler( 2835): Scheduler has control
+I/MyScheduler( 2835): Scheduled thread id: 1
+I/MyScheduler( 2835): Scheduler is waiting for control
+I/MyScheduler( 2835): Scheduler wants to gain control 
+I/MyScheduler( 3283): I got main Id: 1
+I/MyScheduler( 3283): I am releasing to scheduler. I am:1
+I/MyScheduler( 3283): Scheduler has started in thread: MySchedulerThread Id: 95
+I/MyScheduler( 3283): Scheduler wants to gain control 
+I/MyScheduler( 3283): Scheduler gained control 
+I/MyScheduler( 3283): Scheduled thread id: 1
+I/MyScheduler( 3283): Scheduler is waiting for control
+I/MyScheduler( 3283): Scheduler wants to gain control 
+I/MyScheduler( 3283): I am waiting: 1
+I/MyScheduler( 3283): I am executing 1
+I/MyScheduler( 3283): Thread has completed. Id: 1
+I/MyScheduler( 3283): Scheduler gained control 
+I/MyScheduler( 3283): Scheduler has control
+I/MyScheduler( 3283): Scheduled thread id: 1
+I/MyScheduler( 3283): Scheduler is waiting for control
+I/MyScheduler( 3283): Scheduler wants to gain control 
+I/MyScheduler( 3283): I got AsyncTask #1 Id: 97
+I/MyScheduler( 3283): I am waiting: 97
+I/MyScheduler( 3283): I got HelloHandlerThread Id: 96
+I/MyScheduler( 3283): I am waiting: 96
+I/MyScheduler( 3283): I am waiting: 1
+I/MyScheduler( 3283): I am executing 1
+I/MyScheduler( 3283): Thread has completed. Id: 1
+I/MyScheduler( 3283): Scheduler gained control 
+I/MyScheduler( 3283): Scheduler has control
+I/MyScheduler( 3283): Scheduled thread id: 97
+I/MyScheduler( 3283): Scheduler is waiting for control
+I/MyScheduler( 3283): Scheduler wants to gain control 
+I/MyScheduler( 3283): I am executing 97
+I/MyScheduler( 3283): I am waiting: 97
+I/MyScheduler( 3283): I am executing 97
+I/MyScheduler( 3283): I got AsyncTask #2 Id: 98
+I/MyScheduler( 3283): I am waiting: 98
+I/MyScheduler( 3283): I am waiting: 1
+I/MyScheduler( 3283): Thread has completed. Id: 97
+I/MyScheduler( 3283): Scheduler gained control 
+I/MyScheduler( 3283): Scheduler has control
+I/MyScheduler( 3283): Scheduled thread id: 96
+I/MyScheduler( 3283): Scheduler is waiting for control
+I/MyScheduler( 3283): Scheduler wants to gain control 
+I/MyScheduler( 3283): I am executing 96
+I/MyScheduler( 3283): Thread has completed. Id: 96
+I/MyScheduler( 3283): Scheduler gained control 
+I/MyScheduler( 3283): Scheduler has control
+I/MyScheduler( 3283): Scheduled thread id: 96
+I/MyScheduler( 3283): Scheduler is waiting for control
+I/MyScheduler( 3283): Scheduler wants to gain control 
+I/MyScheduler( 3283): Thread has completed. Id: 96
+I/MyScheduler( 3283): I got HelloHandlerThread Id: 96
+I/MyScheduler( 3283): I am waiting: 96
+I/MyScheduler( 3283): Scheduler gained control 
+I/MyScheduler( 3283): Scheduler has control
+I/MyScheduler( 3283): Scheduled thread id: 98
+I/MyScheduler( 3283): Scheduler is waiting for control
+I/MyScheduler( 3283): Scheduler wants to gain control 
+I/MyScheduler( 3283): I am executing 98
+I/MyScheduler( 3283): I am waiting: 98
+I/MyScheduler( 3283): I am executing 98
+I/MyScheduler( 3283): Thread has completed. Id: 98
+I/MyScheduler( 3283): Scheduler gained control 
+I/MyScheduler( 3283): Scheduler has control
+I/MyScheduler( 3283): Scheduled thread id: 96
+I/MyScheduler( 3283): Scheduler is waiting for control
+I/MyScheduler( 3283): Scheduler wants to gain control 
+I/MyScheduler( 3283): I am executing 96
+I/MyScheduler( 3283): Thread has completed. Id: 96
+I/MyScheduler( 3283): Scheduler gained control 
+I/MyScheduler( 3283): Scheduler has control
+I/MyScheduler( 3283): Scheduled thread id: 96
+I/MyScheduler( 3283): Scheduler is waiting for control
+I/MyScheduler( 3283): Scheduler wants to gain control 
+I/MyScheduler( 3283): Thread has completed. Id: 96
+I/MyScheduler( 3283): Scheduler gained control 
+I/MyScheduler( 3283): Scheduler has control
+I/MyScheduler( 3283): Scheduled thread id: 1
+I/MyScheduler( 3283): Scheduler is waiting for control
+I/MyScheduler( 3283): Scheduler wants to gain control 
+I/MyScheduler( 3283): I am executing 1
+I/MyScheduler( 3283): I am waiting: 1
+I/MyScheduler( 3283): I am executing 1
+I/MyScheduler( 3283): Thread has completed. Id: 1
+I/MyScheduler( 3283): Thread has completed. Id: -1
+I/MyScheduler( 3283): Scheduler gained control 
+I/MyScheduler( 3283): Scheduler has control
+I/MyScheduler( 3283): Scheduled thread id: 1
+I/MyScheduler( 3283): Scheduler is waiting for control
+I/MyScheduler( 3283): Scheduler wants to gain control 
+I/MyScheduler( 3283): I am waiting: 1
+I/MyScheduler( 3283): I am executing 1
+I/MyScheduler( 3283): I am waiting: 1
+I/MyScheduler( 3283): I am executing 1
+I/MyScheduler( 3283): Thread has completed. Id: 1
+I/MyScheduler( 3283): Thread has completed. Id: -1
+I/MyScheduler( 3283): I am waiting: 1
+I/MyScheduler( 3283): Scheduler gained control 
+I/MyScheduler( 3283): Scheduler has control
+I/MyScheduler( 3283): Scheduled thread id: 1
+I/MyScheduler( 3283): Scheduler is waiting for control
+I/MyScheduler( 3283): Scheduler wants to gain control 
+I/MyScheduler( 3283): I am executing 1
+I/MyScheduler( 3283): I am waiting: 1
+I/MyScheduler( 3283): I am executing 1
+I/MyScheduler( 3283): Thread has completed. Id: 1
+I/MyScheduler( 3283): Thread has completed. Id: -1
+I/MyScheduler( 3283): I am waiting: 1
+I/MyScheduler( 3283): Scheduler gained control 
+I/MyScheduler( 3283): Scheduler has control
+I/MyScheduler( 3283): Scheduled thread id: 1
+I/MyScheduler( 3283): Scheduler is waiting for control
+I/MyScheduler( 3283): Scheduler wants to gain control 
+I/MyScheduler( 3283): I am executing 1
+I/MyScheduler( 3283): I am waiting: 1
+I/MyScheduler( 3283): I am executing 1
+I/MyScheduler( 3283): Thread has completed. Id: 1
+I/MyScheduler( 3283): Thread has completed. Id: -1
+I/MyScheduler( 3283): Scheduler gained control 
+I/MyScheduler( 3283): Scheduler has control
+I/MyScheduler( 3283): Scheduled thread id: 1
+I/MyScheduler( 3283): Scheduler is waiting for control
+I/MyScheduler( 3283): Scheduler wants to gain control 
