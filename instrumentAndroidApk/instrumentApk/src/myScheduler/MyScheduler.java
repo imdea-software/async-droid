@@ -37,13 +37,17 @@ public class MyScheduler {
 				// In this draft version, next thread is selected in RR fashion
 				// In the order they are registered to the Scheduler
 				while (!threads.isEmpty()) {
-					// no race condition on currentIndex, all other threads are
-					// blocked
+					// no race condition on currentIndex, all other threads are blocked
 					threads.increaseWalker();
-					notifyNext();
-					Log.i("MyScheduler", "Scheduler is waiting for control");
-					gainControl();
-					Log.i("MyScheduler", "Scheduler has control");
+					ThreadData current = threads.getCurrentThread();
+					
+					// false only if the thread has entered the code segment without waiting to be scheduled
+					// in a case where it does not wait since it has acquired locks
+					// normally, such threads are not added into the list. But UI is always in the list and may not be waited
+					if(current.willBeScheduled()){  
+						notifyNext(current);   // give ThreadData as parameter not to repeat getting this data
+						gainControl();
+					}
 				}
 
 				// Does not complete in an app since UI thread does not
@@ -81,15 +85,20 @@ public class MyScheduler {
 
 	// worker waits for its signal to start/resume
 	public static void waitMyTurn() {
-		sendThreadInfo();
+		
 		ThreadData me = threads.getThreadById(Thread.currentThread().getId());
-
+		// it can be suspended only if it is not in a monitor
+		if(me.getCurrentMonitors() > 0){
+			me.setToBeScheduled(false); // do not notify scheduler after that code segment
+			Log.i("MyScheduler", "Thread has acquired monitor(s), is not suspended.. Id:" +me.getId());
+			return;
+		}
+		
+		sendThreadInfo();	// added to the list	
 		Log.i("MyScheduler", "I am waiting: " + me.getId());
-
-		while (scheduled != me.getId()) {
-
+		
+		while (scheduled != me.getId()) {	
 			me.waitThread();
-
 		}
 
 		Log.i("MyScheduler", "I am executing " + me.getId());
@@ -99,6 +108,15 @@ public class MyScheduler {
 	// parameters in the instrumentation
 	// a thread notifies scheduler that it has released CPU
 	public static void notifyScheduler() {
+		
+		ThreadData me = threads.getThreadById(Thread.currentThread().getId());
+		// it can be resumed only if it is suspended before
+		// it may not have been if it had monitors
+		if(!me.willBeScheduled()) { // if has not waited for its turn, it will not notify too
+			me.setToBeScheduled(true); // in the next block, it will be scheduled by default
+			return;
+		}
+		
 		Log.i("MyScheduler", "I am releasing to scheduler. I am:"
 				+ Thread.currentThread().getId());
 		scheduled = (long) -1;
@@ -107,8 +125,7 @@ public class MyScheduler {
 
 	// scheduler notifies the next task to be scheduled
 	// if id == -1, then threads notify the scheduler
-	private static void notifyNext() {
-		ThreadData current = threads.getCurrentThread();
+	private static void notifyNext(ThreadData current) {
 		scheduled = current.getId();
 		Log.i("MyScheduler", "Scheduled thread id: " + scheduled);
 		current.notifyThread();
@@ -123,6 +140,15 @@ public class MyScheduler {
 	// This is also the case in message/runnable processing in a looper
 	// In case no more messages arrive
 	public static void notifyCompletion() {
+		
+		ThreadData me = threads.getThreadById(Thread.currentThread().getId());
+		// it can be resumed only if it is suspended before
+		// it may not have been if it had monitors
+		if(!me.willBeScheduled()) { // if has not waited for its turn, it will not notify too
+			me.setToBeScheduled(true); // in the next block, it will be scheduled by default
+			return;
+		}
+		
 		Log.i("MyScheduler", "Thread has completed. Id: " + scheduled);
 		scheduled = (long) -1;
 		if (Thread.currentThread().getId() != 1)
