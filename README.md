@@ -57,6 +57,8 @@ jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore 2 my -release -
 3. Test the instrumented application
   
   Note: Currently test input invokes UI events in the order of their ids in AndroidViewClient.
+
+  Make sure that you have an AVD running. You should see your device listed when you type: "adb devices" in the command line.
 	
   Fill in the necessary parameters in the invokeTestingApk.sh  and run the script:
 
@@ -68,6 +70,6 @@ jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore 2 my -release -
 
 In the *example* directory, we provide a simple HelloWorld application (together with its signed version) that creates AsyncTasks, Threads, a HandlerThread, sends runnables and messages to the message queue of the HandlerThread depending on the user inputs. 
 
-You can run instrument and test this example application by uncommenting the lines beginning with "##" in the script files.
+You can instrument and test this example application by uncommenting the lines beginning with "##" in the script files.
 
 To see the effect of the instrumentation, you can monitor the application threads using DDMS (Dalvik Debug Monitor Server) and examine LogCat outputs of the instrumented application.
