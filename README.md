@@ -42,16 +42,17 @@
 
 2. Sign the instrumented .apk file.
 
-  1. Generate a private/public key pair using keytool (included in the Java SDK)
+  1. Generate a private/public key pair using keytool (included in the Java SDK) 
+  You need to generate it once, then you can use the same key to sign your applications. 
 
   ```
-keytool -genkey -v -keystore my -release -key.keystore -alias alias_name -keyalg RSA -keysize 2048 -validity 10000
+  keytool -genkey -v -keystore my-release-key.keystore -alias alias_name -keyalg RSA -keysize 2048 -validity 10000
   ```
 
   2. Sign the instrumented .apk with the private key generated with keytool (included in the Java JDK)
 
   ```
-jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore 2 my -release -key. keystore my_application.apk alias_name
+  jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore 2 my-release-key.keystore my_application.apk alias_name
   ```
 
 3. Test the instrumented application
