@@ -10,7 +10,7 @@
  MAIN_ACTIVITY= # main activity name of your app
  ## MAIN_ACTIVITY="my.example.HelloWorld.MainActivity"
 
- # Currently NUM_DELAYS has no effect.
+ # Currently NUM_DELAYS has no effect - delay info embedded into MyScheduler
  NUM_DELAYS= # Total number of delays to be spent in the analysis
  ## NUM_DELAYS=0
 
