@@ -10,10 +10,9 @@
  MAIN_ACTIVITY= # main activity name of your app
  ## MAIN_ACTIVITY="my.example.HelloWorld.MainActivity"
 
- NUM_DELAYS= # Total numbr of delays to be spent in the analysis
+ # Currently NUM_DELAYS has no effect.
+ NUM_DELAYS= # Total number of delays to be spent in the analysis
  ## NUM_DELAYS=0
- 
-NUM_DELAYS=1
 
 mkdir logcatOutputs
 cd logcatOutputs
