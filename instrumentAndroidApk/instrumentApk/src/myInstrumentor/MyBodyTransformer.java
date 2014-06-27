@@ -23,14 +23,7 @@ import soot.jimple.StaticInvokeExpr;
 public class MyBodyTransformer extends BodyTransformer {
 
 	static SootClass schedulerClass;
-	static SootMethod initiateScheduler, waitMyTurn, notifyCompletion, sendThreadInfo;
-
-/*	static {
-		schedulerClass = Scene.v().loadClassAndSupport("MyScheduler2");
-		initiate = schedulerClass.getMethod("void initiateScheduler()");
-		waitMyTurn = schedulerClass.getMethod("void waitMyTurn()");
-		notifyCompletion = schedulerClass.getMethod("void notifyCompletion()");
-	}*/
+	static SootMethod initiateScheduler, waitMyTurn, notifyScheduler;
 
 	@Override
 	protected void internalTransform(final Body b, String phaseName,
@@ -38,9 +31,8 @@ public class MyBodyTransformer extends BodyTransformer {
 
 		schedulerClass = Scene.v().getSootClass("myScheduler.MyScheduler");
 		initiateScheduler = schedulerClass.getMethod("void initiateScheduler()");
-		sendThreadInfo = schedulerClass.getMethod("void sendThreadInfo()");
 		waitMyTurn = schedulerClass.getMethod("void waitMyTurn()");
-		notifyCompletion = schedulerClass.getMethod("void notifyCompletion()");
+		notifyScheduler = schedulerClass.getMethod("void notifyScheduler()");
 		
 		final PatchingChain<Unit> units = b.getUnits();
 		Iterator<Unit> iter = units.snapshotIterator();
@@ -50,12 +42,12 @@ public class MyBodyTransformer extends BodyTransformer {
 			System.out.println("Skipping myScheduler.MyScheduler");
 			return;
 		}
-		if(b.getMethod().getDeclaringClass().toString().equals("myScheduler.MyScheduler$1")){
-			System.out.println("Skipping myScheduler.MyScheduler$1");
+		if(b.getMethod().getDeclaringClass().toString().equals("myScheduler.SchedulerRunnable")){
+			System.out.println("Skipping myScheduler.SchedulerRunnable");
 			return;
 		}
-		if(b.getMethod().getDeclaringClass().toString().equals("myScheduler.MyScheduler$1Anonymous0")){
-			System.out.println("Skipping myScheduler.MyScheduler$1Anonymous0");
+		if(b.getMethod().getDeclaringClass().toString().equals("myScheduler.PendingThreads")){
+			System.out.println("Skipping myScheduler.PendingThreads");
 			return;
 		}
 		
@@ -94,7 +86,7 @@ public class MyBodyTransformer extends BodyTransformer {
 				u.apply(new AbstractStmtSwitch() {
 
 					public void caseReturnVoidStmt(ReturnVoidStmt stmt) {
-						StaticInvokeExpr notifyExpr = Jimple.v().newStaticInvokeExpr(notifyCompletion.makeRef());
+						StaticInvokeExpr notifyExpr = Jimple.v().newStaticInvokeExpr(notifyScheduler.makeRef());
 						Unit notifyStmt = Jimple.v().newInvokeStmt(notifyExpr);
 						units.insertBefore(notifyStmt, stmt);
 						System.out.println("run release CPU stmt added..");
@@ -117,7 +109,7 @@ public class MyBodyTransformer extends BodyTransformer {
 				u.apply(new AbstractStmtSwitch() {
 
 					public void caseReturnVoidStmt(ReturnVoidStmt stmt) {
-						StaticInvokeExpr notifyExpr = Jimple.v().newStaticInvokeExpr(notifyCompletion.makeRef());
+						StaticInvokeExpr notifyExpr = Jimple.v().newStaticInvokeExpr(notifyScheduler.makeRef());
 						Unit notifyStmt = Jimple.v().newInvokeStmt(notifyExpr);
 						units.insertBefore(notifyStmt, stmt);
 						System.out.println("handleMessage release CPU stmt added..");
@@ -137,7 +129,7 @@ public class MyBodyTransformer extends BodyTransformer {
 
 			while (iter.hasNext()) {
 				if (u instanceof ReturnStmt){		
-						StaticInvokeExpr notifyExpr = Jimple.v().newStaticInvokeExpr(notifyCompletion.makeRef());
+						StaticInvokeExpr notifyExpr = Jimple.v().newStaticInvokeExpr(notifyScheduler.makeRef());
 						Unit notifyStmt = Jimple.v().newInvokeStmt(notifyExpr);
 						units.insertBefore(notifyStmt, u);
 						System.out.println("onPreExecute release CPU stmt added..");
@@ -145,7 +137,7 @@ public class MyBodyTransformer extends BodyTransformer {
 				u = iter.next();
 			}
 			
-			StaticInvokeExpr notifyExpr = Jimple.v().newStaticInvokeExpr(notifyCompletion.makeRef());
+			StaticInvokeExpr notifyExpr = Jimple.v().newStaticInvokeExpr(notifyScheduler.makeRef());
 			Unit notifyStmt = Jimple.v().newInvokeStmt(notifyExpr);
 			units.insertBefore(notifyStmt, u);
 			return;
@@ -159,7 +151,7 @@ public class MyBodyTransformer extends BodyTransformer {
 
 			while (iter.hasNext()) {
 				if (u instanceof ReturnStmt){		
-						StaticInvokeExpr notifyExpr = Jimple.v().newStaticInvokeExpr(notifyCompletion.makeRef());
+						StaticInvokeExpr notifyExpr = Jimple.v().newStaticInvokeExpr(notifyScheduler.makeRef());
 						Unit notifyStmt = Jimple.v().newInvokeStmt(notifyExpr);
 						units.insertBefore(notifyStmt, u);
 						System.out.println("onPostExecute release CPU stmt added..");
@@ -167,7 +159,7 @@ public class MyBodyTransformer extends BodyTransformer {
 				u = iter.next();
 			}
 			
-			StaticInvokeExpr notifyExpr = Jimple.v().newStaticInvokeExpr(notifyCompletion.makeRef());
+			StaticInvokeExpr notifyExpr = Jimple.v().newStaticInvokeExpr(notifyScheduler.makeRef());
 			Unit notifyStmt = Jimple.v().newInvokeStmt(notifyExpr);
 			units.insertBefore(notifyStmt, u);
 			return;
@@ -182,7 +174,7 @@ public class MyBodyTransformer extends BodyTransformer {
 
 			while (iter.hasNext()) {
 				if (u instanceof ReturnStmt){		
-						StaticInvokeExpr notifyExpr = Jimple.v().newStaticInvokeExpr(notifyCompletion.makeRef());
+						StaticInvokeExpr notifyExpr = Jimple.v().newStaticInvokeExpr(notifyScheduler.makeRef());
 						Unit notifyStmt = Jimple.v().newInvokeStmt(notifyExpr);
 						units.insertBefore(notifyStmt, u);
 						System.out.println("onPogressUpdate release CPU stmt added..");
@@ -190,7 +182,7 @@ public class MyBodyTransformer extends BodyTransformer {
 				u = iter.next();
 			}
 			
-			StaticInvokeExpr notifyExpr = Jimple.v().newStaticInvokeExpr(notifyCompletion.makeRef());
+			StaticInvokeExpr notifyExpr = Jimple.v().newStaticInvokeExpr(notifyScheduler.makeRef());
 			Unit notifyStmt = Jimple.v().newInvokeStmt(notifyExpr);
 			units.insertBefore(notifyStmt, u);
 			return;
@@ -204,7 +196,7 @@ public class MyBodyTransformer extends BodyTransformer {
 
 			while (iter.hasNext()) {
 				if (u instanceof ReturnStmt){		
-						StaticInvokeExpr notifyExpr = Jimple.v().newStaticInvokeExpr(notifyCompletion.makeRef());
+						StaticInvokeExpr notifyExpr = Jimple.v().newStaticInvokeExpr(notifyScheduler.makeRef());
 						Unit notifyStmt = Jimple.v().newInvokeStmt(notifyExpr);
 						units.insertBefore(notifyStmt, u);
 						System.out.println("doInBackground release CPU stmt added..");
@@ -212,7 +204,7 @@ public class MyBodyTransformer extends BodyTransformer {
 				u = iter.next();
 			}
 			
-			StaticInvokeExpr notifyExpr = Jimple.v().newStaticInvokeExpr(notifyCompletion.makeRef());
+			StaticInvokeExpr notifyExpr = Jimple.v().newStaticInvokeExpr(notifyScheduler.makeRef());
 			Unit notifyStmt = Jimple.v().newInvokeStmt(notifyExpr);
 			units.insertBefore(notifyStmt, u);
 			return;

@@ -1,7 +1,5 @@
 package myScheduler;
 
-import android.util.Log;
-
 // provides synchronization of its corresponding Thread
 
 public class ThreadData {
