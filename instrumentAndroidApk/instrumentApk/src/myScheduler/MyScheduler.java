@@ -40,6 +40,16 @@ public class MyScheduler {
 	public static void notifyScheduler() {			
 		sch.notifyScheduler();
 	}
+	
+	// app thread enters in a monitor
+	public void enterMonitor(){
+		sch.enterMonitor();
+	}
+	
+	// app thread exits a monitor
+	public void exitMonitor(){
+		sch.exitMonitor();
+	}
 
 }
 

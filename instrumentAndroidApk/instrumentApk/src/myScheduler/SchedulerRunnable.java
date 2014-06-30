@@ -138,6 +138,11 @@ public class SchedulerRunnable implements Runnable {
 	public void notifyScheduler() {
 
 		ThreadData me = threads.getThreadById(Thread.currentThread().getId());
+		
+		// if already notified the scheduler, return
+		if(me.didNotifyScheduler())
+			return;
+		
 		// it can be resumed only if it is suspended before
 		// (it may not have been if it had monitors)
 		if (!me.willBeScheduled()) { 
@@ -154,6 +159,8 @@ public class SchedulerRunnable implements Runnable {
 //		synchronized(this){
 			numProcessed ++;  // data race not critical here ?
 //		}
+			
+		me.setNotifiedScheduler(true);
 		schedulerThreadData.notifyThread();
 	}
 
@@ -162,6 +169,16 @@ public class SchedulerRunnable implements Runnable {
 		waitMyTurn(threadId);
 	}
 
+	public void enterMonitor(){
+		ThreadData me = threads.getThreadById(Thread.currentThread().getId());
+		me.enteredMonitor();
+	}
+	
+	public void exitMonitor(){
+		ThreadData me = threads.getThreadById(Thread.currentThread().getId());
+		me.exitedMonitor();
+	}
+	
 	// gainControl and waitMyTurn are merged
 	/*
 	 * public void gainControl() { Log.i("MyScheduler",
@@ -169,7 +186,9 @@ public class SchedulerRunnable implements Runnable {
 	 * schedulerThreadData.waitThread(); } Log.i("MyScheduler",
 	 * "Scheduler gained control "); }
 	 */
+	
 }
+
 
 // scheduled and currentIndex are guaranteed to be not accessed by more than one
 // threads concurrently
