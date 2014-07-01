@@ -1,5 +1,7 @@
 package myScheduler;
 
+import java.util.Stack;
+
 // provides synchronization of its corresponding Thread
 
 public class ThreadData {
@@ -7,15 +9,18 @@ public class ThreadData {
 	private long id;
 	
 	private int currentMonitors = 0;
-	private boolean toBeScheduled = true; 
-	// true: when it can be suspended - can wait for its turn
-	// false: when it has monitors
-	private boolean notifiedScheduler = false; 
-	// true: it notified scheduler after its execution
-	// false: it is scheduled but still not released to scheduler
-	// added to disable sending more than one notifications to the scheduler
-	// (instrumentation might add more than one notify statements)
+	// Each waitMyTurn inserts an item stating whether its corresponding notifyScheduler will notify 
+	// Notification of scheduler is allowed only when popped item is true
+	// This handles two cases:
+	// (1) Nested wait-notify blocks (notify scheduler when exiting last block)
+	// (2) Threads not suspended (did not wait) since it had monitors
+	private Stack<Boolean> willNotify = new Stack<Boolean>();
+	
+	// if this is true once in a nested chunk of blocks
+	// the inner blocks will not notify
+	private boolean willNotifyEver = false;
 
+	// Not used for SchedulerThread
 	
 	public ThreadData(long id)
 	{
@@ -27,7 +32,6 @@ public class ThreadData {
 	}
 	
 	public synchronized void notifyThread(){
-		notifiedScheduler = false; // needs to notify scheduler after its execution
 		this.notify();
 	}
 	
@@ -51,21 +55,30 @@ public class ThreadData {
 		//Log.i("MyScheduler", "Monitors: " + currentMonitors );
 		return currentMonitors;
 	}
-
-	public boolean willBeScheduled() {
-		return toBeScheduled;
+	
+	public void pushWaitBlock(boolean b) {
+		willNotify.push(new Boolean(b));
 	}
 
-	public void setToBeScheduled(boolean b) {
-		this.toBeScheduled = b;
+	public boolean popWaitBlock() {
+		Boolean b = willNotify.pop();
+		return b.booleanValue();
 	}
 	
-	public boolean didNotifyScheduler() {
-		return notifiedScheduler;
+	public boolean isInBlock(){
+		if(willNotify.isEmpty())
+			return false;
+		else
+			return true;
+	}
+	
+	public boolean willNotifyEver() {
+		return willNotifyEver;
+	}
+	
+	public void setWillNotifyEver(boolean b) {
+		willNotifyEver = b;
 	}
 
-	public void setNotifiedScheduler(boolean notifiedScheduler) {
-		this.notifiedScheduler = notifiedScheduler;
-	}
 
 }

@@ -120,52 +120,7 @@ public class MyBodyTransformer extends BodyTransformer {
 
 		if (b.getMethod().getName().equals("doInBackground")) {
 			System.out.println("===========Instrumenting doInBackground..");
-			StaticInvokeExpr waitExpr = Jimple.v().newStaticInvokeExpr(waitMyTurn.makeRef());
-			Unit waitStmt = Jimple.v().newInvokeStmt(waitExpr);
-			units.insertAfter(waitStmt, u);
-			System.out.println("Wait for CPU stmt added..");
-
-			while (iter.hasNext()) {
-
-				u.apply(new AbstractStmtSwitch() {
-
-					public void caseReturnVoidStmt(ReturnVoidStmt stmt) {
-						StaticInvokeExpr notifyExpr = Jimple.v().newStaticInvokeExpr(notifyScheduler.makeRef());
-						Unit notifyStmt = Jimple.v().newInvokeStmt(notifyExpr);
-						units.insertBefore(notifyStmt, stmt);
-						System.out.println("Release CPU stmt added..");
-					}
-
-					public void caseReturnStmt(ReturnStmt stmt) {
-						StaticInvokeExpr notifyExpr = Jimple.v().newStaticInvokeExpr(notifyScheduler.makeRef());
-						Unit notifyStmt = Jimple.v().newInvokeStmt(notifyExpr);
-						units.insertBefore(notifyStmt, stmt);
-						System.out.println("Release CPU stmt added..");
-					}
-
-					public void caseRetStmt(RetStmt stmt) {
-						StaticInvokeExpr notifyExpr = Jimple.v().newStaticInvokeExpr(notifyScheduler.makeRef());
-						Unit notifyStmt = Jimple.v().newInvokeStmt(notifyExpr);
-						units.insertBefore(notifyStmt, stmt);
-						System.out.println("Release CPU stmt added..");
-					}
-
-					public void caseEnterMonitorStmt(EnterMonitorStmt stmt){
-						StaticInvokeExpr enterMonitorExpr = Jimple.v().newStaticInvokeExpr(enterMonitor.makeRef());
-						Unit enterMonitorStmt = Jimple.v().newInvokeStmt(enterMonitorExpr);
-						units.insertAfter(enterMonitorStmt, stmt);
-						System.out.println("Enter monitor stmt added..");
-					}
-
-					public void caseExitMonitorStmt(ExitMonitorStmt stmt){
-						StaticInvokeExpr exitMonitorExpr = Jimple.v().newStaticInvokeExpr(exitMonitor.makeRef());
-						Unit exitMonitorStmt = Jimple.v().newInvokeStmt(exitMonitorExpr);
-						units.insertAfter(exitMonitorStmt, stmt);
-						System.out.println("Exit monitor stmt added..");
-					}
-				});
-				u = iter.next();
-			}
+			instrumentMethod(units, u, iter);
 			return;
 		}
 

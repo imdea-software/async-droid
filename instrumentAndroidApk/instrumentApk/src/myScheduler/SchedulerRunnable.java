@@ -53,19 +53,20 @@ public class SchedulerRunnable implements Runnable {
 		while (!threads.isEmpty() /*&& !isEndOfTest()*/) {
 			threads.increaseWalker();
 
-			if (numProcessed == getNextDelayPoint()) {
-				Log.i("MyScheduler", "Delayed: "
-						+ Thread.currentThread().getName() + " Id: "
-						+ Thread.currentThread().getId() + " NumProcessed: " + numProcessed);
-				threads.increaseWalker(); // delay
-				setNextDelayPoint();
-			}
-
 			ThreadData current = threads.getCurrentThread();
-
-			if (current.willBeScheduled()) {
-				// give ThreadData as parameter not to repeat getting this data
-				notifyNext(current); 
+			
+			// if the current thread needs to be scheduled (is waiting and will notify)
+			if (current.willNotifyEver()) {
+				
+				// check whether it will be delayed
+				if (numProcessed == getNextDelayPoint()) {
+					Log.i("MyScheduler", "Delayed Thread Id: "
+							+ current.getId() + " NumProcessed: " + numProcessed);
+					threads.increaseWalker(); // delay
+					setNextDelayPoint();
+				}
+				
+				notifyNext(); 
 				// gainControl();
 				waitMyTurn(-1);
 			}
@@ -84,27 +85,33 @@ public class SchedulerRunnable implements Runnable {
 		if (threadId != -1) {
 			me = threads.getThreadById(threadId);
 
-			if(me == null)
-				Log.e("MyScheduler",
-						"THREAD TO BE SCHEDULED IS NOT IN THE LIST!!!");
+			if(me == null){ // I should not hit this statement:
+				Log.e("MyScheduler", "THREAD TO BE SCHEDULED IS NOT IN THE LIST!!!");
+				return;
+			}
 				
 			// it can be suspended only if it is not in a monitor
 			if (me.getCurrentMonitors() > 0) {
-				// do not notify the scheduler after completion
-				// no synchronization for that block
-				me.setToBeScheduled(false);
-				Log.i("MyScheduler",
-						"Thread has acquired monitor(s), is not suspended.. Id:"
-								+ me.getId());
+				// since waiting is not incremented, will not notify the scheduler after completion
+				Log.i("MyScheduler", "Thread has acquired monitor(s), is not suspended.. Id:" + me.getId());
+				me.pushWaitBlock(false); // corresponding notifyScheduler will not actually notify
 				return;
+			}
+			
+			// If thread is already in its block
+			if(me.willNotifyEver()){
+				me.pushWaitBlock(false); // corresponding notifyScheduler will not actually notify
+			}else{
+				me.pushWaitBlock(true); // corresponding notifyScheduler WILL notify
+				me.setWillNotifyEver(true); // further blocks will not notify
 			}
 			
 		} else {
 			me = schedulerThreadData;
 		}
-
+	
 		Log.i("MyScheduler", "I am waiting: " + threadId);
-
+		
 		while (scheduled != threadId) {
 			me.waitThread();
 		}
@@ -125,8 +132,8 @@ public class SchedulerRunnable implements Runnable {
 	}
 
 	// scheduler notifies the next task to be scheduled
-	private void notifyNext(ThreadData current) {
-		// scheduler notifies a next thread:
+	private void notifyNext() {
+		ThreadData current = threads.getCurrentThread();
 		scheduled = current.getId();
 		Log.i("MyScheduler", "Scheduled thread id: " + scheduled);
 		current.notifyThread();
@@ -139,28 +146,43 @@ public class SchedulerRunnable implements Runnable {
 
 		ThreadData me = threads.getThreadById(Thread.currentThread().getId());
 		
-		// if already notified the scheduler, return
-		if(me.didNotifyScheduler())
-			return;
-		
-		// it can be resumed only if it is suspended before
-		// (it may not have been if it had monitors)
-		if (!me.willBeScheduled()) { 
-			// in the next segment, it will be scheduled by default
-			me.setToBeScheduled(true); 
+		// if already notified the scheduler, me is null (unless a UI thread)
+		// I should not hit this statement:
+		if(me == null){
+			Log.e("MyScheduler", "THREAD NOTIFYING SCHEDULER NOT IN THE LIST!!!");
 			return;
 		}
-
-		Log.i("MyScheduler", "Thread has completed. Id: "
+				
+		Log.i("MyScheduler", "Block is finished. Thread Id: "
 				+ Thread.currentThread().getId() + " NumProcessed: " + numProcessed);
+		
+		// A thread did not actually wait in corresponding waitMyTurn
+		// (either it was already in block (nested wait stmts) or it had monitors)
+		if(!me.popWaitBlock()){
+			Log.i("MyScheduler", "I am NOTT notifying the scheduler. Thread Id: "
+					+ Thread.currentThread().getId());
+			return; 
+		}
+			
+		
 		scheduled = (long) -1;
-		if (Thread.currentThread().getId() != 1)
+		
+		if (Thread.currentThread().getId() != 1)		
 			threads.removeThreadById(Thread.currentThread().getId());
+		
 //		synchronized(this){
 			numProcessed ++;  // data race not critical here ?
 //		}
-			
-		me.setNotifiedScheduler(true);
+		
+		// thread consumes the notification block
+		me.setWillNotifyEver(false); 
+		Log.i("MyScheduler", "I am notifying the scheduler. Thread Id: "
+				+ Thread.currentThread().getId());
+		schedulerThreadData.notifyThread();
+	}
+	
+	public void wakeScheduler() {
+		scheduled = (long) -1;
 		schedulerThreadData.notifyThread();
 	}
 

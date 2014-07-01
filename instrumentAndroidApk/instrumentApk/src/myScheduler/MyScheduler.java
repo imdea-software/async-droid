@@ -20,7 +20,7 @@ public class MyScheduler {
 			t.setName("MySchedulerThread");
 			t.start();
 			sch.sendThreadInfo();
-			sch.notifyScheduler();
+			sch.wakeScheduler();
 			initiated = true;
 		}
 	}
