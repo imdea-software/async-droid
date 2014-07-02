@@ -59,12 +59,12 @@ public class MyBodyTransformer extends BodyTransformer {
 		
 		final PatchingChain<Unit> units = b.getUnits();
 		Iterator<Unit> iter = units.snapshotIterator();
-		Unit u = iter.next();
 
 		if (b.getMethod().getName().equals("onCreate")) {
 
 			while (iter.hasNext()) {
 
+				Unit u = iter.next();
 				u.apply(new AbstractStmtSwitch() {
 
 					public void caseInvokeStmt(InvokeStmt stmt) {
@@ -77,7 +77,6 @@ public class MyBodyTransformer extends BodyTransformer {
 						}
 					}
 				});
-				u = iter.next();
 			}
 			return;
 		}
@@ -88,7 +87,7 @@ public class MyBodyTransformer extends BodyTransformer {
 		// or sent to UI thread by runOnUIThread
 		if (b.getMethod().getName().equals("run")) {
 			System.out.println("===========Instrumenting run..");
-			instrumentMethod(units, u, iter);
+			instrumentMethod(units, iter);
 			return;
 		}
 
@@ -96,31 +95,31 @@ public class MyBodyTransformer extends BodyTransformer {
 		// by sendMessage, sendMessageAtFrontOfQueue, sendMessageAtTime, sendMessageDelayed
 		if (b.getMethod().getName().equals("handleMessage")) {
 			System.out.println("===========Instrumenting handleMessage..");
-			instrumentMethod(units, u, iter);
+			instrumentMethod(units, iter);
 			return;
 		}
 
 		if (b.getMethod().getName().equals("onPreExecute")) {
 			System.out.println("===========Instrumenting onPreExecute..");
-			instrumentMethod(units, u, iter);
+			instrumentMethod(units, iter);
 			return;
 		}
 
 		if (b.getMethod().getName().equals("onPostExecute")) {
 			System.out.println("===========Instrumenting onPostExecute..");
-			instrumentMethod(units, u, iter);
+			instrumentMethod(units, iter);
 			return;
 		}
 
 		if (b.getMethod().getName().equals("onProgressUpdate")) {
 			System.out.println("===========Instrumenting donProgressUpdate..");
-			instrumentMethod(units, u, iter);
+			instrumentMethod(units, iter);
 			return;
 		}
 
 		if (b.getMethod().getName().equals("doInBackground")) {
 			System.out.println("===========Instrumenting doInBackground..");
-			instrumentMethod(units, u, iter);
+			instrumentMethod(units, iter);
 			return;
 		}
 
@@ -128,7 +127,12 @@ public class MyBodyTransformer extends BodyTransformer {
 	
 	
 	
-	public void instrumentMethod(final PatchingChain<Unit> units, Unit u, Iterator<Unit> iter){
+	public void instrumentMethod(final PatchingChain<Unit> units, Iterator<Unit> iter){
+		
+		if(!iter.hasNext())
+			return;
+		
+		Unit u = iter.next();
 		StaticInvokeExpr waitExpr = Jimple.v().newStaticInvokeExpr(waitMyTurn.makeRef());
 		Unit waitStmt = Jimple.v().newInvokeStmt(waitExpr);
 		units.insertAfter(waitStmt, u);
@@ -136,6 +140,7 @@ public class MyBodyTransformer extends BodyTransformer {
 
 		while (iter.hasNext()) {
 
+			u = iter.next();
 			u.apply(new AbstractStmtSwitch() {
 
 				public void caseReturnVoidStmt(ReturnVoidStmt stmt) {
@@ -173,13 +178,9 @@ public class MyBodyTransformer extends BodyTransformer {
 					System.out.println("Exit monitor stmt added..");
 				}
 			});
-			u = iter.next();
+			
 		}
 
-		StaticInvokeExpr notifyExpr = Jimple.v().newStaticInvokeExpr(notifyScheduler.makeRef());
-		Unit notifyStmt = Jimple.v().newInvokeStmt(notifyExpr);
-		units.insertBefore(notifyStmt, u);
-		System.out.println("Release CPU stmt added before the last unit..");
 	}
 
 
