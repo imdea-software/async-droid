@@ -15,11 +15,12 @@
 
 - ApkTool (v 1.5.2) from https://code.google.com/p/android-apktool/
 
+- Ant tool
+
 - Python (v.2.7.5) 
  
 - Jython (v.2.5.3)
 
-- AndroidViewClient (v.5.1.1) from http://github.com/dtmilano/AndroidViewClient
 
 - You also must have created and started an AVD (Android Virtual Device) before executing step 3 - testing the instrumented application.
 
@@ -34,43 +35,62 @@
   Fill in the necessary parameters in instrumentApk.sh and then run the script:
 
   ```
-  sudo ./instrumentApk.sh
+  sudo ./1_instrumentAndroidApk.sh
   ```
 
-  After execution, sootOutput directory will be created having the instrumented apk file inside.
+  After the execution of the script, sootOutput directory will be created having the instrumented apk file inside.
 
 
-2. Sign the instrumented .apk file.
+2. Build your tester application.
+
+  To build a tester for the example HelloWorldApp:
+
+   ```
+  sudo ./2_buildTesterApk.sh
+  ```
+
+  If you will test another application, you will need to do the following steps before running the script:
+  
+  1. Write your application package name as the target application in buildTestterApk/TestApk/AndroidManifest.xml
+  2. Enter the main activity name of your application in the buildTestterApk/TestApk/src/my/example/test/TestApk.java file.
+  
+  After the execution of the script, TestAndroidApp-release-unsigned.apk will be created inside the bin folder of the tester application project.
+
+
+3. Sign (i) the instrumented .apk file (obtained in step 1) and (ii) the tester .apk (obtained in step 2) file.
+
+  NOTE: These two .apk files should be signed with the same key.
 
   1. Generate a private/public key pair using keytool (included in the Java SDK) 
   You need to generate it once, then you can use the same key to sign your applications. 
 
-  ```
-  keytool -genkey -v -keystore my-release-key.keystore -alias alias_name -keyalg RSA -keysize 2048 -validity 10000
-  ```
+    ```
+    keytool -genkey -v -keystore my-release-key.keystore -alias alias_name -keyalg RSA -keysize 2048 -validity 10000
+    ```
 
-  2. Sign the instrumented .apk with the private key generated with keytool (included in the Java JDK)
+  2. Sign the .apk files with the private key generated with keytool (included in the Java JDK)
 
-  ```
-  jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore 2 my-release-key.keystore my_application.apk alias_name
-  ```
+    ```
+    jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore 2 my-release-key.keystore my_application.apk alias_name
+    jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore 2 my-release-key.keystore my_tester.apk alias_name
+    ```
 
-3. Test the instrumented application
-  
-  Note: Currently test input invokes UI events in the order of their ids in AndroidViewClient.
+
+4. Test the instrumented application
 
   Make sure that you have an AVD running. You should see your device listed when you type: "adb devices" in the command line.
 	
-  Fill in the necessary parameters in the invokeTestingApk.sh  and run the script:
+  Fill in the application name parameter in the invokeTesting.sh  and run the script:
 
   ``` 
-  sudo ./invokeTestingApk.sh
+  sudo ./4_invokeTestingApk.sh
   ```
+
 
 **Example:**
 
-In the *example* directory, we provide a simple HelloWorld application (together with its signed version) that creates AsyncTasks, Threads, a HandlerThread, sends runnables and messages to the message queue of the HandlerThread depending on the user inputs. 
+In the *example* directory, we provide a simple HelloWorld application that creates AsyncTasks, Threads, a HandlerThread, sends runnables and messages to the message queue of the HandlerThread depending on the user inputs. We also provide its instrumented and signed version together with its tester application.
 
-You can instrument and test this example application by uncommenting the lines beginning with "##" in the script files.
+You can instrument and test this example application by running the scripts with the default parameter values.
 
 To see the effect of the instrumentation, you can monitor the application threads using DDMS (Dalvik Debug Monitor Server) and examine LogCat outputs of the instrumented application.
