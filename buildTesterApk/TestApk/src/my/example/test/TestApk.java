@@ -42,7 +42,7 @@ public class TestApk extends ActivityInstrumentationTestCase2 {
 			Log.i("Tester", "view: " + v.toString());
 			if(v.isClickable())
 				//v.performClick();
-				solo.clickOnView(v);
+				v.callOnClick();
 			if(v.getWindowVisibility() != View.VISIBLE){
 				Log.i("VIEW", "not visible : " + v.toString());
 			}else{
