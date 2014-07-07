@@ -122,9 +122,17 @@ public class MyBodyTransformer extends BodyTransformer {
 			instrumentMethod(units, iter);
 			return;
 		}
+		
+		// if a method in an Activity class is defined by user, synchronize it with the scheduler:
+		// (so that UI gives change to other threads when a UI event is received)	
+		SootClass activityClass = Scene.v().getSootClass("android.app.Activity");
+		if(b.getMethod().getDeclaringClass().getSuperclass().toString().equals("android.app.Activity") && !activityClass.declaresMethod(b.getMethod().getNumberedSubSignature()) ){
+			System.out.println("===========Instrumenting a user defined method: " + b.getMethod());
+			instrumentMethod(units, iter);
+			return;
+		}
 
 	}
-	
 	
 	
 	public void instrumentMethod(final PatchingChain<Unit> units, Iterator<Unit> iter){

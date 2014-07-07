@@ -20,11 +20,17 @@ public class PendingThreads {
 	}
 	
 	public synchronized void increaseWalker(){
-		walkerIndex = (walkerIndex + 1) % threads.size();
+		if (threads.size() >= 1)
+			walkerIndex = (walkerIndex + 1) % threads.size();
+		else 
+			walkerIndex = (walkerIndex + 1);
 	}
 	
 	public synchronized void decreaseWalker(){
-		walkerIndex = (walkerIndex - 1) % threads.size();;
+		if (threads.size() >= 1)
+			walkerIndex = (walkerIndex - 1) % threads.size();
+		else
+			walkerIndex = (walkerIndex - 1);
 	}
 	
 	public synchronized int getWalker(){

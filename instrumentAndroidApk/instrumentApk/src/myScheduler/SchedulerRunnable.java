@@ -46,11 +46,14 @@ public class SchedulerRunnable implements Runnable {
 				+ Thread.currentThread().getName() + " Id: "
 				+ Thread.currentThread().getId());
 
-		// must wait until the main (UI) thread is added to the list
+		// must wait until the main (UI) thread wakes it
 		// gainControl();
 		waitMyTurn(-1);
 
-		while (!threads.isEmpty() /*&& !isEndOfTest()*/) {
+		while (true /*&& !isEndOfTest()*/) {
+			if(threads.isEmpty())
+				continue;
+			
 			threads.increaseWalker();
 
 			ThreadData current = threads.getCurrentThread();
@@ -72,9 +75,9 @@ public class SchedulerRunnable implements Runnable {
 			}
 		}
 
-		Log.i("MyScheduler", "Test has completed with delays: ");
+//		Log.i("MyScheduler", "Test has completed with delays: ");
 		///// must end the test !!!!
-		return;
+//		return;
 	}
 
 	// threaddata of waiting task should be in the list!!
@@ -146,7 +149,7 @@ public class SchedulerRunnable implements Runnable {
 
 		ThreadData me = threads.getThreadById(Thread.currentThread().getId());
 		
-		// if already notified the scheduler, me is null (unless a UI thread)
+		// if already notified the scheduler, me is null
 		// I should not hit this statement:
 		if(me == null){
 			Log.e("MyScheduler", "THREAD NOTIFYING SCHEDULER NOT IN THE LIST!!!");
@@ -166,9 +169,8 @@ public class SchedulerRunnable implements Runnable {
 			
 		
 		scheduled = (long) -1;
-		
-		if (Thread.currentThread().getId() != 1)		
-			threads.removeThreadById(Thread.currentThread().getId());
+			
+		threads.removeThreadById(Thread.currentThread().getId());
 		
 //		synchronized(this){
 			numProcessed ++;  // data race not critical here ?

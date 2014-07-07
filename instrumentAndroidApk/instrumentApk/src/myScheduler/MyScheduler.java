@@ -1,5 +1,7 @@
 package myScheduler;
 
+import android.util.Log;
+
 
 // static interface class between the scheduler and the app
 public class MyScheduler {
@@ -19,7 +21,6 @@ public class MyScheduler {
 			Thread t = new Thread(sch);
 			t.setName("MySchedulerThread");
 			t.start();
-			sch.sendThreadInfo();
 			sch.wakeScheduler();
 			initiated = true;
 		}
