@@ -5,6 +5,8 @@ import android.util.Log;
 //schedules the app threads using given delay indices
 public class SchedulerRunnable implements Runnable {
 
+	DelayServiceConHandler delayCon;
+	
 	private int numDelays;
 	private int[] numIndices;
 	private int currentIndexToDelay = 0;
@@ -14,14 +16,14 @@ public class SchedulerRunnable implements Runnable {
 	private static PendingThreads threads = new PendingThreads();
 	private static ThreadData schedulerThreadData = new ThreadData(-1);
 
-	// id of the currently scheduled thread 
-	// -1 for scheduler, initially UI thread is enabled too
+	// id of the currently scheduled thread (-1 for scheduler)
 	private static long scheduled = (long) 0;
 
-	public SchedulerRunnable(int numDelays, int[] numIndices, int limit) {
-		this.numDelays = numDelays;
-		this.numIndices = numIndices;
-		MIN_NUM_PROCESSED = limit;
+	public SchedulerRunnable(DelayServiceConHandler delayCon) {
+		//this.numDelays = numDelays;
+		//this.numIndices = numIndices;
+		//MIN_NUM_PROCESSED = limit;
+		this.delayCon = delayCon;
 	}
 
 	public int getNextDelayPoint() {
@@ -46,6 +48,16 @@ public class SchedulerRunnable implements Runnable {
 				+ Thread.currentThread().getName() + " Id: "
 				+ Thread.currentThread().getId());
 
+		// initiate the service:
+		delayCon.doStartService();
+		// bind the service
+		delayCon.doBindService();
+		
+		// laf olsun die mesaj gonder
+		delayCon.doSendIPCMsg();
+
+		boolean b = true;
+		
 		// must wait until the main (UI) thread wakes it
 		// gainControl();
 		waitMyTurn(-1);
@@ -72,6 +84,13 @@ public class SchedulerRunnable implements Runnable {
 				notifyNext(); 
 				// gainControl();
 				waitMyTurn(-1);
+				
+				if(b){
+					delayCon.doUnbindService();
+					delayCon.doStopService();
+					b = false;
+				}
+				
 			}
 		}
 
@@ -203,14 +222,7 @@ public class SchedulerRunnable implements Runnable {
 		me.exitedMonitor();
 	}
 	
-	// gainControl and waitMyTurn are merged
-	/*
-	 * public void gainControl() { Log.i("MyScheduler",
-	 * "Scheduler wants to gain control "); while (scheduled != -1) {
-	 * schedulerThreadData.waitThread(); } Log.i("MyScheduler",
-	 * "Scheduler gained control "); }
-	 */
-	
+
 }
 
 
