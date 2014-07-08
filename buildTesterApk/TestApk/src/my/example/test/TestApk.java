@@ -2,11 +2,20 @@ package my.example.test;
 
 import java.util.ArrayList;
 
-import com.robotium.solo.Solo;
-
+import android.app.Service;
+import android.content.Context;
+import android.content.Intent;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.IBinder;
+import android.os.Message;
+import android.os.Messenger;
+import android.os.RemoteException;
 import android.test.ActivityInstrumentationTestCase2;
 import android.util.Log;
 import android.view.View;
+
+import com.robotium.solo.Solo;
 
 @SuppressWarnings("unchecked")
 public class TestApk extends ActivityInstrumentationTestCase2 {
@@ -28,33 +37,32 @@ public class TestApk extends ActivityInstrumentationTestCase2 {
 	}
 
 	private Solo solo;
+	private Context context;
 
 	@Override
 	protected void setUp() throws Exception {
+		context = this.getInstrumentation().getContext();
+		//Log.i("CONTEXT", "Target: " + this.getInstrumentation().getTargetContext().getApplicationContext().toString());
+		//Log.i("CONTEXT", "Here: " + context.toString());
 		solo = new Solo(getInstrumentation(), getActivity());
 	}
 
-	public void testDisplayBlackBox() {
-
+	public void testApk() {
+		//Context context = getInstrumentation().getTargetContext().getApplicationContext();
 		ArrayList<View> myViews = solo.getViews();
 		
 		for(View v: myViews){
 			Log.i("Tester", "view: " + v.toString());
 			if(v.isClickable())
-				//v.performClick();
-				v.callOnClick();
-			if(v.getWindowVisibility() != View.VISIBLE){
-				Log.i("VIEW", "not visible : " + v.toString());
-			}else{
-				Log.i("VIEW", "is visible : " + v.toString());
-			}
+				//v.callOnClick();
+				solo.clickOnView(v);
 		}
 
 	}
-
+	
 	@Override
 	public void tearDown() throws Exception {
 		solo.finishOpenedActivities();
 	}
-
+	
 }
