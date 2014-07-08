@@ -7,26 +7,19 @@ import android.content.Context;
 // static interface class between the scheduler and the app
 public class MyScheduler {
 
-	private static boolean initiated = false;
-
-	//private static int MIN_NUM_PROCESSED = 10;
-	//private static int numDelays = 3;
-	//private static int[] numIndices = {3, 5, 8};
-
 	private static SchedulerRunnable sch;
 	private static DelayServiceConHandler delayCon;
 
 	// called by UI thread with the application context
 	public static void initiateScheduler(Context context) 
 	{
-		if (!initiated) {
+		if (delayCon != null) {
 			delayCon = new DelayServiceConHandler(context); // for IPC with DelayService
 			sch = new SchedulerRunnable(delayCon); // to perform scheduling
 			Thread t = new Thread(sch);
 			t.setName("MySchedulerThread");
 			t.start();
 			sch.wakeScheduler();
-			initiated = true;
 		}
 	}
 
