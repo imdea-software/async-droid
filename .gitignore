@@ -1,3 +1,14 @@
 */build/*
 */sootOutput/*
 */mergerOutput/*
+*/logcatOutputs/*
+*/buildTesterApk/bin/*
+*~
+*.class
+*.dex.d
+*.apk.d
+*.xml.d
+.DS_Store
+3_sign.sh
+deneme.sh
+
