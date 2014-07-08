@@ -1,8 +1,8 @@
-*/build/*
-*/sootOutput/*
-*/mergerOutput/*
-*/logcatOutputs/*
-*/buildTesterApk/bin/*
+build
+sootOutput
+mergerOutput
+logcatOutputs
+buildTesterApk/TestApk/bin
 *~
 *.class
 *.dex.d
@@ -11,4 +11,3 @@
 .DS_Store
 3_sign.sh
 deneme.sh
-
