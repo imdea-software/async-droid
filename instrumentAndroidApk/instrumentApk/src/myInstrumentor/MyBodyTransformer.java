@@ -3,7 +3,9 @@ import java.util.Map;
 
 import soot.Body;
 import soot.BodyTransformer;
+import soot.Local;
 import soot.PatchingChain;
+import soot.RefType;
 import soot.Scene;
 import soot.SootClass;
 import soot.SootMethod;
@@ -16,7 +18,9 @@ import soot.jimple.Jimple;
 import soot.jimple.RetStmt;
 import soot.jimple.ReturnStmt;
 import soot.jimple.ReturnVoidStmt;
+import soot.jimple.ThisRef;
 import soot.jimple.StaticInvokeExpr;
+import soot.jimple.VirtualInvokeExpr;
 
 
 public class MyBodyTransformer extends BodyTransformer {
@@ -29,7 +33,7 @@ public class MyBodyTransformer extends BodyTransformer {
 			@SuppressWarnings("rawtypes") Map options) {
 
 		schedulerClass = Scene.v().getSootClass("myScheduler.MyScheduler");
-		initiateScheduler = schedulerClass.getMethod("void initiateScheduler()");
+		initiateScheduler = schedulerClass.getMethod("void initiateScheduler(android.content.Context)");
 		waitMyTurn = schedulerClass.getMethod("void waitMyTurn()");
 		notifyScheduler = schedulerClass.getMethod("void notifyScheduler()");
 		enterMonitor = schedulerClass.getMethod("void enterMonitor()");
@@ -70,9 +74,19 @@ public class MyBodyTransformer extends BodyTransformer {
 					public void caseInvokeStmt(InvokeStmt stmt) {
 						if(stmt.getInvokeExpr().getMethod().getSignature().equals("<android.app.Activity: void onCreate(android.os.Bundle)>")){
 
-							StaticInvokeExpr initiateExpr = Jimple.v().newStaticInvokeExpr(initiateScheduler.makeRef());
+							// get activity's this reference
+							Local thisAct = b.getThisLocal();
+													
+							// get application context:
+							Local context = addTmpRef(b, "ctx", "android.content.Context");
+							SootMethod sm = Scene.v().getMethod("<android.content.ContextWrapper: android.content.Context getApplicationContext()>");	
+							VirtualInvokeExpr getContextExpr = Jimple.v().newVirtualInvokeExpr(thisAct, sm.makeRef());
+																		
+							// initiate scheduler with this context
+							StaticInvokeExpr initiateExpr = Jimple.v().newStaticInvokeExpr(initiateScheduler.makeRef(), context);
 							Unit initiateStmt = Jimple.v().newInvokeStmt(initiateExpr);
 							units.insertAfter(initiateStmt, stmt);
+							units.insertAfter(Jimple.v().newAssignStmt(context, getContextExpr), stmt);  // correct order
 							System.out.println("===========Initiate Scheduler stmt added..");
 						}
 					}
@@ -191,6 +205,10 @@ public class MyBodyTransformer extends BodyTransformer {
 
 	}
 
-
+	private static Local addTmpRef(Body body, String name, String className) {
+		Local tmpRef = Jimple.v().newLocal(name, RefType.v(className));
+		body.getLocals().add(tmpRef);
+		return tmpRef;
+	}
 
 }
