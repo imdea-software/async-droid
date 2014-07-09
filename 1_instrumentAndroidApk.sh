@@ -1,20 +1,9 @@
+#!/bin/bash
+
  # Script file to instrument an application.
  # Uncomment the lines beginning with ## to instrument the example HelloWorldApp.apk
 
- ANDROID_SDK_HOME= # full path to Android SDK directory   
- ANDROID_JAR= # full path to Android jar file (version corresponding to your apk target SDK level)
- APKTOOL_HOME= # full path to the apk tool shell file
- AAPTTOOL_HOME= # full path to the aapt tool shell file (path depends on your SDK version)
-
- # NOTE: Min and Max SDK levels can be found from the manifest file or (mostly) the web page of the application project.
- APK_PATH= # full path to the .apk file you want to instrument
- ## APK_PATH="${PWD}/example" 
- APK_NAME= # 
- ## APK_NAME="HelloWorldApp.apk" 
- MIN_SDK_LEVEL= #
- ## MIN_SDK_LEVEL=16
- MAX_SDK_LEVEL= #
- ## MAX_SDK_LEVEL=19
+ source 0_my.config
 
  for X in \
    ANDROID_SDK_HOME ANDROID_JAR \

@@ -1,11 +1,8 @@
+#!/bin/bash
+
  # Script file to test a(n) (instrumented) application.
 
-PATH_TO_SIGNED_APK="${PWD}/example/signed/HelloWorldApp.apk"
-#PATH_TO_SIGNED_APK= # full path to your instrumented and signed application file
-PATH_TO_SIGNED_TESTER="${PWD}/example/signed/TestApk-release-signed.apk"
-#PATH_TO_SIGNED_APK= # full path to your signed tester application file
-APK_PACKAGE_NAME="my.example.HelloWorld"
-#APK_PACKAGE_NAME= # package name of your app
+source 0_my.config
 
 # Install the app to be tested 
 # Comment out the following line if your app is already installed
