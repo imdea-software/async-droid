@@ -16,6 +16,20 @@
  MAX_SDK_LEVEL= #
  ## MAX_SDK_LEVEL=19
 
+ for X in \
+   ANDROID_SDK_HOME ANDROID_JAR \
+   APKTOOL_HOME AAPTTOOL APK_PATH APK_NAME \
+   MIN_SDK_LEVEL MAX_SDK_LEVEL
+ do
+   if [ -z "$(eval echo "\$$X")" ]
+   then
+     echo "NOTE: This script must be modified so that certain variables are set."
+     echo "Please edit this script to set those variables to their proper values."
+     echo "The $X variable was not set."
+     exit 1
+   fi
+ done
+
  MERGER_CLASSPATH="${CLASSPATH}:${ANDROID_JAR}:${PWD}/lib/libForMergingDex/dx.jar:${PWD}/instrumentAndroidApk/mergeDexes/src"
  INSTRUMENTOR_LIB="${PWD}/lib/libForInstrumentor"
  INSTRUMENTOR_CLASSPATH="${CLASSPATH}:${ANDROID_JAR}:${INSTRUMENTOR_LIB}/lib/coffer.jar:${INSTRUMENTOR_LIB}/jasminclasses.jar:\
