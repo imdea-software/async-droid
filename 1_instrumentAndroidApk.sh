@@ -16,17 +16,6 @@
  MAX_SDK_LEVEL= #
  ## MAX_SDK_LEVEL=19
 
- ANDROID_SDK_HOME="/Users/burcu.ozkan/Desktop/adt-bundle-mac-x86_64-20140321/sdk"
- ANDROID_JAR="/Users/burcu.ozkan/Desktop/adt-bundle-mac-x86_64-20140321/sdk/platforms/android-19/android.jar"
- APKTOOL_HOME="/Users/burcu.ozkan/Desktop/sdkTrials/moretools/apktool1.5.2"
- AAPTTOOL_HOME="/Users/burcu.ozkan/Desktop/adt-bundle-mac-x86_64-20140321/sdk/build-tools/android-4.4.2"
-
- # NOTE: Min and Max SDK levels can be found from the manifest file or (mostly) the web page of the application project.
- APK_PATH="${PWD}/example"
- APK_NAME="HelloWorldApp.apk" 
- MIN_SDK_LEVEL=16
- MAX_SDK_LEVEL=19
-
  MERGER_CLASSPATH="${CLASSPATH}:${ANDROID_JAR}:${PWD}/lib/libForMergingDex/dx.jar:${PWD}/instrumentAndroidApk/mergeDexes/src"
  INSTRUMENTOR_LIB="${PWD}/lib/libForInstrumentor"
  INSTRUMENTOR_CLASSPATH="${CLASSPATH}:${ANDROID_JAR}:${INSTRUMENTOR_LIB}/lib/coffer.jar:${INSTRUMENTOR_LIB}/jasminclasses.jar:\
