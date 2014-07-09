@@ -3,7 +3,15 @@
  # Script file to test a(n) (instrumented) application.
 
 set -e
-source 0_config.sh
+
+if [ ! -f "$1" ]
+then
+  echo "Please supply an APK file."
+  exit 1
+fi
+
+APK_FILE=$(cd $(dirname "$1") && pwd)/$(basename "$1")
+APK_NAME=$(basename "$1")
 
 PATH_TO_SIGNED_APK=$(dirname $APK_FILE)/signed/$(basename $APK_FILE)
 PATH_TO_SIGNED_TESTER=$(dirname $APK_FILE)/signed/TestApk-release-signed.apk
