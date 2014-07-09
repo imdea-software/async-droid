@@ -28,13 +28,6 @@ RESIGN=
 if [ ! -f "sootOutput/$APK_NAME" ] || [ -n "$REINSTRUMENT" ]
 then
 
-  MERGER_CLASSPATH="${CLASSPATH}:${ANDROID_JAR}:${PWD}/lib/libForMergingDex/dx.jar:${PWD}/instrumentAndroidApk/mergeDexes/src"
-  INSTRUMENTOR_LIB="${PWD}/lib/libForInstrumentor"
-  INSTRUMENTOR_CLASSPATH="${CLASSPATH}:${ANDROID_JAR}:${INSTRUMENTOR_LIB}/lib/coffer.jar:${INSTRUMENTOR_LIB}/jasminclasses.jar:\
-  ${INSTRUMENTOR_LIB}/java_cup.jar:${INSTRUMENTOR_LIB}/JFlex.jar:${INSTRUMENTOR_LIB}/pao.jar:\
-  ${INSTRUMENTOR_LIB}/polygot.jar:${INSTRUMENTOR_LIB}/pth.jar:${INSTRUMENTOR_LIB}/soot.jar:\
-  ${INSTRUMENTOR_LIB}/sootclasses.jar:${PWD}/instrumentAndroidApk/instrumentApk/src/myInstrumentor"
-
   echo "-------------------------------------------------------------------------"
   echo "                      PHASE 1 : INSTRUMENT THE APK                       "
   echo "-------------------------------------------------------------------------"
@@ -55,6 +48,11 @@ then
 
   echo "Merging application dex file with myScheduler dex file to be used in the instrumentation."
   # Merge the classes.dex file with myScheduler.dex file
+  MERGER_CLASSPATH=$CLASSPATH
+  MERGER_CLASSPATH+=:$ANDROID_JAR
+  MERGER_CLASSPATH+=:$PWD/lib/libForMergingDex/dx.jar
+  MERGER_CLASSPATH+=:$PWD/instrumentAndroidApk/mergeDexes/src
+
   javac -cp ${MERGER_CLASSPATH} \
     instrumentAndroidApk/mergeDexes/src/mergeDexFiles/*.java 
   # Merge the classes.dex file with myScheduler.dex file 
@@ -91,6 +89,20 @@ then
 
   echo Instrumenting .apk file $APK_NAME.
   # Compile instrumentor
+  INSTRUMENTOR_LIB=$PWD/lib/libForInstrumentor
+  INSTRUMENTOR_CLASSPATH=$CLASSPATH
+  INSTRUMENTOR_CLASSPATH+=:$ANDROID_JAR
+  INSTRUMENTOR_CLASSPATH+=:$INSTRUMENTOR_LIB/lib/coffer.jar
+  INSTRUMENTOR_CLASSPATH+=:$INSTRUMENTOR_LIB/jasminclasses.jar
+  INSTRUMENTOR_CLASSPATH+=:$INSTRUMENTOR_LIB/java_cup.jar
+  INSTRUMENTOR_CLASSPATH+=:$INSTRUMENTOR_LIB/JFlex.jar
+  INSTRUMENTOR_CLASSPATH+=:$INSTRUMENTOR_LIB/pao.jar
+  INSTRUMENTOR_CLASSPATH+=:$INSTRUMENTOR_LIB/polygot.jar
+  INSTRUMENTOR_CLASSPATH+=:$INSTRUMENTOR_LIB/pth.jar
+  INSTRUMENTOR_CLASSPATH+=:$INSTRUMENTOR_LIB/soot.jar
+  INSTRUMENTOR_CLASSPATH+=:$INSTRUMENTOR_LIB/sootclasses.jar
+  INSTRUMENTOR_CLASSPATH+=:$PWD/instrumentAndroidApk/instrumentApk/src/myInstrumentor
+
   javac -cp $INSTRUMENTOR_CLASSPATH \
     instrumentAndroidApk/instrumentApk/src/myInstrumentor/*.java
 
@@ -122,7 +134,7 @@ then
   echo 'Sign that file before installation.'
 fi
 
-if [ ! -f "$SIGNED_APK" ] || [ -n "$RESIGN" ]
+if [ ! -f "$SIGNED_APK" ] || [ ! -f "$SIGNED_TESTER" ] || [ -n "$RESIGN" ]
 then
 
   echo "-------------------------------------------------------------------------"
@@ -133,7 +145,6 @@ then
   STOREPASS=abcdefg
   KEYPASS=abcdefg
   ALIAS=my_alias
-
 
   mkdir -p $(dirname $APK_FILE)/signed
   cp -f "sootOutput/$APK_NAME" $SIGNED_APK
