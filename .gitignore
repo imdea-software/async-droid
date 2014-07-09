@@ -11,3 +11,5 @@ buildTesterApk/TestApk/bin
 .DS_Store
 3_sign.sh
 deneme.sh
+buildTesterApk/TestApk/gen/my/apktester/test/BuildConfig.java
+buildTesterApk/TestApk/gen/my/apktester/test/R.java
