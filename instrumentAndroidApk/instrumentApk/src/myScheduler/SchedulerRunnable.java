@@ -2,27 +2,26 @@ package myScheduler;
 
 import android.util.Log;
 
-//schedules the app threads using given delay indices
+/* 
+ * schedules the application threads using given delay indices
+ */
 public class SchedulerRunnable implements Runnable {
 
-	DelayServiceConHandler delayCon;
-	
-	private int numDelays;
-	private int[] numIndices;
-	private int currentIndexToDelay = 0;
-	private int numProcessed = 0;
-	private int MIN_NUM_PROCESSED = 0;
+	private DelayServiceConHandler delayCon;
 
 	private static PendingThreads threads = new PendingThreads();
-	private static ThreadData schedulerThreadData = new ThreadData(-1);
+	private static ThreadData schedulerThreadData = new ThreadData(ThreadData.SCHEDULER_ID);
 
-	// id of the currently scheduled thread (-1 for scheduler)
+	private int numDelays;
+    private int[] numIndices;
+    private int currentIndexToDelay = 0;
+    private int numProcessed = 0;
+    private int minNumProcessed = 0;
+    
+	// id of the currently scheduled thread
 	private static long scheduled = (long) 0;
 
 	public SchedulerRunnable(DelayServiceConHandler delayCon) {
-		//this.numDelays = numDelays;
-		//this.numIndices = numIndices;
-		//MIN_NUM_PROCESSED = limit;
 		this.delayCon = delayCon;
 	}
 
@@ -38,7 +37,7 @@ public class SchedulerRunnable implements Runnable {
 	}
 
 	public boolean isEndOfTest() {
-		if (currentIndexToDelay >= numDelays && numProcessed == MIN_NUM_PROCESSED)
+		if (currentIndexToDelay >= numDelays && numProcessed == minNumProcessed)
 			return true;
 		return false;
 	}
@@ -53,14 +52,12 @@ public class SchedulerRunnable implements Runnable {
 		// bind the service
 		delayCon.doBindService();
 		
-		// laf olsun die mesaj gonder
+		// to test, will be removed later
 		delayCon.doSendIPCMsg();
 
-		boolean b = true;
 		
 		// must wait until the main (UI) thread wakes it
-		// gainControl();
-		waitMyTurn(-1);
+		waitMyTurn(ThreadData.SCHEDULER_ID);
 
 		while (true /*&& !isEndOfTest()*/) {
 			if(threads.isEmpty())
@@ -82,14 +79,7 @@ public class SchedulerRunnable implements Runnable {
 				}
 				
 				notifyNext(); 
-				// gainControl();
-				waitMyTurn(-1);
-				
-				if(b){
-					delayCon.doUnbindService();
-					delayCon.doStopService();
-					b = false;
-				}
+				waitMyTurn(ThreadData.SCHEDULER_ID);
 				
 			}
 		}
@@ -99,14 +89,17 @@ public class SchedulerRunnable implements Runnable {
 //		return;
 	}
 
-	// threaddata of waiting task should be in the list!!
-	// worker (or scheduler) thread waits for its signal to execute
+	
+	/*
+	 *  worker (or scheduler) thread waits for its signal to execute
+	 */
 	public void waitMyTurn(long threadId) {
 
 		ThreadData me;
-		if (threadId != -1) {
+		if (threadId != ThreadData.SCHEDULER_ID) {
 			me = threads.getThreadById(threadId);
 
+			// threaddata of waiting task should be in the list!!
 			if(me == null){ // I should not hit this statement:
 				Log.e("MyScheduler", "THREAD TO BE SCHEDULED IS NOT IN THE LIST!!!");
 				return;
@@ -141,8 +134,9 @@ public class SchedulerRunnable implements Runnable {
 		Log.i("MyScheduler", "I am executing " + threadId);
 	}
 
-	// Send current thread info to the scheduler
-	// Initial call bu UI thread
+	/*
+	 *  Send current thread info to the scheduler
+	 */
 	public void sendThreadInfo() {
 		long id = (long) Thread.currentThread().getId();
 		if (!threads.capturedBefore(id)) {
@@ -153,7 +147,9 @@ public class SchedulerRunnable implements Runnable {
 
 	}
 
-	// scheduler notifies the next task to be scheduled
+	/*
+	 *  scheduler notifies the next task to be scheduled
+	 */
 	private void notifyNext() {
 		ThreadData current = threads.getCurrentThread();
 		scheduled = current.getId();
@@ -161,9 +157,10 @@ public class SchedulerRunnable implements Runnable {
 		current.notifyThread();
 	}
 
-	// Threads notify scheduler when they are completed
-	// This is also the case in message/runnable processing in a looper
-	// In case no more messages arrive
+	/* Threads notify scheduler when they are completed
+	 * This is also the case in message/runnable processing in a looper
+	 * In case no more messages arrive
+	 */
 	public void notifyScheduler() {
 
 		ThreadData me = threads.getThreadById(Thread.currentThread().getId());
@@ -187,7 +184,7 @@ public class SchedulerRunnable implements Runnable {
 		}
 			
 		
-		scheduled = (long) -1;
+		scheduled = ThreadData.SCHEDULER_ID;
 			
 		threads.removeThreadById(Thread.currentThread().getId());
 		
@@ -203,7 +200,7 @@ public class SchedulerRunnable implements Runnable {
 	}
 	
 	public void wakeScheduler() {
-		scheduled = (long) -1;
+		scheduled = ThreadData.SCHEDULER_ID;
 		schedulerThreadData.notifyThread();
 	}
 

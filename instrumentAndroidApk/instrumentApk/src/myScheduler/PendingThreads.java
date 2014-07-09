@@ -3,9 +3,12 @@ package myScheduler;
 
 import java.util.ArrayList;
 
+/* 
+ * keeps the threads registered to the scheduler
+ */
 public class PendingThreads {
-	private static ArrayList<ThreadData> threads = new ArrayList<ThreadData>();	
-	private static int walkerIndex = -1;  // index of the threadData to be scheduled next, updated when a thread terminates
+	private ArrayList<ThreadData> threads = new ArrayList<ThreadData>();	
+	private int walkerIndex = -1;  // index of the threadData to be scheduled next, updated when a thread terminates
 	
 	public void pendingThreads(){
 		
@@ -27,13 +30,13 @@ public class PendingThreads {
 	}
 	
 	public synchronized void decreaseWalker(){
-		if (threads.size() >= 1)
-			walkerIndex = (walkerIndex - 1) % threads.size();
+		if (threads.size() > 0)
+			walkerIndex = (walkerIndex - 1 + threads.size()) % threads.size();
 		else
-			walkerIndex = (walkerIndex - 1);
+			walkerIndex = -1;
 	}
 	
-	public synchronized int getWalker(){
+	public synchronized int getWalkerIndex(){
 		return walkerIndex;
 	}
 	
