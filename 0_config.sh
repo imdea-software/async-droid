@@ -2,33 +2,8 @@
 
 ## FROM STEP 1
 
-# full path to Android SDK directory   
-ANDROID_SDK_HOME=
-
-# full path to Android jar file (version corresponding to your apk target SDK level)
-ANDROID_JAR=
-
-# full path to the apk tool shell file
-APKTOOL_HOME=
-
-# full path to the aapt tool shell file (path depends on your SDK version)
-AAPTTOOL_HOME=
-
-# NOTE: Min and Max SDK levels can be found from the manifest file or (mostly)
-# the web page of the application project.
-
-# default is 16
-MIN_SDK_LEVEL=
-
-# default is 19
-MAX_SDK_LEVEL=
-
-# full path to the .apk file you want to instrument, e.g., "${PWD}/example"
-APK_PATH=
-
-## name of the APK file, e.g., "HelloWorldApp.apk" 
-APK_NAME=
-
+# full path to the .apk file you want to instrument
+APK_FILE=$PWD/example/HelloWorldApp.apk
 
 ## FROM STEP 2
 
@@ -42,24 +17,26 @@ PACKAGE_NAME="my.example.HelloWorld"
 # main activity name of your app ....
 MAIN_ACTIVITY="my.example.HelloWorld.MainActivity"
 
-
 ## FROM STEP 3
 
-# full path to your instrumented and signed application file
-PATH_TO_SIGNED_APK="${PWD}/example/signed/HelloWorldApp.apk"
-
-# full path to your signed tester application file
-PATH_TO_SIGNED_TESTER="${PWD}/example/signed/TestApk-release-signed.apk"
 
 # package name of your app
 APK_PACKAGE_NAME="my.example.HelloWorld"
 
+## REQUIRED TOOLS
+for X in apktool aapt
+do
+  if [ -z $(which $X) ]
+  then
+    echo "'$X' was not found in the PATH."
+    exit 1
+  fi
+done
+
 for X in \
- ANDROID_SDK_HOME ANDROID_JAR \
- APKTOOL_HOME AAPTTOOL APK_PATH APK_NAME \
- MIN_SDK_LEVEL MAX_SDK_LEVEL \
+ APK_FILE \
  PACKAGE_NAME MAIN_ACTIVITY \
- PATH_TO_SIGNED_APK PATH_TO_SIGNED_TESTER APK_PACKAGE_NAME
+ APK_PACKAGE_NAME
 do
  if [ -z "$(eval echo "\$$X")" ]
  then
