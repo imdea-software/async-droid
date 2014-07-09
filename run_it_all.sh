@@ -46,7 +46,7 @@ apktool d -f "$APK_FILE" "${PWD}/mergerOutput/decodedApk"
 
 echo "Merging application dex file with myScheduler dex file to be used in the instrumentation."
 # Merge the classes.dex file with myScheduler.dex file
-sudo javac -cp ${MERGER_CLASSPATH} \
+javac -cp ${MERGER_CLASSPATH} \
   instrumentAndroidApk/mergeDexes/src/mergeDexFiles/*.java 
 # Merge the classes.dex file with myScheduler.dex file 
 cp -rf "${PWD}/instrumentAndroidApk/instrumentApk/src/myScheduler/MyScheduler.dex" \
@@ -55,7 +55,7 @@ cp -rf "${PWD}/mergerOutput/extractedApk/classes.dex" \
   "${PWD}/instrumentAndroidApk/mergeDexes/src/dex/classes.dex"
 java -cp ${MERGER_CLASSPATH} mergeDexFiles/MergeDexFiles "../dex/classes.dex" \
   "../dex/MyScheduler.dex"
- 
+
 # Recreate .apk file using aapt tool: (if you have more than one res file, add
 # all into the command)
 echo Recreating .apk file in $PWD/myMerger/mergerOutput/extractedApk/${APP_NAME}.
@@ -82,12 +82,12 @@ cd ..
 
 echo Instrumenting .apk file $APK_NAME.
 # Compile instrumentor
-sudo javac -cp $INSTRUMENTOR_CLASSPATH \
+javac -cp $INSTRUMENTOR_CLASSPATH \
   instrumentAndroidApk/instrumentApk/src/myInstrumentor/*.java
 
 # Run the instrumentor
-sudo rm -f "sootOutput/$APK_NAME"
-sudo java -cp $INSTRUMENTOR_CLASSPATH AndroidInstrument \
+rm -f "sootOutput/$APK_NAME"
+java -cp $INSTRUMENTOR_CLASSPATH AndroidInstrument \
   $PWD/mergerOutput/$APK_NAME $ANDROID_HOME/platforms $PWD/src \
   -output-format dex
 
@@ -117,6 +117,13 @@ STOREPASS=abcdefg
 KEYPASS=abcdefg
 ALIAS=my_alias
 
+SIGNED_APK=$(dirname $APK_FILE)/signed/$(basename $APK_FILE)
+SIGNED_TESTER=$(dirname $APK_FILE)/signed/TestApk-release-signed.apk
+
+mkdir -p $(dirname $APK_FILE)/signed
+cp -f "sootOutput/$APK_NAME" $SIGNED_APK
+cp -f "buildTesterApk/TestApk/bin/TestApk-release-unsigned.apk" $SIGNED_TESTER
+
 if [ ! -f $KEYSTORE ]
 then
   keytool -genkey -keyalg RSA -keysize 2048 -validity 10000 \
@@ -125,25 +132,22 @@ then
     -storepass $STOREPASS -keypass $KEYPASS
 fi
 
-sudo jarsigner -sigalg SHA1withRSA -digestalg SHA1 \
+jarsigner -sigalg SHA1withRSA -digestalg SHA1 \
   -keystore $KEYSTORE -storepass $STOREPASS -keypass $KEYPASS \
-  "sootOutput/$APK_NAME" $ALIAS
+  $SIGNED_APK $ALIAS
 
-sudo jarsigner -sigalg SHA1withRSA -digestalg SHA1 \
+jarsigner -sigalg SHA1withRSA -digestalg SHA1 \
   -keystore $KEYSTORE -storepass $STOREPASS -keypass $KEYPASS \
-  "buildTesterApk/TestApk/bin/TestApk-release-unsigned.apk" $ALIAS
+  $SIGNED_TESTER $ALIAS
 
 echo "-------------------------------------------------------------------------"
 echo "                      PHASE 4 : INVOKE TESTING APK                       "
 echo "-------------------------------------------------------------------------"
 
-PATH_TO_SIGNED_APK=$(dirname $APK_FILE)/signed/$(basename $APK_FILE)
-PATH_TO_SIGNED_TESTER=$(dirname $APK_FILE)/signed/TestApk-release-signed.apk
-
 # Install the app to be tested 
 # Comment out the following line if your app is already installed
-monkeyrunner $PWD/invokeTestingApk/scripts/installScript.py $PATH_TO_SIGNED_APK
-monkeyrunner $PWD/invokeTestingApk/scripts/installScript.py $PATH_TO_SIGNED_TESTER
+monkeyrunner $PWD/invokeTestingApk/scripts/installScript.py $SIGNED_APK
+monkeyrunner $PWD/invokeTestingApk/scripts/installScript.py $SIGNED_TESTER
 
 mkdir logcatOutputs
 adb logcat ActivityManager:I *:S --line-buffered > "$PWD/logcatOutputs/AllActivities.log" &
