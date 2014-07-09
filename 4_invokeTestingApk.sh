@@ -2,7 +2,7 @@
 
  # Script file to test a(n) (instrumented) application.
 
-source 0_my.config
+source 0_config.sh
 
 # Install the app to be tested 
 # Comment out the following line if your app is already installed

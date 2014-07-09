@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source 0_my.config
+source 0_config.sh
 
 # Build the tester application:
 cd buildTesterApk/TestApk

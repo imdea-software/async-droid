@@ -1,3 +1,5 @@
+#!/bin/bash
+
 ## FROM STEP 1
 
 # full path to Android SDK directory   
@@ -27,17 +29,19 @@ APK_PATH=
 ## name of the APK file, e.g., "HelloWorldApp.apk" 
 APK_NAME=
 
+
 ## FROM STEP 2
 
-# The current configuration tests:
-# PACKAGE_NAME="my.example.HelloWorld"
-# MAIN_ACTIVITY="my.example.HelloWorld.MainActivity"
+# Before building the test apk, make sure to provide the following.
+# NOTE: Package name and the main activity name can be found from the manifest
+# file of the application project.
 
-# If you want to test another application:
-# Before building the test apk, make sure that you have provided:
-# PACKAGE_NAME= # package name of your app into ......
-# MAIN_ACTIVITY= # main activity name of your app ....
-# NOTE: Package name and the main activity name can be found from the manifest file of the application project. 
+# package name of your app into ......
+PACKAGE_NAME="my.example.HelloWorld"
+
+# main activity name of your app ....
+MAIN_ACTIVITY="my.example.HelloWorld.MainActivity"
+
 
 ## FROM STEP 3
 
@@ -49,3 +53,18 @@ PATH_TO_SIGNED_TESTER="${PWD}/example/signed/TestApk-release-signed.apk"
 
 # package name of your app
 APK_PACKAGE_NAME="my.example.HelloWorld"
+
+for X in \
+ ANDROID_SDK_HOME ANDROID_JAR \
+ APKTOOL_HOME AAPTTOOL APK_PATH APK_NAME \
+ MIN_SDK_LEVEL MAX_SDK_LEVEL \
+ PACKAGE_NAME MAIN_ACTIVITY \
+ PATH_TO_SIGNED_APK PATH_TO_SIGNED_TESTER APK_PACKAGE_NAME
+do
+ if [ -z "$(eval echo "\$$X")" ]
+ then
+   echo "Please edit 0_config.sh to set certain variables to their proper values."
+   echo "The $X variable was not set."
+   exit 1
+ fi
+done
