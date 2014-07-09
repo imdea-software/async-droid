@@ -12,6 +12,9 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.util.Log;
 
+/* 
+ * handles connection of Scheduler to the DelayService
+ */
 public class DelayServiceConHandler {
 
 	public static final int MSG_UNREGISTER_CLIENT = -1;
@@ -21,7 +24,7 @@ public class DelayServiceConHandler {
 	public static final int MSG_REG_OK = 5;
 	
 	private String delayService = "my.toy.service.START_SERVICE";
-	ServiceConnection connection;
+	private ServiceConnection connection;
 	private Messenger serviceMessenger = null;	
 	private final Messenger messenger = new Messenger(new IncomingMessageHandler());
 	boolean isBound;
@@ -33,7 +36,9 @@ public class DelayServiceConHandler {
 		context = c;
 	}
 	
-	// Handle incoming messages from DelayService
+	/*
+	 *  Handle incoming messages from DelayService
+	 */
 	private static class IncomingMessageHandler extends Handler {		
 		@Override
 		public void handleMessage(Message msg) {

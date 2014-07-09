@@ -7,6 +7,7 @@ import java.util.Stack;
 public class ThreadData {
 
 	private long id;
+	public static long SCHEDULER_ID = -1;
 	
 	private int currentMonitors = 0;
 	// Each waitMyTurn inserts an item stating whether its corresponding notifyScheduler will notify 
@@ -19,7 +20,6 @@ public class ThreadData {
 	// if this is true once in a nested chunk of blocks
 	// the inner blocks will not notify
 	private boolean willNotifyEver = false;
-
 	// Not used for SchedulerThread
 	
 	public ThreadData(long id)
@@ -61,8 +61,11 @@ public class ThreadData {
 	}
 
 	public boolean popWaitBlock() {
-		Boolean b = willNotify.pop();
-		return b.booleanValue();
+		if(!willNotify.empty()){
+		    Boolean b = willNotify.pop();
+		    return b.booleanValue();
+		}
+		return false;
 	}
 	
 	public boolean isInBlock(){
