@@ -17,16 +17,16 @@ public class DelayGenerator{
     
     public int getNextSegmentIndexToDelay() {
 
-        if(currentIndexToDelay >= numDelays)
-            return 0;
-        
-        // skip delay at 0 (e.g. for 4 0 0, the first delay is at 0) 
-        while (currentIndexToDelay < numDelays-1 && delayIndices[currentIndexToDelay] == 0){
+        // skip delays 0 (e.g. for 4 0 0, the first delay is at 4) 
+        while (currentIndexToDelay < numDelays && delayIndices[currentIndexToDelay] == 0){
             currentIndexToDelay ++;
         }
             
-        // if all 0, returns 0 (no segment will delay)
-        return delayIndices[currentIndexToDelay]; 
+        // if all 0, currentIndexToDelay == numDelays, then return 0 (no segment will delay)
+        if(currentIndexToDelay >= numDelays)
+            return 0;
+        else
+            return delayIndices[currentIndexToDelay]; 
     }
 
     public void setNextDelayPoint() {
