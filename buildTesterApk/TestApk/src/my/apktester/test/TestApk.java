@@ -1,4 +1,4 @@
-package my.example.test;
+package my.apktester.test;
 
 import java.util.ArrayList;
 
@@ -37,32 +37,45 @@ public class TestApk extends ActivityInstrumentationTestCase2 {
 	}
 
 	private Solo solo;
-	private Context context;
 
 	@Override
 	protected void setUp() throws Exception {
-		context = this.getInstrumentation().getContext();
-		//Log.i("CONTEXT", "Target: " + this.getInstrumentation().getTargetContext().getApplicationContext().toString());
-		//Log.i("CONTEXT", "Here: " + context.toString());
 		solo = new Solo(getInstrumentation(), getActivity());
 	}
 
 	public void testApk() {
-		//Context context = getInstrumentation().getTargetContext().getApplicationContext();
+	
 		ArrayList<View> myViews = solo.getViews();
 		
 		for(View v: myViews){
 			Log.i("Tester", "view: " + v.toString());
 			if(v.isClickable())
 				//v.callOnClick();
-				solo.clickOnView(v);
+				solo.clickLongOnView(v);
+			//if(v.getWindowVisibility() != View.VISIBLE){
+			//	Log.i("VIEW", "not visible : " + v.toString());
+			//}else{
+			//	Log.i("VIEW", "is visible : " + v.toString());
+			//}
+
 		}
+		
+		// TODO: Implement IPC with the service and the tester
+		// For repeated inputs and peaceful connection abort
+		try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
 
 	}
-	
+
 	@Override
 	public void tearDown() throws Exception {
 		solo.finishOpenedActivities();
 	}
 	
+
 }
+

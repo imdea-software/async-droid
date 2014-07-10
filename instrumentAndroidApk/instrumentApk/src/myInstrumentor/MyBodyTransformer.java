@@ -47,6 +47,18 @@ public class MyBodyTransformer extends BodyTransformer {
 			//System.out.println("Skipping myScheduler.SchedulerRunnable");
 			return;
 		}
+		if(b.getMethod().getDeclaringClass().toString().equals("myScheduler.DelayServiceConHandler")){
+			//System.out.println("Skipping myScheduler.DelayServiceConHandler");
+			return;
+		}
+		if(b.getMethod().getDeclaringClass().toString().equals("myScheduler.DelayServiceConHandler$IncomingMessageHandler")){
+			//System.out.println("Skipping myScheduler.DelayServiceConHandler$IncomingMessageHandler");
+			return;
+		}
+		if(b.getMethod().getDeclaringClass().toString().equals("myScheduler.DelayGenerator")){
+			//System.out.println("Skipping myScheduler.DelayGenerator");
+			return;
+		}
 		if(b.getMethod().getDeclaringClass().toString().equals("myScheduler.PendingThreads")){
 			//System.out.println("Skipping myScheduler.PendingThreads");
 			return;
