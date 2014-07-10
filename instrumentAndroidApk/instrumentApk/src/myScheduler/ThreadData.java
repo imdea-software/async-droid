@@ -22,12 +22,11 @@ public class ThreadData {
 	private boolean willNotifyEver = false;
 	// Not used for SchedulerThread
 	
-	public ThreadData(long id)
-	{
+	public ThreadData(long id){
 		this.id = id;
 	}
 
-	public long getId() {
+	public long getId(){
 		return id;
 	}
 	
@@ -38,7 +37,7 @@ public class ThreadData {
 	public synchronized void waitThread(){
 		try {
 			this.wait();
-		} catch (InterruptedException e) {
+		} catch (InterruptedException e){
 			e.printStackTrace();
 		}
 	}

@@ -4,7 +4,6 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -17,17 +16,22 @@ import android.util.Log;
  */
 public class DelayServiceConHandler {
 
-	public static final int MSG_UNREGISTER_CLIENT = -1;
-	public static final int MSG_REGISTER_CLIENT = 0;
-	public static final int MSG_REQUEST_DELAYS = 1;
-	public static final int MSG_RESPOND_DELAYS = 2;
-	public static final int MSG_REG_OK = 5;
-	
-	private String delayService = "my.toy.service.START_SERVICE";
+    public static final int MSG_ENDED_ACK = -2;
+    public static final int MSG_END_TESTING = -1;
+    public static final int MSG_START_TESTING = 0;
+    public static final int MSG_STARTED_ACK = 1;
+    public static final int MSG_NUMDELAYS_REQUEST = 2;
+    public static final int MSG_NUMDELAYS_RESPONSE = 3;
+    public static final int MSG_REPEAT_TEST = 5;
+	   
+	private String delayService = "my.apktester.test.START_SERVICE";
 	private ServiceConnection connection;
 	private Messenger serviceMessenger = null;	
 	private final Messenger messenger = new Messenger(new IncomingMessageHandler());
-	boolean isBound;
+	private boolean isBound;
+	
+	public int NUM_DELAYS; // will be received from DelayService
+	public int NUM_INPUTS; // will be received from DelayService
 	
 	// get the context of the application to bind the service
 	private Context context;
@@ -36,31 +40,42 @@ public class DelayServiceConHandler {
 		context = c;
 	}
 	
+	public int getNumDelays(){
+	    return NUM_DELAYS;
+	}
+	
+	public int getNumInputs(){
+	    return NUM_INPUTS;
+	}
+
 	/*
 	 *  Handle incoming messages from DelayService
 	 */
-	private static class IncomingMessageHandler extends Handler {		
+	private class IncomingMessageHandler extends Handler {		
 		@Override
 		public void handleMessage(Message msg) {
-			Log.i("HERE","IncomingHandler:handleMessage" + msg.what);
 			switch (msg.what) {
-				case MSG_REG_OK:
-					Log.i("MyScIPC", "Received Registration ACK"); 
+				case MSG_STARTED_ACK:
+					Log.i("MyScIPC", "Received test stated ACK"); 
+	                   Log.i("MyScIPC", "Handler in scheduler: " + Thread.currentThread().getName() + " " + Thread.currentThread().getId()); 
 					break;
-				case MSG_RESPOND_DELAYS:
-					int delays[] = msg.getData().getIntArray("delays");
-					Log.i("MyScIPC", "Received delay info: " + delays[0] + delays[1] + delays[2] + delays.length); 
+				case MSG_NUMDELAYS_RESPONSE:
+				    NUM_DELAYS = msg.getData().getInt("numDelays");
+				    NUM_INPUTS = msg.getData().getInt("numInputs");
+					Log.i("MyScIPC", "Received delay info: " + NUM_DELAYS); 
+					Log.i("MyScIPC", "Received input info: " + NUM_INPUTS); 
 					break;
+				case MSG_ENDED_ACK:
+                    Log.i("MyScIPC", "Received test ended ACK"); 
+                    break;
 				default:
-					Log.i("MyScIPC", "Unrecognized message from Delay Handler"); 
+					Log.i("MyScIPC", "Unrecognized message is received from DelayService"); 
 					break;
 			}
 		}
 	}
 	
 	public void doStartService(){
-		//Context context = getBaseContext();
-		//Intent i= new Intent(context, DelayService.class);
 		Intent i=new Intent(delayService);  
 		context.startService(i); 
 	}
@@ -71,20 +86,20 @@ public class DelayServiceConHandler {
 			@Override
 			public void onServiceConnected(ComponentName name, IBinder service) {
 				serviceMessenger = new Messenger(service);
-				Log.i("MyScIPC", "Attached "); 
+				Log.i("MyScIPC", "Scheduler is attached to DelayService"); 
 				try {
-					Message msg = Message.obtain(null, MSG_REGISTER_CLIENT);
+					Message msg = Message.obtain(null, MSG_START_TESTING);
 					msg.replyTo = messenger;
 					serviceMessenger.send(msg);
 				} 
 				catch (RemoteException e) {
-					// In this case the service has crashed before we could even do anything with it
+					// the service has crashed before we could even do anything with it
 				} 
 			}
 
 			@Override
 			public void onServiceDisconnected(ComponentName name) {
-				// This is called when the connection with the service has been unexpectedly disconnected - process crashed.
+				// the connection with the service has been unexpectedly disconnected - process crashed.
 				serviceMessenger = null;
 				
 			}
@@ -95,23 +110,21 @@ public class DelayServiceConHandler {
 		Log.i("MyScIPC", "I am binding " + Thread.currentThread().getId()); 
 	}
 
-	public void doSendIPCMsg(){
+	public boolean doSendIPCMsg(int msgType){
 		if (serviceMessenger != null) {
 			try {
-				int[] delays = {77, 88, 99};
-				Message msg = Message.obtain(null, MSG_REQUEST_DELAYS);
+				Message msg = Message.obtain(null, msgType);
 				msg.replyTo = messenger;
-				
-				Bundle bResp = new Bundle();  //////added
-	            bResp.putIntArray("oldDelays", delays); ///////added
-	            msg.setData(bResp); ///////added
-	            
+				//Bundle bResp = new Bundle();
+	            //bResp.putIntArray("prevDelays", delays);
+	            //msg.setData(bResp); 
 				serviceMessenger.send(msg);        
-	            
-				Log.i("MyScIPC", "Service handler is NOTT null");
+	            return true;			
 			} catch (RemoteException e) {
+			    Log.i("MyScIPC", "Could not send IPC message");
 			}
 		}
+		return false;
 	}
 	
 	public void doUnbindService() {
@@ -119,7 +132,7 @@ public class DelayServiceConHandler {
 			// If we have received the service, and hence registered with it, then now is the time to unregister.
 			if (serviceMessenger != null) {
 				try {
-					Message msg = Message.obtain(null, MSG_UNREGISTER_CLIENT);
+					Message msg = Message.obtain(null, MSG_END_TESTING);
 					msg.replyTo = messenger;
 					serviceMessenger.send(msg);
 				} catch (RemoteException e) {

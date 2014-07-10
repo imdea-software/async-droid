@@ -84,4 +84,9 @@ public class PendingThreads {
 		return getThreadByIndex(walkerIndex);	
 	}
 	
+	public void clear(){
+	    threads.clear();
+	    walkerIndex = -1;
+	}
+	
 }
