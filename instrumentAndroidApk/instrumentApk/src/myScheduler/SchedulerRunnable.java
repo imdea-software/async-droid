@@ -12,11 +12,11 @@ public class SchedulerRunnable implements Runnable {
 	private static PendingThreads threads = new PendingThreads();
 	private static ThreadData schedulerThreadData = new ThreadData(ThreadData.SCHEDULER_ID);
 
-	private int numDelays;
-    private int[] numIndices;
-    private int currentIndexToDelay = 0;
-    private int numProcessed = 0;
-    private int minNumProcessed = 0;
+	private DelayGenerator delayGen;
+	private int numDelays = 3;
+	private int minNumProcessed = 5;
+ 
+    private int segmentToProcess = 1;
     
 	// id of the currently scheduled thread
 	private static long scheduled = (long) 0;
@@ -25,70 +25,95 @@ public class SchedulerRunnable implements Runnable {
 		this.delayCon = delayCon;
 	}
 
-	public int getNextDelayPoint() {
-		if (currentIndexToDelay < numDelays)
-			return numIndices[currentIndexToDelay];
-		else
-			return -1;
+	public void initiateDelayIndices(){
+//	    delayCon.doStartService();
+//      delayCon.doBindService();       
+//      delayCon.doSendIPCMsg(DelayServiceConHandler.MSG_START_TESTING);    
+//      while(!delayCon.doSendIPCMsg(DelayServiceConHandler.MSG_NUMDELAYS_REQUEST));
+        
+//      delayGen = new DelayGenerator(delayCon.getNumInputs(), delayCon.getNumDelays());
+        delayGen = new DelayGenerator(5, 3);
 	}
-
-	public void setNextDelayPoint() {
-		currentIndexToDelay++;
+	
+	public void initiateTestParameters(){
+//	    threads.clear();
+	    segmentToProcess = 1;
+//	    scheduled = 0;
 	}
+    
+    public boolean isEndOfCurrentTest() {
+        if (delayGen.isEndOfCurrentDelaySequence() &&  segmentToProcess >= minNumProcessed)
+           return true;
+        return false;
+    }
 
-	public boolean isEndOfTest() {
-		if (currentIndexToDelay >= numDelays && numProcessed == minNumProcessed)
-			return true;
-		return false;
-	}
-
+    public boolean isEndOfAllTests() {
+        if (delayGen.isEndOfCurrentDelaySequence() &&  segmentToProcess >= minNumProcessed)
+           return true;
+        return false;
+    }
+    
 	public void run() {
 		Log.i("MyScheduler", "Scheduler has started in thread: "
 				+ Thread.currentThread().getName() + " Id: "
 				+ Thread.currentThread().getId());
 
-		// initiate the service:
-		delayCon.doStartService();
-		// bind the service
-		delayCon.doBindService();
+
+		initiateDelayIndices();
+		Log.i("MyScheduler", "Test has started with: " +  numDelays + " delays.");
+        
+        // must wait until the main (UI) thread wakes it
+        waitMyTurn(ThreadData.SCHEDULER_ID);
+        
+		boolean moreTests = true;
 		
-		// to test, will be removed later
-		delayCon.doSendIPCMsg();
-
+		while(moreTests){
+		    Log.i("DelayInfo", "Current delay indices:" + delayGen.delayIndicesToString());
 		
-		// must wait until the main (UI) thread wakes it
-		waitMyTurn(ThreadData.SCHEDULER_ID);
-
-		while (true /*&& !isEndOfTest()*/) {
-			if(threads.isEmpty())
-				continue;
-			
-			threads.increaseWalker();
-
-			ThreadData current = threads.getCurrentThread();
-			
-			// if the current thread needs to be scheduled (is waiting and will notify)
-			if (current.willNotifyEver()) {
-				
-				// check whether it will be delayed
-				if (numProcessed == getNextDelayPoint()) {
-					Log.i("MyScheduler", "Delayed Thread Id: "
-							+ current.getId() + " NumProcessed: " + numProcessed);
-					threads.increaseWalker(); // delay
-					setNextDelayPoint();
-				}
-				
-				notifyNext(); 
-				waitMyTurn(ThreadData.SCHEDULER_ID);
-				
-			}
+		    initiateTestParameters();		
+		    runSingleTest();
+		
+		    // end of current test
+		    // get new delay indices 
+		    Log.i("DelayInfo", "Updating delay indices for next test..");
+		    moreTests = delayGen.updateDelayIndices(); /////// returns false when ended !!!!
 		}
 
-//		Log.i("MyScheduler", "Test has completed with delays: ");
-		///// must end the test !!!!
-//		return;
+		
+//		delayCon.doUnbindService();
+//		delayCon.doStopService();
+		
+		Log.i("MyScheduler", "Test has completed.");
+		return;
 	}
 
+	public void runSingleTest(){
+	    while (!isEndOfCurrentTest()) {
+            if(threads.isEmpty())
+                continue;
+            
+            threads.increaseWalker();
+
+            ThreadData current = threads.getCurrentThread();
+            
+            // if the current thread needs to be scheduled (is waiting and will notify)
+            if (current.willNotifyEver()) {
+                
+                // check whether it will be delayed
+                if (segmentToProcess == delayGen.getNextSegmentIndexToDelay()) {
+                    Log.i("MyScheduler", "Delayed Thread Id: "
+                            + current.getId() + " NumProcessed: " + segmentToProcess);                  
+                    Log.i("DelayInfo", "Consumed delay: " + segmentToProcess);
+                    threads.increaseWalker(); // delay
+                    delayGen.setNextDelayPoint(); //////
+                }
+                
+                notifyNext(); 
+                waitMyTurn(ThreadData.SCHEDULER_ID);        
+            }
+        }
+	    
+	}
 	
 	/*
 	 *  worker (or scheduler) thread waits for its signal to execute
@@ -99,7 +124,7 @@ public class SchedulerRunnable implements Runnable {
 		if (threadId != ThreadData.SCHEDULER_ID) {
 			me = threads.getThreadById(threadId);
 
-			// threaddata of waiting task should be in the list!!
+			// ThreadData of waiting task should be in the list!!
 			if(me == null){ // I should not hit this statement:
 				Log.e("MyScheduler", "THREAD TO BE SCHEDULED IS NOT IN THE LIST!!!");
 				return;
@@ -144,7 +169,6 @@ public class SchedulerRunnable implements Runnable {
 			Log.i("MyScheduler", "I got " + Thread.currentThread().getName()
 					+ " Id: " + Thread.currentThread().getId());
 		}
-
 	}
 
 	/*
@@ -157,6 +181,16 @@ public class SchedulerRunnable implements Runnable {
 		current.notifyThread();
 	}
 
+	/*
+     *  scheduler notifies all threads when the test is completed
+     */
+	private void notifyAllThreads(){
+	       while(!threads.isEmpty()){
+	            threads.increaseWalker();
+	            notifyNext(); 
+	        }
+	}
+	
 	/* Threads notify scheduler when they are completed
 	 * This is also the case in message/runnable processing in a looper
 	 * In case no more messages arrive
@@ -171,9 +205,10 @@ public class SchedulerRunnable implements Runnable {
 			Log.e("MyScheduler", "THREAD NOTIFYING SCHEDULER NOT IN THE LIST!!!");
 			return;
 		}
-				
+			
+		
 		Log.i("MyScheduler", "Block is finished. Thread Id: "
-				+ Thread.currentThread().getId() + " NumProcessed: " + numProcessed);
+                + Thread.currentThread().getId() + " NumProcessed: " + (segmentToProcess+1));
 		
 		// A thread did not actually wait in corresponding waitMyTurn
 		// (either it was already in block (nested wait stmts) or it had monitors)
@@ -183,13 +218,11 @@ public class SchedulerRunnable implements Runnable {
 			return; 
 		}
 			
-		
-		scheduled = ThreadData.SCHEDULER_ID;
-			
+		scheduled = ThreadData.SCHEDULER_ID;		
 		threads.removeThreadById(Thread.currentThread().getId());
 		
 //		synchronized(this){
-			numProcessed ++;  // data race not critical here ?
+			segmentToProcess ++;  // data race not critical here ?
 //		}
 		
 		// thread consumes the notification block
@@ -219,7 +252,6 @@ public class SchedulerRunnable implements Runnable {
 		me.exitedMonitor();
 	}
 	
-
 }
 
 
