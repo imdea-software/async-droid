@@ -18,13 +18,18 @@ public class DelayService extends Service {
     public static final int MSG_START_TESTING = 0;
     public static final int MSG_NUMDELAYS_RESPONSE = 1;
     public static final int MSG_REPEAT_TEST = 5;
+    public static final int MSG_REGISTER_TESTER = 2;
+    public static final int MSG_UNREGISTER_TESTER = 3;
 	
-	public static final int NUM_DELAYS = 2;
-	public static final int NUM_SEGMENTS = 4;
+	public static final int NUM_DELAYS = 1;
+	public static final int NUM_SEGMENTS = 8;
 	
     private Messenger msg = new Messenger(new DelayHandler());
+    private Messenger toTester;
+    
     private static boolean isRunning = false;
     
+  
     public IBinder onBind(Intent arg0) {               
         return msg.getBinder();
     }
@@ -49,7 +54,7 @@ public class DelayService extends Service {
 	}
 	
  
-    static class DelayHandler extends Handler {
+    class DelayHandler extends Handler {
 
 		@Override
 		public void handleMessage(Message msg) {
@@ -71,16 +76,43 @@ public class DelayService extends Service {
 		            e.printStackTrace();
 		        }
 		        break;
+		    case MSG_REGISTER_TESTER:
+                Log.i("MyScIPC", "Tester is registered to the DelayService..");
+                toTester = msg.replyTo;
+                break;
+		    case MSG_UNREGISTER_TESTER:
+                Log.i("MyScIPC", "Tester is unregistered to the DelayService..");
+                toTester = null;
+                break;
 		    case MSG_REPEAT_TEST:
 		        Log.i("MyScIPC", "Scheduler requests to repeat tests");
+		        if(toTester == null){
+		            Log.i("MyScIPC", "No registered testers to repeat tests");
+		            break;
+		        }
+		        try {
+                    toTester.send(msg);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
 		        break;
 	        case MSG_END_TESTING:
 	            Log.i("MyScIPC", "Scheduler requests to end testing");
-	            break;
+	            if(toTester == null){
+                    Log.i("MyScIPC", "No registered testers to repeat tests");
+                    break;
+                }
+                try {
+                    toTester.send(msg);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+                break;
 		    default:
 		    	Log.i("MyScIPC", "Unidentified message received by the DelayService.");
 		    }
 		}
     }
+    
       
 }
