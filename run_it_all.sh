@@ -182,7 +182,7 @@ adb logcat -s "MyScheduler" --line-buffered > "$PWD/logcatOutputs/MyScheduler.lo
 adb logcat -s *:E --line-buffered > "$PWD/logcatOutputs/AllErrors.log" &
 
 # Invoke testing
-adb shell am instrument -w my.apktester.test/android.test.InstrumentationTestRunner
+adb shell am instrument -w my.example.test/android.test.InstrumentationTestRunner
 
 # Kill the child processes
 trap "kill 0" SIGINT SIGTERM EXIT
