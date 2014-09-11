@@ -7,26 +7,26 @@ import sys, subprocess, getopt, printErrorScript
 toInstall = False;
 
 try:
-	opts, args = getopt.getopt(sys.argv[1:], 'h', ['install', 'apkPath=', 'package=', 'activity=', 'delay='])
+    opts, args = getopt.getopt(sys.argv[1:], 'h', ['install', 'apkPath=', 'package=', 'activity=', 'delay='])
 except getopt.GetoptError:
-	print '<scriptFile> --install --apkPath <FullPathOfApkFile> --package <PackageName> --activity <MainActivity> --delays <delayNum>'
-	sys.exit(-1)
+    print '<scriptFile> --install --apkPath <FullPathOfApkFile> --package <PackageName> --activity <MainActivity> --delays <delayNum>'
+    sys.exit(-1)
 for opt, arg in opts:
-	if opt == '-h':
-		print 'Usage: --install <scriptFile> --apkPath <FullPathOfApkFile> --package <PackageName> --activity <MainActivity> --delays <delayNum>' 
-		sys.exit()
-	elif opt == "--install":
-		toInstall = True
-	elif opt == "--apkPath":
-		apkPath = arg
-	elif opt == "--package":
-		package = arg
-	elif opt == "--activity":
-		activity = arg
-	elif opt == "--delay":
-		delay = arg
+    if opt == '-h':
+        print 'Usage: --install <scriptFile> --apkPath <FullPathOfApkFile> --package <PackageName> --activity <MainActivity> --delays <delayNum>' 
+        sys.exit()
+    elif opt == "--install":
+        toInstall = True
+    elif opt == "--apkPath":
+        apkPath = arg
+    elif opt == "--package":
+        package = arg
+    elif opt == "--activity":
+        activity = arg
+    elif opt == "--delay":
+        delay = arg
    
-print "APPLICATION PARAMETERS: "	
+print "APPLICATION PARAMETERS: "    
 print "Application apk file: " + apkPath
 print "Application package name: " + package
 print "Activity name: " + activity
@@ -43,11 +43,11 @@ device = MonkeyRunner.waitForConnection()
 
 # (1) Installs the Android package
 if (toInstall):
-	print "Installing the application."    
-	installed = device.installPackage(apkPath)
-	if(installed == False):
-		printErrorScript.onInstallationError()
-		exit(1)
+    print "Installing the application."    
+    installed = device.installPackage(apkPath)
+    if(installed == False):
+        printErrorScript.onInstallationError()
+        exit(1)
 
 
 # (2) Run the appication
@@ -64,8 +64,8 @@ device.startActivity(component=runComponent)
 print "Executing inputs."    
 ret = subprocess.call("python ${PWD}/invokeTestingApk/scripts/inputScript.py", shell=True)
 if(ret == 2):
-	printErrorScript.onInputExecutionError(2)
-	exit(2)
+    printErrorScript.onInputExecutionError(2)
+    exit(2)
 
 
 # (4) Close the application

@@ -37,30 +37,30 @@ import java.nio.file.Paths;
 public final class MergeDexFiles {
 
 
-	public static void main(String[] args){
-		
-		if(args.length != 2){
-			System.out.println("Please enter the paths of the two dex files to be merged.");
-			return;
-		}
-		MergeDexFiles myMerger = new MergeDexFiles();
-		try {
-			myMerger.mergeDexes(args[0], args[1]);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-	
+    public static void main(String[] args){
+        
+        if(args.length != 2){
+            System.out.println("Please enter the paths of the two dex files to be merged.");
+            return;
+        }
+        MergeDexFiles myMerger = new MergeDexFiles();
+        try {
+            myMerger.mergeDexes(args[0], args[1]);
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+    
     public void mergeDexes(String dexAResource, String dexBResource) throws Exception {
         Dex dexA = resourceToDexBuffer(dexAResource);
         Dex dexB = resourceToDexBuffer(dexBResource);
         Dex merged = new DexMerger(dexA, dexB, CollisionPolicy.KEEP_FIRST).merge();
 
-		File f = new File("mergerOutput", "classes.dex");
-		//f.mkdirs();
-		f.createNewFile();		
-		merged.writeTo(f);
+        File f = new File("mergerOutput", "classes.dex");
+        //f.mkdirs();
+        f.createNewFile();        
+        merged.writeTo(f);
     }
 
     private Dex resourceToDexBuffer(String resource) throws IOException {

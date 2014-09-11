@@ -22,7 +22,7 @@ def onInstallationError():
 
 
 def onInputExecutionError(val):
-	if (val == 2):
-	    print "Could not find the input script file."
-	
+    if (val == 2):
+        print "Could not find the input script file."
+    
 
