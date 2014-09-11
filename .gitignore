@@ -13,3 +13,4 @@ buildTesterApk/TestApk/bin
 deneme.sh
 buildTesterApk/TestApk/gen/my/apktester/test/BuildConfig.java
 buildTesterApk/TestApk/gen/my/apktester/test/R.java
+examples/signed
