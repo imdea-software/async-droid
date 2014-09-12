@@ -3,6 +3,8 @@
     A tool for concurrency testing of Android apps.
   </description>
 
+  <property environment="env"/>
+
   <property name="src" location="src"/>
   <property name="lib" location="lib"/>
   <property name="bin" location="bin"/>
@@ -18,8 +20,9 @@
   <property name="soot-jar" location="${lib}/soot.jar"/>
 
   <!-- TODO THIS SHOULD BE AN INPUT -->
-  <property name="android-sdk" location="/usr/local/opt/android-sdk"/>
   <property name="android-sdk-version" value="19"/>
+
+  <property name="android-sdk" location="${env.ANDROID_HOME}"/>
   <property name="android-jar" location="${android-sdk}/platforms/android-${android-sdk-version}/android.jar"/>
 
   <target name="compile">
