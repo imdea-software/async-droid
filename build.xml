@@ -43,5 +43,6 @@
 
   <target name="clean" description="Delete all generated files." >
     <delete dir="${build}"/>
+    <ant dir="tester-app" target="clean"/>
   </target>
 </project>
