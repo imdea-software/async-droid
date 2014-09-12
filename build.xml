@@ -1,4 +1,4 @@
-<project name="AndroidAppScheduleEnumerator" default="compile">
+<project name="AndroidAppScheduleEnumerator" default="app">
   <description>
     A tool for concurrency testing of Android apps.
   </description>
@@ -10,11 +10,13 @@
   <property name="bin" location="bin"/>
   <property name="build" location="build"/>
   <property name="output" location="logcatOutputs"/>
+  <property name="tester-app" location="tester-app"/>
 
   <property name="merger-jar" location="${build}/merger.jar"/>
   <property name="scheduler-jar" location="${build}/scheduler.jar"/>
   <property name="scheduler-dex" location="${build}/scheduler.dex"/>
   <property name="instrumentor-jar" location="${build}/instrumentor.jar"/>
+  <property name="tester-apk" location="${build}/TestApk.apk"/>
   
   <property name="dx-jar" location="${lib}/dx.jar"/>
   <property name="soot-jar" location="${lib}/soot.jar"/>
@@ -24,6 +26,59 @@
 
   <property name="android-sdk" location="${env.ANDROID_HOME}"/>
   <property name="android-jar" location="${android-sdk}/platforms/android-${android-sdk-version}/android.jar"/>
+
+  <basename property="app-name" file="${apk}" suffix=".apk"/>
+
+  <available property="tester-compiled" file="${tester-apk}"/>
+  <available property="app-instrumented" file="${build}/${app-name}.apk"/>
+  <available property="keystore-generated" file="${build}/my.keystore"/>
+
+  <uptodate property="instrumented-app-up-to-date"
+            targetfile="${build}/${app-name}.apk">
+    <srcresources>
+      <file file="${apk}"/>
+      <file file="${instrumentor-jar}"/>
+      <file file="${scheduler-jar}"/>
+      <file file="${merger-jar}"/>
+    </srcresources>
+  </uptodate>
+
+  <uptodate property="tester-apk-up-to-date"
+            targetfile="${tester-apk}">
+    <srcfiles dir="${tester-app}">
+      <exclude name="bin/**"/>
+      <exclude name="res/**"/>
+    </srcfiles>
+  </uptodate>
+
+  <path id="merger.classpath">
+    <pathelement path="${classpath}"/>
+    <pathelement path="${android-jar}"/>
+    <pathelement path="${merger-jar}"/>
+    <pathelement path="${lib}/dx.jar"/>
+  </path>
+
+  <path id="instrumentor.classpath">
+    <pathelement path="${classpath}"/>
+    <pathelement path="${android-jar}"/>
+    <pathelement path="${instrumentor-jar}"/>
+    <pathelement path="${lib}/coffer.jar"/>
+    <pathelement path="${lib}/jasminclasses.jar"/>
+    <pathelement path="${lib}/java_cup.jar"/>
+    <pathelement path="${lib}/JFlex.jar"/>
+    <pathelement path="${lib}/pao.jar"/>
+    <pathelement path="${lib}/polyglot.jar"/>
+    <pathelement path="${lib}/pth.jar"/>
+    <pathelement path="${lib}/soot.jar"/>
+    <pathelement path="${lib}/sootclasses.jar"/>
+  </path>
+
+  <property name="key-alias" value="my_alias"/>
+  <property name="key-store" value="${build}/my.keystore"/>
+  <property name="key-storepass" value="abcdefg"/>
+  <property name="key-pass" value="abcdefg"/>
+
+  <target name="app" depends="instrument-app,compile-tester" if="apk"/>
 
   <target name="compile">
     <mkdir dir="${build}"/>
@@ -35,13 +90,120 @@
         <pathelement path="${soot-jar}"/>
       </classpath>
     </javac>
-    <jar destfile="${merger-jar}" basedir="${build}" includes="mergeDexFiles/**"/>
+    <jar destfile="${merger-jar}" basedir="${build}" includes="mergeDexFiles/**">
+      <manifest>
+        <attribute name="Main-Class" value="mergeDexFiles.MergeDexFiles"/>
+      </manifest>
+    </jar>
     <jar destfile="${scheduler-jar}" basedir="${build}" includes="myScheduler/**"/>
-    <jar destfile="${instrumentor-jar}" basedir="${build}" includes="myInstrumentor/**"/>
+    <jar destfile="${instrumentor-jar}" basedir="${build}" includes="myInstrumentor/**">
+      <manifest>
+        <attribute name="Main-Class" value="myInstrumentor.AndroidInstrument"/>
+      </manifest>
+    </jar>
     <exec executable="dx">
       <arg value="--dex"/>
       <arg value="--output=${scheduler-dex}"/>
       <arg value="${scheduler-jar}"/>
+    </exec>
+  </target>
+
+  <target name="instrument-app" depends="compile,generate-keystore"
+          if="apk"
+          unless="instrumented-app-up-to-date">
+
+    <echo message="(Re)instrumenting ${app-name}"/>
+    <unzip src="${apk}" dest="${build}/${app-name}-extracted"/>
+    <exec executable="apktool">
+      <arg value="d"/>
+      <arg value="-f"/>
+      <arg value="${apk}"/>
+      <arg value="${build}/${app-name}-decoded"/>
+    </exec>
+    <mkdir dir="${build}/${app-name}-merged"/>
+    <java classname="mergeDexFiles.MergeDexFiles"
+        classpathref="merger.classpath">
+      <arg value="${build}/${app-name}-extracted/classes.dex"/>
+      <arg value="${build}/scheduler.dex"/>
+      <arg value="${build}/${app-name}-merged/classes.dex"/>
+    </java>
+    <exec executable="aapt" dir="${build}/${app-name}-merged">
+      <arg value="package"/>
+      <arg value="-f"/>
+      <arg value="-M"/>
+      <arg value="${build}/${app-name}-decoded/AndroidManifest.xml"/>
+      <arg value="-S"/>
+      <arg value="${build}/${app-name}-decoded/res/"/>
+      <arg value="-I"/>
+      <arg value="${android-jar}"/>
+      <arg value="--min-sdk-version"/>
+      <arg value="${android-sdk-version}"/>
+      <arg value="--target-sdk-version"/>
+      <arg value="${android-sdk-version}"/>
+      <arg value="-F"/>
+      <arg value="${build}/${app-name}.apk"/>
+    </exec>
+    <exec executable="aapt" dir="${build}/${app-name}-merged">
+      <arg value="add"/>
+      <arg value="-f"/>
+      <arg value="${build}/${app-name}.apk"/>
+      <arg value="classes.dex"/>
+    </exec>
+    <delete dir="sootOutput"/>
+    <java classname="myInstrumentor.AndroidInstrument"
+        classpathref="instrumentor.classpath">
+      <arg value="${build}/${app-name}.apk"/>
+      <arg value="${env.ANDROID_HOME}/platforms"/>
+      <arg value="${src}"/>
+      <arg value="-output-format"/>
+      <arg value="dex"/>
+    </java>
+    <move file="sootOutput/${app-name}.apk" tofile="${build}/${app-name}.apk"/>
+    <delete dir="sootOutput"/>
+    <signjar jar="${build}/${app-name}.apk"
+      alias="${key-alias}" keystore="${key-store}"
+      storepass="${key-storepass}" keypass="${key-pass}"/>
+  </target>
+
+  <target name="compile-tester" depends="generate-keystore"
+          unless="tester-apk-up-to-date">
+
+    <echo message="(Re)compiling tester app."/>
+    <exec executable="android">
+      <arg value="update"/>
+      <arg value="project"/>
+      <arg value="-p"/>
+      <arg value="."/>
+    </exec>
+    <ant dir="${tester-app}" target="release"/>
+    <copy file="${tester-app}/bin/TestApk-release-unsigned.apk"
+      tofile="${tester-apk}"/>
+    <signjar jar="${tester-apk}"
+      alias="${key-alias}" keystore="${key-store}"
+      storepass="${key-storepass}" keypass="${key-pass}"/>
+  </target>
+
+  <target name="generate-keystore" unless="keystore-generated">
+    <echo message="Regenerating keystore ${key-store}"/>
+    <exec executable="keytool">
+      <arg value="-genkey"/>
+      <arg value="-keyalg"/>
+      <arg value="RSA"/>
+      <arg value="-keysize"/>
+      <arg value="2048"/>
+      <arg value="-validity"/>
+      <arg value="10000"/>
+      <arg value="-noprompt"/>
+      <arg value="-dname"/>
+      <arg value="CN=a, OU=b, O=c, L=d, S=e, C=f"/>
+      <arg value="-alias"/>
+      <arg value="${key-alias}"/>
+      <arg value="-keystore"/>
+      <arg value="${key-store}"/>
+      <arg value="-storepass"/>
+      <arg value="${key-storepass}"/>
+      <arg value="-keypass"/>
+      <arg value="${key-pass}"/>
     </exec>
   </target>
 
