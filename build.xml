@@ -7,6 +7,7 @@
   <property name="lib" location="lib"/>
   <property name="bin" location="bin"/>
   <property name="build" location="build"/>
+  <property name="output" location="logcatOutputs"/>
 
   <property name="merger-jar" location="${build}/merger.jar"/>
   <property name="scheduler-jar" location="${build}/scheduler.jar"/>
@@ -43,6 +44,7 @@
 
   <target name="clean" description="Delete all generated files." >
     <delete dir="${build}"/>
+    <delete dir="${output}"/>
     <ant dir="tester-app" target="clean"/>
   </target>
 </project>
