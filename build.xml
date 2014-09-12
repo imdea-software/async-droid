@@ -1,0 +1,47 @@
+<project name="AndroidAppScheduleEnumerator" default="compile">
+  <description>
+    A tool for concurrency testing of Android apps.
+  </description>
+
+  <property name="src" location="src"/>
+  <property name="lib" location="lib"/>
+  <property name="bin" location="bin"/>
+  <property name="build" location="build"/>
+
+  <property name="merger-jar" location="${build}/merger.jar"/>
+  <property name="scheduler-jar" location="${build}/scheduler.jar"/>
+  <property name="scheduler-dex" location="${build}/scheduler.dex"/>
+  <property name="instrumentor-jar" location="${build}/instrumentor.jar"/>
+  
+  <property name="dx-jar" location="${lib}/dx.jar"/>
+  <property name="soot-jar" location="${lib}/soot.jar"/>
+
+  <!-- TODO THIS SHOULD BE AN INPUT -->
+  <property name="android-sdk" location="/usr/local/opt/android-sdk"/>
+  <property name="android-sdk-version" value="19"/>
+  <property name="android-jar" location="${android-sdk}/platforms/android-${android-sdk-version}/android.jar"/>
+
+  <target name="compile">
+    <mkdir dir="${build}"/>
+    <javac srcdir="${src}" destdir="${build}" includeantruntime="false">
+      <classpath>
+        <pathelement path="${classpath}"/>
+        <pathelement path="${android-jar}"/>
+        <pathelement path="${dx-jar}"/>
+        <pathelement path="${soot-jar}"/>
+      </classpath>
+    </javac>
+    <jar destfile="${merger-jar}" basedir="${build}" includes="mergeDexFiles/**"/>
+    <jar destfile="${scheduler-jar}" basedir="${build}" includes="myScheduler/**"/>
+    <jar destfile="${instrumentor-jar}" basedir="${build}" includes="myInstrumentor/**"/>
+    <exec executable="dx">
+      <arg value="--dex"/>
+      <arg value="--output=${scheduler-dex}"/>
+      <arg value="${scheduler-jar}"/>
+    </exec>
+  </target>
+
+  <target name="clean" description="Delete all generated files." >
+    <delete dir="${build}"/>
+  </target>
+</project>
