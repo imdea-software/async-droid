@@ -145,7 +145,7 @@
           unless="tester-apk-up-to-date">
 
     <echo message="(Re)compiling tester app."/>
-    <exec executable="android">
+    <exec executable="android" dir="${tester-app}">
       <arg value="update"/>
       <arg value="project"/>
       <arg value="-p"/>
