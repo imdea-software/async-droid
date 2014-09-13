@@ -14,8 +14,6 @@ A tool for concurrency testing of Android apps.
 - (Optional) Alternative Android Virtual Devices:
     - Genymotion: http://www.genymotion.com
 
-- Android Apktool (1.5.2)
-
 - Java (SE 7)
 
 - Apache Ant (1.9.4)

@@ -77,12 +77,12 @@
 
     <echo message="(Re)instrumenting ${app-name}"/>
     <unzip src="${apk}" dest="${build}/${app-name}-extracted"/>
-    <exec executable="apktool">
+    <java jar="${lib}/apktool.jar" fork="true">
       <arg value="d"/>
       <arg value="-f"/>
       <arg value="${apk}"/>
       <arg value="${build}/${app-name}-decoded"/>
-    </exec>
+    </java>
     <mkdir dir="${build}/${app-name}-merged"/>
     <java classname="com.android.dx.merge.DexMerger" classpath="${lib}/dx.jar">
       <arg value="${build}/${app-name}-merged/classes.dex"/>
