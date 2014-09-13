@@ -3,8 +3,6 @@
     A tool for concurrency testing of Android apps.
   </description>
 
-  <property environment="env"/>
-
   <property name="src" location="src"/>
   <property name="lib" location="lib"/>
   <property name="bin" location="bin"/>
@@ -13,11 +11,22 @@
   <property name="tester-app" location="tester-app"/>
 
   <property name="tester-apk" location="${build}/TestApk.apk"/>
-  
+
+  <property file="local.properties" />
+
+  <property environment="env"/>
+  <condition property="android-sdk" value="${env.ANDROID_HOME}">
+    <isset property="env.ANDROID_HOME" />
+  </condition>
+  <fail unless="android-sdk">
+    Android SDK not found.
+    Make sure to either set the android-sdk property in local.properties,
+    or to set the ANDROID_HOME environment variable.
+  </fail>
+
   <!-- TODO THIS SHOULD BE AN INPUT -->
   <property name="android-sdk-version" value="19"/>
 
-  <property name="android-sdk" location="${env.ANDROID_HOME}"/>
   <property name="android-jar" location="${android-sdk}/platforms/android-${android-sdk-version}/android.jar"/>
 
   <basename property="app-name" file="${apk}" suffix=".apk"/>
@@ -120,7 +129,7 @@
         <pathelement path="${lib}/soot.jar"/>
       </classpath>
       <arg value="${build}/${app-name}.apk"/>
-      <arg value="${env.ANDROID_HOME}/platforms"/>
+      <arg value="${android-sdk}/platforms"/>
       <arg value="${src}"/>
       <arg value="-output-format"/>
       <arg value="dex"/>
