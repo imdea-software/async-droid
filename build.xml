@@ -3,33 +3,48 @@
     A tool for concurrency testing of Android apps.
   </description>
 
+  <property file="local.properties"/>
+  <property file="project.properties"/>
+
+  <property environment="env"/>
+
+  <condition property="android.sdk" value="${env.ANDROID_HOME}">
+    <isset property="env.ANDROID_HOME" />
+  </condition>
+
+  <condition property="android.api.version" value="${env.ANDROID_API_VERSION}">
+    <isset property="env.ANDROID_API_VERSION" />
+  </condition>
+
+  <fail unless="android.sdk">
+    Android SDK not found.
+    Make sure to either set the android.sdk property in local.properties,
+    or to set the ANDROID_HOME environment variable.
+  </fail>
+
+  <fail unless="android.api.version">
+    Android API version unknown.
+    Make sure to either set an android.api.version property in local.properties,
+    or to set the ANDROID_API_VERSION environment variable.
+  </fail>
+
+  <property name="android.jar" location="${android.sdk}/platforms/android-${android.api.version}/android.jar"/>
+
+  <basename property="app-name" file="${apk}" suffix=".apk"/>
+
   <property name="src" location="src"/>
   <property name="lib" location="lib"/>
   <property name="bin" location="bin"/>
   <property name="build" location="build"/>
   <property name="output" location="logcatOutputs"/>
-  <property name="tester-app" location="tester-app"/>
 
+  <property name="tester-app" location="tester-app"/>
   <property name="tester-apk" location="${build}/TestApk.apk"/>
 
-  <property file="local.properties" />
-
-  <property environment="env"/>
-  <condition property="android-sdk" value="${env.ANDROID_HOME}">
-    <isset property="env.ANDROID_HOME" />
-  </condition>
-  <fail unless="android-sdk">
-    Android SDK not found.
-    Make sure to either set the android-sdk property in local.properties,
-    or to set the ANDROID_HOME environment variable.
-  </fail>
-
-  <!-- TODO THIS SHOULD BE AN INPUT -->
-  <property name="android-sdk-version" value="19"/>
-
-  <property name="android-jar" location="${android-sdk}/platforms/android-${android-sdk-version}/android.jar"/>
-
-  <basename property="app-name" file="${apk}" suffix=".apk"/>
+  <property name="key-alias" value="my_alias"/>
+  <property name="key-store" value="${build}/my.keystore"/>
+  <property name="key-storepass" value="abcdefg"/>
+  <property name="key-pass" value="abcdefg"/>
 
   <available property="keystore-generated" file="${build}/my.keystore"/>
 
@@ -37,6 +52,9 @@
             targetfile="${build}/${app-name}.apk">
     <srcresources>
       <file file="${apk}"/>
+      <fileset dir="${src}">
+        <include name="**/*.java"/>
+      </fileset>
       <file file="${build}/instrumentor.jar"/>
       <file file="${build}/scheduler.jar"/>
     </srcresources>
@@ -50,11 +68,6 @@
     </srcfiles>
   </uptodate>
 
-  <property name="key-alias" value="my_alias"/>
-  <property name="key-store" value="${build}/my.keystore"/>
-  <property name="key-storepass" value="abcdefg"/>
-  <property name="key-pass" value="abcdefg"/>
-
   <target name="app" depends="instrument-app,compile-tester" if="apk"/>
 
   <target name="compile">
@@ -62,7 +75,7 @@
     <javac srcdir="${src}" destdir="${build}" includeantruntime="false">
       <classpath>
         <pathelement path="${classpath}"/>
-        <pathelement path="${android-jar}"/>
+        <pathelement path="${android.jar}"/>
         <pathelement path="${lib}/dx.jar"/>
         <pathelement path="${lib}/soot.jar"/>
       </classpath>
@@ -106,11 +119,11 @@
       <arg value="-S"/>
       <arg value="${build}/${app-name}-decoded/res/"/>
       <arg value="-I"/>
-      <arg value="${android-jar}"/>
+      <arg value="${android.jar}"/>
       <arg value="--min-sdk-version"/>
-      <arg value="${android-sdk-version}"/>
+      <arg value="${android.api.version}"/>
       <arg value="--target-sdk-version"/>
-      <arg value="${android-sdk-version}"/>
+      <arg value="${android.api.version}"/>
       <arg value="-F"/>
       <arg value="${build}/${app-name}.apk"/>
     </exec>
@@ -124,21 +137,19 @@
     <java classname="myInstrumentor.AndroidInstrument">
       <classpath>
         <pathelement path="${classpath}"/>
-        <pathelement path="${android-jar}"/>
+        <pathelement path="${android.jar}"/>
         <pathelement path="${build}/instrumentor.jar"/>
         <pathelement path="${lib}/soot.jar"/>
       </classpath>
       <arg value="${build}/${app-name}.apk"/>
-      <arg value="${android-sdk}/platforms"/>
-      <arg value="${src}"/>
-      <arg value="-output-format"/>
-      <arg value="dex"/>
+      <arg value="${android.sdk}/platforms"/>
     </java>
     <move file="sootOutput/${app-name}.apk" tofile="${build}/${app-name}.apk"/>
     <delete dir="sootOutput"/>
     <signjar jar="${build}/${app-name}.apk"
       alias="${key-alias}" keystore="${key-store}"
       storepass="${key-storepass}" keypass="${key-pass}"/>
+    <echo message="Instrumented ${app-name} is ${build}/${app-name}.apk"/>
   </target>
 
   <target name="compile-tester" depends="generate-keystore"
@@ -157,6 +168,7 @@
     <signjar jar="${tester-apk}"
       alias="${key-alias}" keystore="${key-store}"
       storepass="${key-storepass}" keypass="${key-pass}"/>
+    <echo message="Tester app is ${tester-app}"/>
   </target>
 
   <target name="generate-keystore" unless="keystore-generated">
