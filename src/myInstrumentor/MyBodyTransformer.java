@@ -6,11 +6,13 @@ import java.util.Map;
 import soot.Body;
 import soot.BodyTransformer;
 import soot.Local;
+import soot.PackManager;
 import soot.PatchingChain;
 import soot.RefType;
 import soot.Scene;
 import soot.SootClass;
 import soot.SootMethod;
+import soot.Transform;
 import soot.Unit;
 import soot.jimple.AbstractStmtSwitch;
 import soot.jimple.EnterMonitorStmt;
@@ -32,7 +34,24 @@ public class MyBodyTransformer extends BodyTransformer {
     static SootClass activityClass;
     static SootMethod getApplicationContextMethod;
 
-    void init() {
+    public static void main(String[] args) {
+        // args[0]: directory from which to process classes
+        // args[1]: path for finding the android.jar file
+
+        PackManager.v().getPack("jtp").add(
+            new Transform("jtp.myInstrumenter", new MyBodyTransformer()));
+
+        soot.Main.main(new String[]{
+            "-debug",
+            "-prepend-classpath",
+            "-process-dir", args[0],
+            "-android-jars", args[1],
+            "-src-prec", "apk",
+            "-output-format", "dex"
+        });
+    }
+
+    static void init() {
         if (schedulerClass != null)
             return;
 
@@ -173,5 +192,4 @@ public class MyBodyTransformer extends BodyTransformer {
     static InvokeStmt staticInvocation(SootMethod m, Local arg) {
         return Jimple.v().newInvokeStmt(Jimple.v().newStaticInvokeExpr(m.makeRef(),arg));
     }
-
 }

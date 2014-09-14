@@ -83,7 +83,7 @@
     <jar destfile="${build}/scheduler.jar" basedir="${build}" includes="myScheduler/**"/>
     <jar destfile="${build}/instrumentor.jar" basedir="${build}" includes="myInstrumentor/**">
       <manifest>
-        <attribute name="Main-Class" value="myInstrumentor.AndroidInstrument"/>
+        <attribute name="Main-Class" value="myInstrumentor.MyBodyTransformer"/>
       </manifest>
     </jar>
     <java jar="${lib}/dx.jar" fork="true">
@@ -134,7 +134,7 @@
       <arg value="classes.dex"/>
     </exec>
     <delete dir="sootOutput"/>
-    <java classname="myInstrumentor.AndroidInstrument">
+    <java classname="myInstrumentor.MyBodyTransformer">
       <classpath>
         <pathelement path="${classpath}"/>
         <pathelement path="${android.jar}"/>
