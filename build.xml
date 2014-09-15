@@ -28,6 +28,24 @@
     or to set the ANDROID_API_VERSION environment variable.
   </fail>
 
+  <fail message="Please make sure that aapt is in your system path">
+    <condition>
+      <not>
+            <available file="aapt" filepath="${env.PATH}"/> 
+      </not>
+    </condition>
+  </fail>
+ 
+
+  <fail message="Please make sure that android executable is in your system path">
+    <condition>
+      <not>
+            <available file="android" filepath="${env.PATH}"/> 
+      </not>
+    </condition>
+  </fail>
+
+
   <property name="android.jar" location="${android.sdk}/platforms/android-${android.api.version}/android.jar"/>
 
   <basename property="app-name" file="${apk}" suffix=".apk"/>

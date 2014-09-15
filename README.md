@@ -20,7 +20,6 @@ A tool for concurrency testing of Android apps.
 
 - Python (2.7.5)
 
-- Jython (2.5.3)
 
 ## Usage
 
@@ -32,11 +31,11 @@ created and started an Android Virtual Device (AVD).
 Instrument your application `.apk` file for testing. For instance, try the
 example app in `example/HelloWorldApk.apk`:
 
-    ant -Dapk=example/HelloWorldApk.apk
+    ant -Dapk=example/HelloWorldApp.apk
 
 (Note that the original `.apk` file will remain unmodified.)
 Then, test the instrumented application:
 
-    ./bin/run_it_all.sh example/HelloWorldApk.apk
+    ./bin/run_it_all.sh example/HelloWorldApp.apk
 
 And see the results in `logcatOutputs`.
