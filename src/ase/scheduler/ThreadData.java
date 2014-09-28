@@ -1,4 +1,4 @@
-package myScheduler;
+package ase.scheduler;
 
 import java.util.Stack;
 
@@ -56,7 +56,7 @@ public class ThreadData {
     }
     
     public void pushWaitBlock(boolean b) {
-        willNotify.push(new Boolean(b));
+        willNotify.push(Boolean.valueOf(b));
     }
 
     public boolean popWaitBlock() {
@@ -81,6 +81,4 @@ public class ThreadData {
     public void setWillNotifyEver(boolean b) {
         willNotifyEver = b;
     }
-
-
 }

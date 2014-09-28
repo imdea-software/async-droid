@@ -1,24 +1,24 @@
-package myScheduler;
+package ase.scheduler;
 
-public class DelayGenerator{
+public class DelaySequence{
 
+    private int[] delaySequence;
     private int numDelays;
-    private int[] delayIndices;
     private int currentIndexToDelay = 0;
     private boolean isEnded;
     
-    public DelayGenerator(int maxDelayIndex, int numDelays){
+    public DelaySequence(int numDelays, int maxDelayIndex){
         this.numDelays = numDelays;    
-        delayIndices = new int[numDelays];
+        delaySequence = new int[numDelays];
         
         for(int i=0; i<numDelays; i++)
-            delayIndices[i] = maxDelayIndex - numDelays + i;
+            delaySequence[i] = maxDelayIndex - numDelays + i;
     }
     
-    public int getNextSegmentIndexToDelay() {
+    public int getNextDelayIndex() {
 
         // skip delays 0 (e.g. for 4 0 0, the first delay is at 4) 
-        while (currentIndexToDelay < numDelays && delayIndices[currentIndexToDelay] == 0){
+        while (currentIndexToDelay < numDelays && delaySequence[currentIndexToDelay] == 0){
             currentIndexToDelay ++;
         }
             
@@ -26,10 +26,10 @@ public class DelayGenerator{
         if(currentIndexToDelay >= numDelays)
             return 0;
         else
-            return delayIndices[currentIndexToDelay]; 
+            return delaySequence[currentIndexToDelay]; 
     }
 
-    public void setNextDelayPoint() {
+    public void spendCurrentDelayIndex() {
         currentIndexToDelay++;
     }
     
@@ -43,10 +43,10 @@ public class DelayGenerator{
         return isEnded;
     }
     
-    public boolean updateDelayIndices(){
+    public boolean getNextDelaySequence(){
         int decrementPoint = -1;
         for(int i=0; i<numDelays; i++){
-            if(delayIndices[i] > 0){
+            if(delaySequence[i] > 0){
                 decrementPoint = i;
                 break;
             }
@@ -58,30 +58,27 @@ public class DelayGenerator{
             return false;
         }
                      
-        delayIndices[decrementPoint] --;
+        delaySequence[decrementPoint] --;
         
         for(int i=decrementPoint-1; i>=0; i--){
-            delayIndices[i] = Math.max(delayIndices[i+1] - 1, 0);  
+            delaySequence[i] = Math.max(delaySequence[i+1] - 1, 0);  
         }
         
         currentIndexToDelay = 0;
         return true;
     }
-    
-    public int[] getIndices(){
-        return delayIndices;
-    }
-    
+
     public int getDelayAtIndex(int index){
-        if(index < delayIndices.length)
-            return delayIndices[index];
+        if(index < delaySequence.length)
+            return delaySequence[index];
         return -1;
     }
     
-    public String delayIndicesToString(){
+    @Override
+    public String toString(){
         String result = "";
         for(int i=numDelays-1; i>=0; i--){
-            result = result.concat(Integer.toString(delayIndices[i]));
+            result = result.concat(Integer.toString(delaySequence[i]));
             result = result.concat(" ");
         }
         return result;

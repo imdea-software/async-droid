@@ -1,4 +1,4 @@
-package myScheduler;
+package ase.scheduler;
 
 
 import java.util.ArrayList;

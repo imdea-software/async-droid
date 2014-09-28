@@ -1,36 +1,38 @@
-package myScheduler;
+package ase.scheduler;
 
+import android.content.Context;
 import android.util.Log;
+import android.view.View;
+import ase.repeater.InputRepeater;
 
 /* 
- * Schedules the application threads using given delay indices
+ * Schedules the application threads using a particular number of delays
  */
 public class SchedulerRunnable implements Runnable {
 
-    private DelayServiceConHandler delayCon;
-
-    private static PendingThreads threads = new PendingThreads();
-    private static ThreadData schedulerThreadData = new ThreadData(ThreadData.SCHEDULER_ID);
-
-    private DelayGenerator delayGen;
-    private int numDelays;
-    private int minNumSegments;
- 
-    private int segmentToProcess = 1;
+    private PendingThreads threads = new PendingThreads();
+    private ThreadData schedulerThreadData = new ThreadData(ThreadData.SCHEDULER_ID);
+    private DelaySequence delaySeq;
     
     // Thread id of the currently scheduled thread
-    private static long scheduled = (long) 0;
-
-    public SchedulerRunnable(DelayServiceConHandler delayCon) {
-        this.delayCon = delayCon;
+    private static long scheduled = 0L;
+    private int segmentToProcess = 1;
+    
+    private Context appContext;
+    private View rootView;
+    Thread inputThread;
+    
+    public SchedulerRunnable(int numDelays, int numInputs, Context context, View view) { 
+        appContext = context;
+        rootView = view;
+        delaySeq = new DelaySequence(numDelays, numInputs);    
+        delaySeq = new DelaySequence(0, 5);
     }
 
     public void run() {
         Log.i("MyScheduler", "Scheduler has started in thread: "
                 + Thread.currentThread().getName() + " Id: "
                 + Thread.currentThread().getId());
-
-        initiateTestParameters();
         
         // must wait until the main (UI) thread wakes it
         waitMyTurn(ThreadData.SCHEDULER_ID);
@@ -38,32 +40,37 @@ public class SchedulerRunnable implements Runnable {
         boolean moreTests = true;
         
         while(moreTests){
-            Log.i("DelayInfo", "Current delay indices:" + delayGen.delayIndicesToString());
+            Log.i("DelayInfo", "Current delay indices:" + delaySeq.toString());
         
             // run a single test with a sequence of delay indices
-            initiateTestUnit();        
+            initiateSingleTest();        
             runSingleTest();
         
             // end of current test, get new delay indices 
             Log.i("DelayInfo", "Updating delay indices for next test..");
-            moreTests = delayGen.updateDelayIndices(); /////// returns false when ended !!!!
-            
-            delayCon.doSendIPCMsg(DelayServiceConHandler.MSG_REPEAT_TEST);
+            moreTests = delaySeq.getNextDelaySequence(); /////// returns false when ended
         }
-        
-        delayCon.doUnbindService();
-        delayCon.doStopService();
-        
+         
         Log.i("MyScheduler", "Test has completed.");
         Log.i("DelayInfo", "Test has completed.");
         return;
+    }
+    
+    /*
+     * Reset single test parameters
+     */
+    public void initiateSingleTest(){
+        InputRepeater inputRepeater = new InputRepeater(appContext, rootView);
+        inputThread = new Thread(inputRepeater);
+        inputThread.start();
+        segmentToProcess = 1;
     }
 
     /*
      * A single test following one delay sequence
      */
     public void runSingleTest(){
-        while (!isEndOfCurrentTest()) {
+        do {
             if(threads.isEmpty())
                 continue;
             
@@ -73,60 +80,37 @@ public class SchedulerRunnable implements Runnable {
             
             // if the current thread needs to be scheduled (is waiting and will notify)
             if (current.willNotifyEver()) {
-                
+                 Log.i("DelayInfo", "Consumed delay: " + segmentToProcess);
                 // check whether it will be delayed
-                if (segmentToProcess == delayGen.getNextSegmentIndexToDelay()) {
+                if (segmentToProcess == delaySeq.getNextDelayIndex()) {
                     Log.i("MyScheduler", "Delayed Thread Id: "
                             + current.getId() + " Last Processed: " + segmentToProcess);                  
                     Log.i("DelayInfo", "Consumed delay: " + segmentToProcess);
                     threads.increaseWalker(); // delay
-                    delayGen.setNextDelayPoint(); //////
+                    delaySeq.spendCurrentDelayIndex(); //////
                 }
                 
                 notifyNext(); 
-                waitMyTurn(ThreadData.SCHEDULER_ID);        
+                waitMyTurn(ThreadData.SCHEDULER_ID);   
             }
-        }
+        }while (!isEndOfCurrentTest());
         
-    }
-    
-    /*
-     * Get parameters via DelayServiceConnectionHandler
-     */
-    public void initiateTestParameters(){
-        delayCon.doStartService();
-        delayCon.doBindService();       
-        while(!delayCon.doSendIPCMsg(DelayServiceConHandler.MSG_START_TESTING));        
-        while(!delayCon.isParametersSet()); // service messages are handled in UI thread
-
-        minNumSegments = delayCon.getNumSegments();
-        numDelays = delayCon.getNumDelays();
-        
-        delayGen = new DelayGenerator(minNumSegments, numDelays);
-        Log.i("MyScheduler", "Test parameters: numDelays = " +  numDelays + "  numSegments= " + minNumSegments);
-    }
-    
-    /*
-     * Reset single test parameters
-     */
-    public void initiateTestUnit(){
-        segmentToProcess = 1;
     }
     
     /*
      * True if the current single test with a delay sequence has completed
      */
     public boolean isEndOfCurrentTest() {
-        if (delayGen.isEndOfCurrentDelaySequence() &&  segmentToProcess > minNumSegments)
+        if (delaySeq.isEndOfCurrentDelaySequence() &&  segmentToProcess ==50 )
            return true;
         return false;
     }
-
+////////////////////TODO here to determine the end of the test!!!!!
     /*
      * True if all tests for all possible delay sequences completed
      */
     public boolean isEndOfAllTests() {
-        if (delayGen.isEndOfCurrentDelaySequence() &&  segmentToProcess > minNumSegments)
+        if (delaySeq.isEndOfCurrentDelaySequence() /*&&  segmentToProcess > numInputs*/)
            return true;
         return false;
     }
@@ -198,9 +182,9 @@ public class SchedulerRunnable implements Runnable {
     }
 
     /*
-     *  Scheduler notifies all threads when the test is completed
+     *  Scheduler notifies all threads
      */
-    /*private void notifyAllThreads(){
+/*    private void notifyAllThreads(){
            while(!threads.isEmpty()){
                 threads.increaseWalker();
                 notifyNext(); 
@@ -248,8 +232,13 @@ public class SchedulerRunnable implements Runnable {
         schedulerThreadData.notifyThread();
     }
     
+    /*
+     * To be called by UI thread in initiateScheduler
+     * Enables scheduler thread to run
+     */
     public void wakeScheduler() {
         scheduled = ThreadData.SCHEDULER_ID;
+        Log.i("MyScheduler", "Waky waky!");
         schedulerThreadData.notifyThread();
     }
 
