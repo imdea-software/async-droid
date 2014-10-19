@@ -7,19 +7,25 @@ import android.view.ViewGroup;
 import android.view.View.OnClickListener;
 
 public class ViewTraverser {
-    
+
     public static Context applicationContext;
-    
-    public static void setViewViewerContext(Context context){
+    public static View CURRENT_ROOT_VIEW;
+
+    public static void setViewViewerContext(Context context) {
         applicationContext = context;
     }
 
+    public static void setRootView(View view) {
+        CURRENT_ROOT_VIEW = view;
+    }
+
     public static View traverseViewIds(View view) {
-        Log.v("ViewLogger", "traversing: " + view.getClass().getSimpleName() + ", id: " + view.getId() + "Inthread: " + Thread.currentThread().getName());
+        Log.v("ViewLogger", "traversing: " + view.getClass().getSimpleName()
+                + ", id: " + view.getId() + "Inthread: "
+                + Thread.currentThread().getName());
         if (view.getParent() != null && (view.getParent() instanceof ViewGroup)) {
-            return traverseViewIds((View)view.getParent());
-        }
-        else {
+            return traverseViewIds((View) view.getParent());
+        } else {
             traverseChildViewIds(view);
             return view;
         }
@@ -27,7 +33,7 @@ public class ViewTraverser {
 
     private static void traverseChildViewIds(View view) {
         if (view instanceof ViewGroup) {
-            ViewGroup group = (ViewGroup)view;
+            ViewGroup group = (ViewGroup) view;
             for (int i = 0; i < group.getChildCount(); i++) {
                 View child = group.getChildAt(i);
                 Log.v("ViewLogger", "traversed: " + child.getClass().getSimpleName() + " " + Integer.toHexString(child.getId()));
@@ -37,7 +43,7 @@ public class ViewTraverser {
                     OnClickListener listener = new InstrumentedListener(child, applicationContext); ////////////////
                     child.setOnClickListener(listener); //////////////////////
                 }
-            
+
                 traverseChildViewIds(child);
             }
         }

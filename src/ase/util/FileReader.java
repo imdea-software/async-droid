@@ -14,19 +14,19 @@ public class FileReader implements Reader {
 
     private final Context context;
     private final String file;
-    
+
     public FileReader(Context context, String file) {
         this.context = context;
         this.file = file;
     }
-    
+
     @Override
     public List<AseEvent> read() {
-        
+
         List<AseEvent> events = new ArrayList<AseEvent>();
         FileInputStream fIn;
         String inputLine;
-        
+
         try {
             fIn = context.openFileInput(file);
             InputStreamReader isr = new InputStreamReader(fIn);
@@ -38,13 +38,12 @@ public class FileReader implements Reader {
                 events.add(event);
                 Log.i("FileReader", "Read: " + Integer.toHexString(Integer.parseInt(inputLine)));
             }
-                 
+
         } catch (Exception e) {
             Log.e("FileReader", "Could not read event from file: " + file, e);
         }
-        
+
         return events;
     }
-    
 
 }

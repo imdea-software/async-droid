@@ -11,28 +11,28 @@ public class ReflectionUtils {
 
     public static ArrayList<Integer> getViewsInApp(String packageName) {
         ArrayList<Integer> viewIDs = new ArrayList<Integer>();
-        
+
         try {
             Class<?> r = Class.forName(packageName + ".R$id");
-            
+
             for (Field f : r.getDeclaredFields()) {
-                viewIDs.add((Integer)f.getInt(new Object()));
-                // Log.i("ReflectionUtils", " " + Integer.toHexString(f.getInt(new Object())));
+                viewIDs.add((Integer) f.getInt(new Object()));
+                // Log.i("ReflectionUtils", " " +
+                // Integer.toHexString(f.getInt(new Object())));
             }
-            
+
         } catch (Exception e) {
             Log.i("ReflectionUtils", "Exception during reflection!");
         }
-            
+
         return viewIDs;
     }
-    
+
     public static OnClickListener getOnClickListener(View view) {
         OnClickListener listener = null;
         try {
             Field listenerInfoField = null;
-            listenerInfoField = View.class
-                    .getDeclaredField("mListenerInfo");
+            listenerInfoField = View.class.getDeclaredField("mListenerInfo");
             if (listenerInfoField != null) {
                 listenerInfoField.setAccessible(true);
             }
@@ -52,4 +52,5 @@ public class ReflectionUtils {
         }
         return listener;
     }
+
 }

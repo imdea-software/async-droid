@@ -23,15 +23,15 @@ public class InstrumentedListener implements OnClickListener {
     public void onClick(View v) {
         int id = v.getId();
 
-        if(id == -1){
+        if (id == -1) {
             Log.i("ViewLogger", "Clicked event has id -1 and not recorded.");
             return;
         }
-        
+
         AseEvent event = new AseEvent();
         event.viewId = id;
         recorder.record(event);
-        
+
         if (ownListener != null)
             ownListener.onClick(v);
     }

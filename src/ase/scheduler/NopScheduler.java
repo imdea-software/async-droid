@@ -1,14 +1,10 @@
 package ase.scheduler;
 
-import android.app.Activity;
-import ase.util.IOFactory;
-import ase.util.Recorder;
+public class NopScheduler implements Scheduler {
+    PendingThreads threads = new PendingThreads();
 
-public class RecordingScheduler implements Scheduler {
+    public NopScheduler() {
 
-    public RecordingScheduler(Activity act) {
-        Recorder recorder = IOFactory.getRecorder(act.getApplicationContext());
-        recorder.clear();
     }
 
     @Override
