@@ -43,8 +43,10 @@ public class PendingThreads {
     }
 
     public synchronized void addThread(ThreadData td) {
-        threads.add(td);
-        sortByName();
+        if(!capturedBefore(td.getId())){
+            threads.add(td);
+            sortByName();
+        }
     }
 
     public synchronized void removeThread(ThreadData td) {

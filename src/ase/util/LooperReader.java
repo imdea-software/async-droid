@@ -9,13 +9,14 @@ import android.os.MessageQueue;
 import android.util.Log;
 
 public class LooperReader {
+    
+    private static LooperReader INSTANCE;
+    
     private final Field messagesField;
     private final Field nextField;
     private final Field queueField;
 
-    // private final List<Message> allMessages = new ArrayList<Message>();
-
-    public LooperReader() {
+    private LooperReader() {
         try {
             queueField = Looper.class.getDeclaredField("mQueue");
             queueField.setAccessible(true);
@@ -28,6 +29,13 @@ public class LooperReader {
         }
     }
 
+    public static LooperReader getInstance() {
+        if (INSTANCE == null) {
+            INSTANCE = new LooperReader();
+        }
+        return INSTANCE;
+    }
+    
     public Looper getLooper(Thread t) {
         if (t instanceof HandlerThread) {
             return ((HandlerThread) t).getLooper();
@@ -35,7 +43,7 @@ public class LooperReader {
         if (t.getId() == 1) {
             return Looper.getMainLooper();
         }
-        Log.i("LooperReader", "No looper: " + t.getName());
+        //Log.v("LooperReader", "No looper: " + t.getName());
         return null;
     }
 
@@ -55,7 +63,8 @@ public class LooperReader {
         }
         if (message == null)
             return true;
-        Log.v("LooperReader", "Looper of Thread " + t.getId());
+        //Log.v("LooperReader", "Looper of Thread " + t.getId());
+        //dumpQueue(t);
         return false;
     }
 

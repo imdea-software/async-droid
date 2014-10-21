@@ -8,8 +8,6 @@ public class IOFactory {
     private static Recorder DEFAULT_RECORDER;
     private static Reader DEFAULT_READER;
 
-    private static LooperReader DEFAULT_LOOPER_READER;
-
     public static Recorder getRecorder(Context context) {
         if (DEFAULT_RECORDER == null) {
             DEFAULT_RECORDER = new FileRecorder(context, DEFAULT_TRACE_FILE);
@@ -22,12 +20,5 @@ public class IOFactory {
             DEFAULT_READER = new FileReader(context, DEFAULT_TRACE_FILE);
         }
         return DEFAULT_READER;
-    }
-
-    public static LooperReader getLooperReader() {
-        if (DEFAULT_LOOPER_READER == null) {
-            DEFAULT_LOOPER_READER = new LooperReader();
-        }
-        return DEFAULT_LOOPER_READER;
     }
 }

@@ -1,6 +1,5 @@
 package ase.repeater;
 
-import java.util.Iterator;
 import java.util.List;
 
 import android.content.Context;
@@ -11,8 +10,7 @@ import android.view.View;
 import ase.AseEvent;
 import ase.AseTestBridge;
 import ase.recorder.ViewTraverser;
-import ase.util.IOFactory;
-import ase.util.Reader;
+
 
 public class InputRepeater implements Runnable {
 
@@ -20,65 +18,75 @@ public class InputRepeater implements Runnable {
     // registers (sends its info) and waits for its turn
     private List<AseEvent> eventList;
     private Handler handlerToUI;
-    private int repeatCount = 1;
-
-    public InputRepeater(Context context) {
-        Reader reader = IOFactory.getReader(context);
-        eventList = reader.read();
+    
+    // to keep track of the status of InputRepeater thread's job
+    // counts the number of posted event invoker runnables to UI
+    // when >0, scheduler will schedule it (in its turn) even when it has not executed waitMyTurn()
+    private int inputsToGo;
+    
+    // incremented when posted task to UI could invoke (view exists in current layout) the event
+    // ensures the correct order of invocations when view is not in the layout
+    private int inputsDispatched = 0;
+    
+    public InputRepeater(Context context, List<AseEvent> events) {
+        eventList = events;
         handlerToUI = new Handler(Looper.getMainLooper());
+        inputsToGo=eventList.size();
     }
 
     @Override
     public void run() {
         Log.i("Repeater", "In thread: " + Thread.currentThread().getName()
                 + " " + Thread.currentThread().getId());
-        Iterator<AseEvent> events = eventList.listIterator();
-        Log.i("Repeater", "Repeating inputs. Count: " + repeatCount);
-        if (!events.hasNext()) {
+        
+        AseTestBridge.sendThreadInfo();
+        Log.i("Repeater", "Repeating inputs.");
+        if (eventList.isEmpty()) {
             Log.i("Repeater", "No events to repeat.");
         }
-        while (events.hasNext()) {
+        
+        for (int i=0; i<eventList.size(); i++) {
             AseTestBridge.waitMyTurn();
-            sendEventToApp(events.next());
+            sendEventToApp(); 
+            AseTestBridge.incNumUIBlocks();  // posted event (runnable to click) into UI thread
+            inputsToGo --;
+            Log.i("Repeater", "Posted a click.. InputsToGo:" + inputsToGo);
             AseTestBridge.notifyScheduler();
         }
-
-        Log.i("Repeater", "Completed inputs. Count: " + repeatCount++);
+        
+        Log.i("Repeater", "Completed inputs.");
     }
-
+    
     // for now, only clicks
-    public void sendEventToApp(final AseEvent event) {
+    public void sendEventToApp() {
         handlerToUI.post(new Runnable() {
             public void run() {
+                AseEvent event = eventList.get(inputsDispatched);
                 AseTestBridge.waitMyTurn();
-                View view = ViewTraverser.CURRENT_ROOT_VIEW
-                        .findViewById(event.viewId);
+                View view = ViewTraverser.CURRENT_ROOT_VIEW.findViewById(event.viewId);
 
-                /*
-                 while(view == null){ // if null, always null.. no time to inflate new (?) 
-                     AseTestBridge.notifyScheduler();
-                     AseTestBridge.waitMyTurn(); 
-                     view = ViewTraverser.CURRENT_ROOT_VIEW.findViewById(event.viewId); 
-                     }
-                 */
                 if (view == null) {
-                    handlerToUI.post(this); // temporary solution, disrupts
-                                            // order!!
-                    Log.i("Repeater",
-                            "Sending again "
-                                    + Integer.toHexString(event.viewId));
+                    handlerToUI.post(this); 
+                    AseTestBridge.incNumUIBlocks();
+                    Log.i("Repeater", "Sending again " + Integer.toHexString(event.viewId));
+                    AseTestBridge.notifyScheduler();    
                     return;
                 }
+          
+                // counter provides invoking the events in order
+                inputsDispatched ++;
                 view.callOnClick();
-                Log.i("Repeater",
-                        "Clicked view: " + Integer.toHexString(view.getId())
-                                + " " + view.isEnabled() + " " + view.isShown()
-                                + " In Thread: "
-                                + Thread.currentThread().getName());
+                Log.i("Repeater", "Clicked view: " + Integer.toHexString(view.getId()));
 
                 AseTestBridge.notifyScheduler();
             }
         });
     }
 
+
+    // no possible race on inputsToGo
+    // scheduler thread calls it mutually exclusively
+    public synchronized boolean hasMoreInputs() {
+        return inputsToGo > 0;
+    }
 }

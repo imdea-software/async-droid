@@ -2,7 +2,8 @@ package ase.scheduler;
 
 import java.util.Stack;
 
-import ase.util.IOFactory;
+import android.util.Log;
+import ase.util.LooperReader;
 
 // provides synchronization of its corresponding Thread
 
@@ -41,9 +42,10 @@ public class ThreadData {
     }
 
     public String getName() {
-        // if(thread!=null)
-        return thread.getName();
-        // return "SchedulerThread";
+        if(thread!=null)
+            return thread.getName();
+       Log.e("MyScheduler", "Reading name of a null-thread");
+       return null;
     }
 
     public synchronized void notifyThread() {
@@ -67,7 +69,7 @@ public class ThreadData {
     }
 
     public int getCurrentMonitors() {
-        // Log.i("MyScheduler", "Monitors: " + currentMonitors );
+        // Log.v("MyScheduler", "Monitors: " + currentMonitors );
         return currentMonitors;
     }
 
@@ -99,7 +101,7 @@ public class ThreadData {
     }
 
     public boolean hasMsgToHandle() {
-        return !IOFactory.getLooperReader().hasEmptyLooper(thread);
+        return !LooperReader.getInstance().hasEmptyLooper(thread);
     }
 
 }

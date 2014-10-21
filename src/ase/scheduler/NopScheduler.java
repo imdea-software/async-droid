@@ -39,4 +39,10 @@ public class NopScheduler implements Scheduler {
 
     }
 
+    @Override
+    public void sendThreadInfo() {
+        // TODO Auto-generated method stub
+        
+    }
+
 }

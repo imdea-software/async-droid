@@ -43,4 +43,10 @@ public class RecordingScheduler implements Scheduler {
 
     }
 
+    @Override
+    public void sendThreadInfo() {
+        // TODO Auto-generated method stub
+        
+    }
+
 }

@@ -1,6 +1,7 @@
 package ase;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -22,53 +23,54 @@ public class AseTestBridge {
 
     private static Scheduler scheduler;
     private static SchedulerMode mode;
+    private static boolean initiated = false;
+    
+    // application context to be used in utils and the scheduler
+    private static Context context;
+    
+    // UI blocks inserted by inputRepeater, onPublishProgress or onPostExecute
+    // keeps track of UI thread status
+    private static int numUIBlocks = 0;
 
     /*
      * called by UI thread with the application context
      */
     public static void initiateScheduler(Activity act) {
-        setTestParameters(act);
-
-        runSchedulerThread();
+        if (!initiated) {
+            setTestParameters(act);
+            scheduler.runScheduler();
+            initiated = true;
+        }
     }
 
     /*
      * set the number of delays and inputs
      */
     private static void setTestParameters(Activity act) {
-        int numDelays = 0, numInputs = 0;
+        context = act.getApplicationContext(); // used to resume main activity
+        
+        int numDelays = 0;
         String smode = null;
         Intent intent = act.getIntent();
         Bundle bundle = intent.getExtras();
         if (bundle != null) {
             smode = bundle.getString("mode");
             numDelays = Integer.parseInt(bundle.getString("numDelays"));
-            numInputs = Integer.parseInt(bundle.getString("numInputs"));
         }
-        Log.i("MyScheduler", String.format(
-                "Parameters: numDelays: %d numInputs: %d mode: %s", numDelays,
-                numInputs, smode));
+        Log.i("MyScheduler", String.format("Parameters: mode: %s numDelays: %d", smode, numDelays));
         if (smode != null && smode.equalsIgnoreCase("record")) {
             mode = SchedulerMode.RECORD;
             Log.i("MyScheduler", "Running in record mode");
             scheduler = new RecordingScheduler(act);
-        } else if (smode != null
-                && (smode.equalsIgnoreCase("repeat") || smode
-                        .equalsIgnoreCase("replay"))) {
+        } else if (smode != null && (smode.equalsIgnoreCase("repeat") || smode.equalsIgnoreCase("replay"))) {
             mode = SchedulerMode.REPEAT;
             Log.i("MyScheduler", "Running in repeat mode");
-            scheduler = new RepeatingScheduler(numDelays, numInputs,
-                    act.getApplicationContext(), act.getWindow().getDecorView()
-                            .getRootView());
+            scheduler = new RepeatingScheduler(numDelays, act.getApplicationContext(), act.getWindow().getDecorView().getRootView());
         } else {
             mode = SchedulerMode.NOP;
             Log.i("MyScheduler", "No Scheduler is used");
             scheduler = new NopScheduler();
         }
-    }
-
-    public static void runSchedulerThread() {
-        scheduler.runScheduler();
     }
 
     public static void setActivityViewTraverser(Activity act) {
@@ -91,6 +93,14 @@ public class AseTestBridge {
         }
     }
 
+    /*
+     * application thread sends its info to the scheduler
+     * (necessary when it runs before added into scheduler's list)
+     */
+    public static void sendThreadInfo() {
+        scheduler.sendThreadInfo();
+    }
+    
     /*
      * application thread waits for its signal to start/resume
      */
@@ -124,6 +134,25 @@ public class AseTestBridge {
      */
     public void exitMonitor() {
         scheduler.exitMonitor();
+    }
+    
+    public static synchronized void incNumUIBlocks() {
+        numUIBlocks ++;
+    }
+    
+    public static synchronized void decNumUIBlocks() {
+        numUIBlocks --;
+    }
+    
+    public static synchronized int getNumUIBlocks() {
+        return numUIBlocks;
+    }
+    
+    public static void resumeMainActivity(){
+        String packageName = context.getPackageName();
+        Intent i = context.getPackageManager().getLaunchIntentForPackage(packageName);
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        context.startActivity(i);
     }
 
 }

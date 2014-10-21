@@ -4,11 +4,10 @@ import android.content.Context;
 import android.view.View;
 
 public class RepeatingScheduler implements Scheduler {
-    private static SchedulerRunnable sch;
+    private static RepeatingSchedulerRunnable sch;
 
-    public RepeatingScheduler(int delays, int inputs, Context context, View view) {
-        sch = new SchedulerRunnable(delays, inputs, context); // to perform
-                                                              // scheduling
+    public RepeatingScheduler(int delays, Context context, View view) {
+        sch = new RepeatingSchedulerRunnable(delays, context); 
     }
 
     @Override
@@ -38,5 +37,10 @@ public class RepeatingScheduler implements Scheduler {
 
     public void exitMonitor() {
         sch.exitMonitor();
+    }
+
+    @Override
+    public void sendThreadInfo() {
+        sch.sendThreadInfo();      
     }
 }
