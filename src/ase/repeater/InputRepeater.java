@@ -84,9 +84,14 @@ public class InputRepeater implements Runnable {
     }
 
 
+    public void reset(){
+        inputsToGo=eventList.size();
+        inputsDispatched = 0;
+    }
+    
     // no possible race on inputsToGo
     // scheduler thread calls it mutually exclusively
-    public synchronized boolean hasMoreInputs() {
+    public boolean hasMoreInputs() {
         return inputsToGo > 0;
     }
 }

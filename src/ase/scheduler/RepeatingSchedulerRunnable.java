@@ -20,8 +20,7 @@ public class RepeatingSchedulerRunnable implements Runnable {
     private ThreadData schedulerThreadData = new ThreadData(ThreadData.SCHEDULER_ID, null);
     private DelaySequence delaySeq;
     private InputRepeater inputRepeater;
-    // event list will be read once and be fed into each inputRepeater
-    private List<AseEvent> eventsToRepeat;
+    
     
     // Thread id of the currently scheduled thread
     private static long scheduled = 0L;
@@ -33,10 +32,10 @@ public class RepeatingSchedulerRunnable implements Runnable {
 
     public RepeatingSchedulerRunnable(int numDelays, Context context) {
         appContext = context;
-     
+        // event list will be read once and be fed into each inputRepeater
         Reader reader = IOFactory.getReader(context);
-        eventsToRepeat = reader.read();
-        
+        List<AseEvent> eventsToRepeat = reader.read();
+        inputRepeater = new InputRepeater(appContext, eventsToRepeat);        
         // use numInputs to generate the delay sequences
         delaySeq = new DelaySequence(numDelays, eventsToRepeat.size());
     }
@@ -76,7 +75,7 @@ public class RepeatingSchedulerRunnable implements Runnable {
      * Reset single test parameters
      */
     public void initiateSingleTest() {
-        inputRepeater = new InputRepeater(appContext, eventsToRepeat);
+        inputRepeater.reset();
         Thread inputThread = new Thread(inputRepeater);
         inputThread.setName("InputRepeater");
         inputThread.start();        
