@@ -86,10 +86,7 @@ public class AseTestBridge {
 
     public static void setFragmentViewTraverser(View rootView) {
         if (mode == SchedulerMode.RECORD) {
-            ViewTraverser.setRootView(rootView);
             ViewTraverser.traverseViewIds(rootView);
-        } else if (mode == SchedulerMode.REPEAT) {
-            ViewTraverser.setRootView(rootView);
         }
     }
 
