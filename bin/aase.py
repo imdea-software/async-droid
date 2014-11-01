@@ -22,7 +22,6 @@ def err(msg):
   sys.exit()
 
 def command(cmd, get_output=True):
-  cs = cmd.split()
   if options.debug:
     print "[call] %s" % cmd
   if get_output:
