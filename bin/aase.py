@@ -1,10 +1,5 @@
 #!/usr/bin/env python
 
-NAME = 'Android App Schedule Enumerator'
-VERSION = '0.1'
-DESCRIPTION = NAME + ' version ' + VERSION
-options = []
-
 import argparse
 import os.path
 import re
@@ -12,62 +7,76 @@ import subprocess
 import sys
 import time
 
+NAME = 'Android App Schedule Enumerator'
+VERSION = '0.1'
+DESCRIPTION = NAME + ' version ' + VERSION
+REPLAY_FILE = "events.trc"
+
+options = []
+
+def warn(msg):
+  print "[warning] %s" % msg
+  
+def err(msg):
+  print "[error] %s" % msg
+  sys.exit()
+
+def command(cmd, get_output=True):
+  cs = cmd.split()
+  if options.debug:
+    print "[call] %s" % cmd
+  if get_output:
+    return subprocess.check_output(cmd.split())
+  else:
+    return subprocess.call(cmd.split(), stdout=open(os.devnull,'w'), stderr=subprocess.STDOUT) == 0
+
+def adb(cmd, *args):
+  return command("adb %s" % cmd, *args)
+  
+def aapt(cmd, *args):
+  return command("aapt %s" % cmd, *args)
+
 def package_name(app_path):
-  m = re.search(r'package: name=\'([^\']*)\'',
-    subprocess.check_output(["aapt", "dump", "badging", app_path]))
+  m = re.search(r'package: name=\'([^\']*)\'', aapt("dump badging %s" % app_path))
   if m: return m.group(1)
-  else: sys.exit("Could not find package name for " + app_path + ".")
+  else: err("Could not find package name for " + app_path + ".")
 
 def launchable_activity(app_path):
-  m = re.search(r'launchable-activity: name=\'([^\']*)\'',
-    subprocess.check_output(["aapt", "dump", "badging", app_path]))
+  m = re.search(r'launchable-activity: name=\'([^\']*)\'', aapt("dump badging %s" % app_path))
   if m: return m.group(1)
-  else: sys.exit("Could not find launchable acitvity for " + app_path + ".")
+  else: err("Could not find launchable acitvity for " + app_path + ".")
 
 def device_is_running():
-  return subprocess.call(["adb", "shell", "echo"],
-    stdout=open(os.devnull,'w'), stderr=subprocess.STDOUT) == 0
+  return adb("shell echo", False)
 
 def app_is_installed(app_name):
-  return "package:" in subprocess.check_output(["adb", "shell", "pm", "list", "packages", app_name])
+  return "package:" in adb("shell pm list packages %s" % app_name)
 
 def app_is_running(app_name):
-  return app_name in subprocess.check_output(["adb", "shell", "ps"])
+  return app_name in adb("shell ps")
 
 def recording_exists(app_name):
-  return "No such file" not in subprocess.check_output(["adb", "shell", "ls", "/data/data/%s/files/events.trc" % app_name])
+  return "No such file" not in adb("shell ls /data/data/%s/files/%s" % (app_name, REPLAY_FILE))
 
 def install(app_name, app_path):
   print "Installing", app_name
-  cmd = ["adb", "install", app_path]
-  if options.debug: print "CALLING", " ".join(cmd)
-  subprocess.call(cmd, stdout=open(os.devnull,'w'), stderr=subprocess.STDOUT)
+  adb("install %s" % app_path, False)
 
 def uninstall(app_name):
   print "Uninstalling", app_name
-  cmd = ["adb", "shell", "pm", "uninstall", app_name]
-  if options.debug: print "CALLING", " ".join(cmd)
-  subprocess.call(cmd, stdout=open(os.devnull,'w'), stderr=subprocess.STDOUT)
+  adb("shell pm uninstall %s" % app_name)
 
 def start(app_name, activity, *args):
   print "Starting", app_name
-  cmd = ["adb", "shell", "am", "start"]
-  for a in args:
-    cmd += ["-e"]
-    cmd += a.split()
-  cmd += [app_name + "/" + activity]
-  if options.debug: print "CALLING", " ".join(cmd)
-  subprocess.call(cmd, stdout=open(os.devnull,'w'), stderr=subprocess.STDOUT)
+  adb("shell am start %s %s/%s" % (" ".join(map(lambda x: "-e " + x, args)), app_name, activity))
 
 def stop(app_name):
   print "Stopping", app_name
-  cmd = ["adb", "shell", "am", "force-stop", app_name]
-  if options.debug: print "CALLING", " ".join(cmd)
-  subprocess.call(cmd, stdout=open(os.devnull,'w'), stderr=subprocess.STDOUT)
+  adb("shell am force-stop %s" % app_name)
 
 def start_up(app_path, *args):
   if not device_is_running():
-    sys.exit("Device is not running.")
+    err("Device is not running.")
 
   app_name = package_name(app_path)
   activity = launchable_activity(app_path)
@@ -107,14 +116,14 @@ def do_replay():
     wait_for_close(app_name)
     print "Replay completed."
   else:
-    print "Warning: the replayer did not find a recording."
+    warn("The replayer did not find a recording.")
   tear_down(app_name, options.uninstall)
 
 def validate_apk_file(f):
   if os.path.exists(f) and os.path.splitext(f)[1] == '.apk':
     return f
   else:
-    sys.exit("Expected the path to an Android app's APK file.")
+    err("Expected the path to an Android app's APK file.")
 
 def aase_parser():
   p = argparse.ArgumentParser(description=DESCRIPTION)
