@@ -106,7 +106,7 @@ def do_record():
   print "Running %s in record mode." % app_name
   wait_for_close(app_name)
   print "Recording completed."
-  tear_down(app_name, options.uninstall)
+  tear_down(app_name, options.uninstall and options.mode == 'record')
 
 def do_replay():
   # TODO why can't `mode replay` have a default `numDelays` argument?
@@ -125,7 +125,7 @@ def validate_apk_file(f):
   else:
     err("Expected the path to an Android app's APK file.")
 
-def aase_parser():
+def parser():
   p = argparse.ArgumentParser(description=DESCRIPTION)
 
   p.add_argument('--version', action='version', version=DESCRIPTION)
@@ -139,12 +139,12 @@ def aase_parser():
     help='the APK file of an Android app')
 
   p.add_argument('--record',
-    dest='mode', action='store_const', const='record', default='record',
-    help='run the app in record mode (default)')
+    dest='mode', action='store_const', const='record',
+    help='run the app in record-only mode')
 
   p.add_argument('--replay',
     dest='mode', action='store_const', const='replay',
-    help='run the app in replay mode')
+    help='run the app in replay-only mode')
 
   p.add_argument('--delays',
     dest='delays', metavar='K', type=int, default=0,
@@ -157,10 +157,6 @@ def aase_parser():
   return p
 
 if __name__ == '__main__':
-  options = aase_parser().parse_args()
-
-  if options.mode == 'replay':
-    do_replay()
-
-  else:
-    do_record()
+  options = parser().parse_args()
+  if options.mode != 'replay': do_record()
+  if options.mode != 'record': do_replay()
