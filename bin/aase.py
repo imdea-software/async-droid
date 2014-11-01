@@ -10,6 +10,7 @@ import os.path
 import re
 import subprocess
 import sys
+import time
 
 def package_name(app_path):
   m = re.search(r'package: name=\'([^\']*)\'',
@@ -33,6 +34,9 @@ def app_is_installed(app_name):
 def app_is_running(app_name):
   return app_name in subprocess.check_output(["adb", "shell", "ps"])
 
+def recording_exists(app_name):
+  return "No such file" not in subprocess.check_output(["adb", "shell", "ls", "/data/data/%s/files/events.trc" % app_name])
+
 def install(app_name, app_path):
   print "Installing", app_name
   cmd = ["adb", "install", app_path]
@@ -47,10 +51,11 @@ def uninstall(app_name):
 
 def start(app_name, activity, *args):
   print "Starting", app_name
-  cmd = ["adb", "shell", "am", "start", app_name + "/" + activity]
+  cmd = ["adb", "shell", "am", "start"]
   for a in args:
     cmd += ["-e"]
     cmd += a.split()
+  cmd += [app_name + "/" + activity]
   if options.debug: print "CALLING", " ".join(cmd)
   subprocess.call(cmd, stdout=open(os.devnull,'w'), stderr=subprocess.STDOUT)
 
@@ -75,26 +80,35 @@ def start_up(app_path, *args):
 
   return app_name
 
-def tear_down(app_name):
+def wait_for_close(app_name):
+  while app_is_running(app_name):
+    time.sleep(1)
+
+def tear_down(app_name, do_uninstall=False):
   if app_is_running(app_name):
     stop(app_name)
 
-  if app_is_installed(app_name):
+  if app_is_installed(app_name) and do_uninstall:
     uninstall(app_name)
 
-def do_record(app_path):
-  app_name = start_up(app_path, "mode record")
+def do_record():
+  # TODO why does `mode record` require the `numDelays` argument?
+  app_name = start_up(options.apkfile, "mode record", "numDelays 0")
+  print "Running %s in record mode." % app_name
+  wait_for_close(app_name)
+  print "Recording completed."
+  tear_down(app_name, options.uninstall)
 
-  # TODO the recording...
-
-  tear_down(app_name)
-
-def do_replay(app_path, num_delays):
-  app_name = start_up(app_path, "mode replay", "numDelays 2")
-
-  # TODO the replaying...
-
-  tear_down(app_name)
+def do_replay():
+  # TODO why can't `mode replay` have a default `numDelays` argument?
+  app_name = start_up(options.apkfile, "mode replay", "numDelays %d" % options.delays)
+  print "Running %s in replay mode." % app_name
+  if recording_exists(app_name):
+    wait_for_close(app_name)
+    print "Replay completed."
+  else:
+    print "Warning: the replayer did not find a recording."
+  tear_down(app_name, options.uninstall)
 
 def validate_apk_file(f):
   if os.path.exists(f) and os.path.splitext(f)[1] == '.apk':
@@ -127,15 +141,17 @@ def aase_parser():
     dest='delays', metavar='K', type=int, default=0,
     help='number of scheduler delays')
 
+  p.add_argument('--uninstall',
+    dest='uninstall', action='store_true', default=False,
+    help='uninstall the app after running')
+
   return p
 
 if __name__ == '__main__':
   options = aase_parser().parse_args()
 
-  print "Running %s on %s in %s-mode" % (NAME, options.apkfile, options.mode)
-
   if options.mode == 'replay':
-    do_replay(options.apkfile, options.delays)
+    do_replay()
 
   else:
-    do_record(options.apkfile)
+    do_record()
