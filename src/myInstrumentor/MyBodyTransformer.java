@@ -1,5 +1,6 @@
 package myInstrumentor;
 
+
 import java.util.Iterator;
 import java.util.Map;
 
@@ -14,6 +15,7 @@ import soot.SootClass;
 import soot.SootMethod;
 import soot.Transform;
 import soot.Unit;
+import soot.Value;
 import soot.jimple.AbstractStmtSwitch;
 import soot.jimple.EnterMonitorStmt;
 import soot.jimple.ExitMonitorStmt;
@@ -22,17 +24,14 @@ import soot.jimple.Jimple;
 import soot.jimple.RetStmt;
 import soot.jimple.ReturnStmt;
 import soot.jimple.ReturnVoidStmt;
-import soot.jimple.ThisRef;
-import soot.jimple.StaticInvokeExpr;
-import soot.jimple.VirtualInvokeExpr;
 
 public class MyBodyTransformer extends BodyTransformer {
 
-    static SootClass schedulerClass;
-    static SootMethod initiateScheduler, waitMyTurn, notifyScheduler, enterMonitor, exitMonitor;
+    static SootClass aseTestBridgeClass;
+    static SootMethod initiateScheduler, waitMyTurn, notifyScheduler, enterMonitor, exitMonitor, incNumUIBlocks, decNumUIBlocks;
+    static SootMethod setActivityViewTraverser, setFragmentViewTraverser;
 
     static SootClass activityClass;
-    static SootMethod getApplicationContextMethod;
 
     public static void main(String[] args) {
         // args[0]: directory from which to process classes
@@ -52,18 +51,21 @@ public class MyBodyTransformer extends BodyTransformer {
     }
 
     static void init() {
-        if (schedulerClass != null)
+        if (aseTestBridgeClass != null)
             return;
 
-        schedulerClass = Scene.v().getSootClass("myScheduler.MyScheduler");
-        initiateScheduler = schedulerClass.getMethod("void initiateScheduler(android.content.Context)");
-        waitMyTurn = schedulerClass.getMethod("void waitMyTurn()");
-        notifyScheduler = schedulerClass.getMethod("void notifyScheduler()");
-        enterMonitor = schedulerClass.getMethod("void enterMonitor()");
-        exitMonitor = schedulerClass.getMethod("void exitMonitor()");
-
+        aseTestBridgeClass = Scene.v().getSootClass("ase.AseTestBridge");
+        initiateScheduler = aseTestBridgeClass.getMethod("void initiateScheduler(android.app.Activity)");
+        waitMyTurn = aseTestBridgeClass.getMethod("void waitMyTurn()");
+        notifyScheduler = aseTestBridgeClass.getMethod("void notifyScheduler()");
+        enterMonitor = aseTestBridgeClass.getMethod("void enterMonitor()");
+        exitMonitor = aseTestBridgeClass.getMethod("void exitMonitor()");
+        incNumUIBlocks = aseTestBridgeClass.getMethod("void incNumUIBlocks()");
+        decNumUIBlocks = aseTestBridgeClass.getMethod("void decNumUIBlocks()");
+        setActivityViewTraverser = aseTestBridgeClass.getMethod("void setActivityViewTraverser(android.app.Activity)");
+        setFragmentViewTraverser = aseTestBridgeClass.getMethod("void setFragmentViewTraverser(android.view.View)");
+        
         activityClass = Scene.v().getSootClass("android.app.Activity");
-        getApplicationContextMethod = Scene.v().getMethod("<android.content.ContextWrapper: android.content.Context getApplicationContext()>");
     }
 
     @Override
@@ -75,29 +77,33 @@ public class MyBodyTransformer extends BodyTransformer {
         String className = b.getMethod().getDeclaringClass().toString();
         String methodName = b.getMethod().getName();
 
-        if (className.startsWith("myScheduler.")) {
+        if (className.startsWith("ase.")) {
 
         } else if (className.startsWith("android.support")) {
 
         } else if (methodName.equals("onCreate")) {
             instrumentOnCreateMethod(b);
-        
-        // TODO: If parent is pure Thread, then detect loop and instrument
-        // beginning and the end of the loop runnables posted to a looper
-        // thread by post, postAtFrontOfQueue, postAtTime, postDelayed
-        // or sent to UI thread by runOnUIThread
+            
+        } else if (methodName.equals("onCreateView")) {
+            instrumentOnCreateViewMethod(b);
+            
+        } else if (methodName.equals("doInBackground")) {
+            instrumentDoInBackgMethod(b);
 
         } else if (methodName.equals("run") ||
                    methodName.equals("handleMessage") ||
-                   methodName.equals("onPreExecute") ||
                    methodName.equals("onPostExecute") ||
-                   methodName.equals("onProgressUpdate") ||
-                   methodName.equals("doInBackground")) {
+                   methodName.equals("onProgressUpdate")) {
 
             System.out.println("===========Instrumenting " + methodName + "..");
             instrumentMethod(b);
 
-        } else if (b.getMethod().getDeclaringClass().getSuperclass().toString().equals("android.app.Activity") &&
+        } 
+
+        // No need to instrument input event handlers any more!
+        // The execution order of input event handlers are controlled in blocks
+        // that call callOnClick methods for events (posted to UI thread by InputRepeater)
+        /*else if (b.getMethod().getDeclaringClass().getSuperclass().toString().equals("android.app.Activity") &&
                 !activityClass.declaresMethod(b.getMethod().getNumberedSubSignature()) ){
 
             // if a method in an Activity class is defined by user, synchronize 
@@ -105,10 +111,39 @@ public class MyBodyTransformer extends BodyTransformer {
             // when a UI event is received)
             System.out.println("===========Instrumenting a user defined method: " + b.getMethod());
             instrumentMethod(b);
+        }*/
+    }
+
+    /**
+     * Adds a statement to initiate ase scheduler
+     * Also adds a call to setActivityViewTraverser 
+     * to set root view of the app and traverse the views in the activity layout
+     */
+    void instrumentOnCreateMethod(final Body b) {
+        final PatchingChain<Unit> units = b.getUnits();
+        Iterator<Unit> iter = units.snapshotIterator();
+
+        while (iter.hasNext()) {
+            Unit u = iter.next();
+            u.apply(new AbstractStmtSwitch() {
+
+                public void caseReturnVoidStmt(ReturnVoidStmt stmt) {
+                    units.insertBefore(staticInvocation(initiateScheduler, b.getThisLocal()), stmt);
+                    System.out.println("===========Initiate Scheduler stmt added..");
+                        
+                    units.insertBefore(staticInvocation(setActivityViewTraverser, b.getThisLocal()), stmt);
+                    System.out.println("===========ActivityViewTraversal stmt added..");
+                }
+
+            });
         }
     }
 
-    void instrumentOnCreateMethod(final Body b) {
+    /**
+     * Adds call to setFragmentViewTraverser to traverse the views in fragment view
+     * to enable record/replay
+     */
+    void instrumentOnCreateViewMethod(final Body b) {
         final PatchingChain<Unit> units = b.getUnits();
         Iterator<Unit> iter = units.snapshotIterator();
 
@@ -116,26 +151,89 @@ public class MyBodyTransformer extends BodyTransformer {
 
             iter.next().apply(new AbstractStmtSwitch() {
 
-                public void caseInvokeStmt(InvokeStmt stmt) {
-                    if (stmt.getInvokeExpr().getMethod().getSignature().equals("<android.app.Activity: void onCreate(android.os.Bundle)>")) {
+                public void caseReturnStmt(ReturnStmt stmt) {
+                    
+                    //read to-be-returned value
+                    Value returnedView = stmt.getOpBox().getValue();
+                    // stmt.getReturnExpr().getArg(0);
+                    // insert call to setFragmentViewTraverser
+                    units.insertBefore(staticInvocation(setFragmentViewTraverser, returnedView), stmt);
+                    System.out.println("===========FragmentViewTraversal stmt added..");
 
-                        // get application context:
-                        Local context = createLocal(b, "ctx", "android.content.Context");
+                }
+            });
+        }
+    }
+    
+    /**
+     * Execution of that method is controlled by ase.scheduler
+     * (its code is executed in between waitMyTurn() and notifyScheduler())
+     * It also increases numUIBlocks when:
+     *  - it publishes progress (onPublishProgress will be executed on UI thread) or
+     *  - it returns (onPostExecute will be executed on UI thread
+     */
+    void instrumentDoInBackgMethod(final Body b) {
+        final PatchingChain<Unit> units = b.getUnits();
+        Iterator<Unit> iter = units.snapshotIterator();
 
-                        // initiate scheduler with the application context
-                        units.insertAfter(staticInvocation(initiateScheduler,context), stmt);
-                        units.insertAfter(
-                            Jimple.v().newAssignStmt(context,
-                                Jimple.v().newVirtualInvokeExpr(b.getThisLocal(),
-                                    getApplicationContextMethod.makeRef())),
-                            stmt);
-                        System.out.println("===========Initiate Scheduler stmt added..");
+        if(!iter.hasNext())
+            return;
+        
+        Unit u = iter.next();
+        units.insertAfter(staticInvocation(waitMyTurn), u);
+        System.out.println("Wait for CPU stmt added..");
+
+        while (iter.hasNext()) {
+            u = iter.next();
+            u.apply(new AbstractStmtSwitch() {
+
+                // increment numUIBlocks if 
+                // it published progress (posts onPublishProgress) or returns (posts onPostExecute)
+                /*public void caseInvokeStmt(InvokeStmt stmt) {                  
+                    if (stmt.getInvokeExpr().getMethod().getName().equals("publishProgress")){
+                        units.insertAfter(staticInvocation(incNumUIBlocks), stmt);
+                        System.out.println("Increment numUIBlocks stmt added after publishProgress..");
                     }
+                }*/
+                
+                public void caseReturnVoidStmt(ReturnVoidStmt stmt) {
+                    //units.insertBefore(staticInvocation(incNumUIBlocks), stmt);
+                    //System.out.println("Increment numUIBlocks stmt added after doInBackGround..");
+                    units.insertBefore(staticInvocation(notifyScheduler), stmt);
+                    System.out.println("Release CPU stmt added..");
+                }
+                
+                public void caseReturnStmt(ReturnStmt stmt) {
+                    //units.insertBefore(staticInvocation(incNumUIBlocks), stmt);
+                    //System.out.println("Increment numUIBlocks stmt added after doInBackGround..");
+                    units.insertBefore(staticInvocation(notifyScheduler), stmt);
+                    System.out.println("Release CPU stmt added..");
+                }
+                
+                public void caseRetStmt(RetStmt stmt) {
+                    //units.insertBefore(staticInvocation(incNumUIBlocks), stmt);
+                    //System.out.println("Increment numUIBlocks stmt added after doInBackGround..");
+                    units.insertBefore(staticInvocation(notifyScheduler), stmt);
+                    System.out.println("Release CPU stmt added..");
+                }
+                
+                public void caseEnterMonitorStmt(EnterMonitorStmt stmt){
+                    units.insertAfter(staticInvocation(enterMonitor), stmt);
+                    System.out.println("Enter monitor stmt added..");
+                }
+                
+                public void caseExitMonitorStmt(ExitMonitorStmt stmt){
+                    units.insertAfter(staticInvocation(exitMonitor), stmt);
+                    System.out.println("Exit monitor stmt added..");
                 }
             });
         }
     }
 
+    /**
+     * Execution of that method is controlled by ase.scheduler
+     * (its code is executed in between waitMyTurn() and notifyScheduler())
+     */
     void instrumentMethod(final Body b){
         final PatchingChain<Unit> units = b.getUnits();
         Iterator<Unit> iter = units.snapshotIterator();
@@ -185,11 +283,21 @@ public class MyBodyTransformer extends BodyTransformer {
         return l;
     }
 
+    static Local createLocal(Body body, String name, RefType type) {
+        Local l = Jimple.v().newLocal(name, type);
+        body.getLocals().add(l);
+        return l;
+    } 
+
     static InvokeStmt staticInvocation(SootMethod m) {
         return Jimple.v().newInvokeStmt(Jimple.v().newStaticInvokeExpr(m.makeRef()));
     }
 
     static InvokeStmt staticInvocation(SootMethod m, Local arg) {
+        return Jimple.v().newInvokeStmt(Jimple.v().newStaticInvokeExpr(m.makeRef(),arg));
+    }
+    
+    static InvokeStmt staticInvocation(SootMethod m, Value arg) {
         return Jimple.v().newInvokeStmt(Jimple.v().newStaticInvokeExpr(m.makeRef(),arg));
     }
 }

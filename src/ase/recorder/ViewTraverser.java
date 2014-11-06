@@ -17,6 +17,7 @@ public class ViewTraverser {
 
     public static void setRootView(View view) {
         CURRENT_ROOT_VIEW = view;
+        Log.i("Press", "" + view.toString());
     }
 
     public static View traverseViewIds(View view) {

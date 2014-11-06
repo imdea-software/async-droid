@@ -39,7 +39,6 @@ public class InputRepeater implements Runnable {
         Log.i("Repeater", "In thread: " + Thread.currentThread().getName()
                 + " " + Thread.currentThread().getId());
         
-        AseTestBridge.sendThreadInfo();
         Log.i("Repeater", "Repeating inputs.");
         if (eventList.isEmpty()) {
             Log.i("Repeater", "No events to repeat.");
@@ -54,7 +53,7 @@ public class InputRepeater implements Runnable {
             AseTestBridge.notifyScheduler();
         }
         
-        Log.i("Repeater", "Completed inputs.");
+        Log.i("Repeater", "Completed posting inputs.");
     }
     
     // for now, only clicks
@@ -74,7 +73,8 @@ public class InputRepeater implements Runnable {
                 }
           
                 // counter provides invoking the events in order
-                inputsDispatched ++;
+                incrementInputsDispatched();
+                
                 view.callOnClick();
                 Log.i("Repeater", "Clicked view: " + Integer.toHexString(view.getId()));
 
@@ -83,6 +83,9 @@ public class InputRepeater implements Runnable {
         });
     }
 
+    public void incrementInputsDispatched(){
+        inputsDispatched ++;
+    }
 
     public void reset(){
         inputsToGo=eventList.size();

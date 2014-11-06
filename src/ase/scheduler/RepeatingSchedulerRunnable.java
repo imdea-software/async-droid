@@ -4,6 +4,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import android.content.Context;
+import android.os.Process;
 import android.util.Log;
 import ase.AseEvent;
 import ase.AseTestBridge;
@@ -51,7 +52,7 @@ public class RepeatingSchedulerRunnable implements Runnable {
         boolean moreTests = true;
 
         while (moreTests) {
-            AseTestBridge.resumeMainActivity();
+//            AseTestBridge.launchMainActivity();
             Log.i("DelayInfo", "Current delay indices:" + delaySeq.toString());
 
             // run a single test with a sequence of delay indices
@@ -62,12 +63,12 @@ public class RepeatingSchedulerRunnable implements Runnable {
             // end of current test, get new delay indices
             Log.i("DelayInfo", "Updating delay indices for next test..");
             moreTests = delaySeq.getNextDelaySequence(); // ///// returns false when ended
-            AseTestBridge.resumeMainActivity();
+            AseTestBridge.launchMainActivity();
         }
 
         Log.i("MyScheduler", "All tests has completed.");
         Log.i("DelayInfo", "All tests has completed.");
-   
+        
         return;
     }
 
@@ -80,7 +81,10 @@ public class RepeatingSchedulerRunnable implements Runnable {
         inputThread.setName("InputRepeater");
         inputThread.start();        
         segmentToProcess = 1; 
-        threads.clear();
+        threads.clear();  // If comes after InputRepeater is registered, problematic!!!
+        sendThreadInfo(inputThread); // Register this before scheduler runs since it may wait earlier
+        // (initiation of myScheduler by UIthread, that waits when click)
+        // (InputRepeater immediately wants to be scheduled, it needs to be in the list)
     }
 
     /*
@@ -95,8 +99,8 @@ public class RepeatingSchedulerRunnable implements Runnable {
             threads.increaseWalker();
             
             ThreadData current = threads.getCurrentThread();
-            Log.v("MyScheduler", threads.toString());
-            Log.v("MyScheduler", "Current: " + current.getName() + " Walker Index: " + threads.getWalkerIndex());
+            Log.v("Scheduled", threads.toString());
+            Log.v("Scheduled", "Current: " + current.getName() + " Walker Index: " + threads.getWalkerIndex());
             
             if(okToSchedule(current)){
                 // check whether the thread will be delayed

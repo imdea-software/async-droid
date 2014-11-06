@@ -11,6 +11,8 @@ import ase.scheduler.RecordingScheduler;
 import ase.scheduler.NopScheduler;
 import ase.scheduler.RepeatingScheduler;
 import ase.scheduler.Scheduler;
+import ase.scheduler.SchedulerData;
+
 
 /*
  *  static interface class between the scheduler and the app under test
@@ -22,55 +24,64 @@ public class AseTestBridge {
     };
 
     private static Scheduler scheduler;
+    private static SchedulerData schedulerData;
     private static SchedulerMode mode;
     private static boolean initiated = false;
     
     // application context to be used in utils and the scheduler
     private static Context context;
-    
-    // UI blocks inserted by inputRepeater, onPublishProgress or onPostExecute
-    // keeps track of UI thread status
-    private static int numUIBlocks = 0;
+   
 
     /*
      * called by UI thread with the application context
      */
     public static void initiateScheduler(Activity act) {
         if (!initiated) {
-            setTestParameters(act);
-            scheduler.runScheduler();
             initiated = true;
+            schedulerData = new SchedulerData();
+            setTestParameters(act);
+            scheduler.runScheduler();  
         }
     }
 
-    /*
-     * set the number of delays and inputs
+    /**
+     * Sets the scheduler mode and number of delays
+     * Also sets the application context 
+     * to be used to relaunch mainActivity after each test case
      */
     private static void setTestParameters(Activity act) {
-        context = act.getApplicationContext(); // used to resume main activity
-        
-        int numDelays = 0;
-        String smode = null;
+        context = act.getApplicationContext(); 
+
         Intent intent = act.getIntent();
         Bundle bundle = intent.getExtras();
-        if (bundle != null) {
-            smode = bundle.getString("mode");
-            numDelays = Integer.parseInt(bundle.getString("numDelays"));
+        
+        if (intent.hasExtra("mode")) {
+            String smode = bundle.getString("mode");
+            
+            if (smode.equalsIgnoreCase("record")) {
+                mode = SchedulerMode.RECORD;
+                Log.i("MyScheduler", "Running in record mode");
+                scheduler = new RecordingScheduler(act);
+                return;
+            }
+            if ((smode.equalsIgnoreCase("repeat") || smode.equalsIgnoreCase("replay"))) {
+                mode = SchedulerMode.REPEAT;
+                int numDelays = 0;
+                if (intent.hasExtra("numDelays")) {
+                    numDelays = Integer.parseInt(bundle.getString("numDelays"));
+                    Log.i("MyScheduler", "Running in repeat mode with delay bound " + numDelays);
+                } else {
+                    Log.i("MyScheduler", "Running in repeat mode with delay bound 0 (default setting)");
+                }
+                scheduler = new RepeatingScheduler(numDelays, act.getApplicationContext(), act.getWindow().getDecorView().getRootView());
+                return;
+            }
+            Log.i("MyScheduler", "Scheduler mode cannot be identified.");
         }
-        Log.i("MyScheduler", String.format("Parameters: mode: %s numDelays: %d", smode, numDelays));
-        if (smode != null && smode.equalsIgnoreCase("record")) {
-            mode = SchedulerMode.RECORD;
-            Log.i("MyScheduler", "Running in record mode");
-            scheduler = new RecordingScheduler(act);
-        } else if (smode != null && (smode.equalsIgnoreCase("repeat") || smode.equalsIgnoreCase("replay"))) {
-            mode = SchedulerMode.REPEAT;
-            Log.i("MyScheduler", "Running in repeat mode");
-            scheduler = new RepeatingScheduler(numDelays, act.getApplicationContext(), act.getWindow().getDecorView().getRootView());
-        } else {
-            mode = SchedulerMode.NOP;
-            Log.i("MyScheduler", "No Scheduler is used");
-            scheduler = new NopScheduler();
-        }
+         
+        mode = SchedulerMode.NOP;
+        Log.i("MyScheduler", "No Scheduler is used");
+        scheduler = new NopScheduler();   
     }
 
     public static void setActivityViewTraverser(Activity act) {
@@ -111,6 +122,7 @@ public class AseTestBridge {
     public static void yield() {
         scheduler.yield();
     }
+    
 
     /*
      * application thread notify scheduler when they are completed
@@ -122,30 +134,32 @@ public class AseTestBridge {
     /*
      * application thread enters in a monitor
      */
-    public void enterMonitor() {
+    public static void enterMonitor() {
         scheduler.enterMonitor();
     }
 
     /*
      * application thread exits a monitor
      */
-    public void exitMonitor() {
+    public static void exitMonitor() {
         scheduler.exitMonitor();
     }
     
-    public static synchronized void incNumUIBlocks() {
-        numUIBlocks ++;
+    public static void incNumUIBlocks() {
+        Log.v("MyScheduler", "Incremented numUIBlocks by: " + Thread.currentThread().getName());
+        schedulerData.incNumUIBlocks();
     }
     
-    public static synchronized void decNumUIBlocks() {
-        numUIBlocks --;
+    public static void decNumUIBlocks() {
+        Log.v("MyScheduler", "Decremented numUIBlocks by: " + Thread.currentThread().getName());
+        schedulerData.decNumUIBlocks();
     }
     
-    public static synchronized int getNumUIBlocks() {
-        return numUIBlocks;
+    public static int getNumUIBlocks() {
+        return schedulerData.getNumUIBlocks();
     }
     
-    public static void resumeMainActivity(){
+    public static void launchMainActivity() {
         String packageName = context.getPackageName();
         Intent i = context.getPackageManager().getLaunchIntentForPackage(packageName);
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
