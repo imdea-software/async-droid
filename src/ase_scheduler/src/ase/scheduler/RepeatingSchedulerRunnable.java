@@ -68,8 +68,6 @@ public class RepeatingSchedulerRunnable implements Runnable {
 
         Log.i("MyScheduler", "All tests has completed.");
         Log.i("DelayInfo", "All tests has completed.");
-        
-        return;
     }
 
     /*

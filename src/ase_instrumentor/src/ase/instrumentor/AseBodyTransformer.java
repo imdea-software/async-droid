@@ -1,4 +1,4 @@
-package myInstrumentor;
+package ase.instrumentor;
 
 
 import java.util.Iterator;
@@ -25,20 +25,20 @@ import soot.jimple.RetStmt;
 import soot.jimple.ReturnStmt;
 import soot.jimple.ReturnVoidStmt;
 
-public class MyBodyTransformer extends BodyTransformer {
+public class AseBodyTransformer extends BodyTransformer {
 
-    static SootClass aseTestBridgeClass;
-    static SootMethod initiateScheduler, waitMyTurn, notifyScheduler, enterMonitor, exitMonitor, incNumUIBlocks, decNumUIBlocks;
-    static SootMethod setActivityViewTraverser, setFragmentViewTraverser;
+    private static SootClass aseTestBridgeClass;
+    private static SootMethod initiateScheduler, waitMyTurn, notifyScheduler, enterMonitor, exitMonitor, incNumUIBlocks, decNumUIBlocks;
+    private static SootMethod setActivityViewTraverser, setFragmentViewTraverser;
 
-    static SootClass activityClass;
+    private static SootClass activityClass;
 
     public static void main(String[] args) {
         // args[0]: directory from which to process classes
         // args[1]: path for finding the android.jar file
 
         PackManager.v().getPack("jtp").add(
-            new Transform("jtp.myInstrumenter", new MyBodyTransformer()));
+            new Transform("jtp.myInstrumenter", new AseBodyTransformer()));
 
         soot.Main.main(new String[]{
             "-debug",
@@ -50,7 +50,7 @@ public class MyBodyTransformer extends BodyTransformer {
         });
     }
 
-    static void init() {
+    private static void init() {
         if (aseTestBridgeClass != null)
             return;
 
@@ -78,9 +78,9 @@ public class MyBodyTransformer extends BodyTransformer {
         String methodName = b.getMethod().getName();
 
         if (className.startsWith("ase.")) {
-
+            // skip
         } else if (className.startsWith("android.support")) {
-
+            // skip
         } else if (methodName.equals("onCreate")) {
             instrumentOnCreateMethod(b);
             
@@ -119,7 +119,7 @@ public class MyBodyTransformer extends BodyTransformer {
      * Also adds a call to setActivityViewTraverser 
      * to set root view of the app and traverse the views in the activity layout
      */
-    void instrumentOnCreateMethod(final Body b) {
+    private void instrumentOnCreateMethod(final Body b) {
         final PatchingChain<Unit> units = b.getUnits();
         Iterator<Unit> iter = units.snapshotIterator();
 
@@ -143,7 +143,7 @@ public class MyBodyTransformer extends BodyTransformer {
      * Adds call to setFragmentViewTraverser to traverse the views in fragment view
      * to enable record/replay
      */
-    void instrumentOnCreateViewMethod(final Body b) {
+    private void instrumentOnCreateViewMethod(final Body b) {
         final PatchingChain<Unit> units = b.getUnits();
         Iterator<Unit> iter = units.snapshotIterator();
 
@@ -172,7 +172,7 @@ public class MyBodyTransformer extends BodyTransformer {
      *  - it publishes progress (onPublishProgress will be executed on UI thread) or
      *  - it returns (onPostExecute will be executed on UI thread
      */
-    void instrumentDoInBackgMethod(final Body b) {
+    private void instrumentDoInBackgMethod(final Body b) {
         final PatchingChain<Unit> units = b.getUnits();
         Iterator<Unit> iter = units.snapshotIterator();
 
@@ -234,7 +234,7 @@ public class MyBodyTransformer extends BodyTransformer {
      * Execution of that method is controlled by ase.scheduler
      * (its code is executed in between waitMyTurn() and notifyScheduler())
      */
-    void instrumentMethod(final Body b){
+    private void instrumentMethod(final Body b){
         final PatchingChain<Unit> units = b.getUnits();
         Iterator<Unit> iter = units.snapshotIterator();
 
@@ -277,27 +277,27 @@ public class MyBodyTransformer extends BodyTransformer {
         }
     }
 
-    static Local createLocal(Body body, String name, String type) {
+    private static Local createLocal(Body body, String name, String type) {
         Local l = Jimple.v().newLocal(name, RefType.v(type));
         body.getLocals().add(l);
         return l;
     }
 
-    static Local createLocal(Body body, String name, RefType type) {
+    private static Local createLocal(Body body, String name, RefType type) {
         Local l = Jimple.v().newLocal(name, type);
         body.getLocals().add(l);
         return l;
     } 
 
-    static InvokeStmt staticInvocation(SootMethod m) {
+    private static InvokeStmt staticInvocation(SootMethod m) {
         return Jimple.v().newInvokeStmt(Jimple.v().newStaticInvokeExpr(m.makeRef()));
     }
 
-    static InvokeStmt staticInvocation(SootMethod m, Local arg) {
+    private static InvokeStmt staticInvocation(SootMethod m, Local arg) {
         return Jimple.v().newInvokeStmt(Jimple.v().newStaticInvokeExpr(m.makeRef(),arg));
     }
     
-    static InvokeStmt staticInvocation(SootMethod m, Value arg) {
+    private static InvokeStmt staticInvocation(SootMethod m, Value arg) {
         return Jimple.v().newInvokeStmt(Jimple.v().newStaticInvokeExpr(m.makeRef(),arg));
     }
 }

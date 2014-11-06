@@ -37,8 +37,7 @@ public class ViewTraverser {
             ViewGroup group = (ViewGroup) view;
             for (int i = 0; i < group.getChildCount(); i++) {
                 View child = group.getChildAt(i);
-                Log.v("ViewLogger",
-                        "traversed: " + child.getClass().getSimpleName() + " "
+                Log.v("ViewLogger", "traversed: " + child.getClass().getSimpleName() + " "
                                 + Integer.toHexString(child.getId()));
 
                 // add listener to the traversed view
@@ -52,12 +51,4 @@ public class ViewTraverser {
             }
         }
     }
-
-    /*
-     * // initially send with 0, in recursion sent by incrementing spaces
-     * private static String padString(String str, int noOfSpaces) { if
-     * (noOfSpaces <= 0) { return str; } StringBuilder builder = new
-     * StringBuilder(str.length() + noOfSpaces); for (int i = 0; i < noOfSpaces;
-     * i++) { builder.append(' '); } return builder.append(str).toString(); }
-     */
 }

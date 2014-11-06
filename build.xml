@@ -16,48 +16,34 @@
     <isset property="env.ANDROID_API_VERSION" />
   </condition>
 
-  <fail unless="android.sdk">
-    Android SDK not found.
-    Make sure to either set the android.sdk property in local.properties,
-    or to set the ANDROID_HOME environment variable.
-  </fail>
-
-  <fail unless="android.api.version">
-    Android API version unknown.
-    Make sure to either set an android.api.version property in local.properties,
-    or to set the ANDROID_API_VERSION environment variable.
-  </fail>
-
   <fail message="Please make sure that aapt is in your system path">
     <condition>
       <not>
-            <available file="aapt" filepath="${env.PATH}"/> 
+        <available file="aapt" filepath="${env.PATH}"/> 
       </not>
     </condition>
   </fail>
  
-
   <fail message="Please make sure that android executable is in your system path">
     <condition>
       <not>
-            <available file="android" filepath="${env.PATH}"/> 
+        <available file="android" filepath="${env.PATH}"/> 
       </not>
     </condition>
   </fail>
-
 
   <property name="android.jar" location="${android.sdk}/platforms/android-${android.api.version}/android.jar"/>
 
   <basename property="app-name" file="${apk}" suffix=".apk"/>
 
-  <property name="src" location="src"/>
   <property name="lib" location="lib"/>
   <property name="bin" location="bin"/>
+
   <property name="build" location="build"/>
   <property name="output" location="logcatOutputs"/>
 
-  <property name="tester-app" location="tester-app"/>
-  <property name="tester-apk" location="${build}/TestApk.apk"/>
+  <property name="scheduler-home" location="src/ase_scheduler"/>
+  <property name="instrumentor-home" location="src/ase_instrumentor"/>
 
   <property name="key-alias" value="my_alias"/>
   <property name="key-store" value="${build}/my.keystore"/>
@@ -70,7 +56,10 @@
             targetfile="${build}/${app-name}.apk">
     <srcresources>
       <file file="${apk}"/>
-      <fileset dir="${src}">
+      <fileset dir="${instrumentor-home}/src">
+        <include name="**/*.java"/>
+      </fileset>
+      <fileset dir="${scheduler-home}/src">
         <include name="**/*.java"/>
       </fileset>
       <file file="${build}/instrumentor.jar"/>
@@ -78,37 +67,19 @@
     </srcresources>
   </uptodate>
 
-  <uptodate property="tester-apk-up-to-date"
-            targetfile="${tester-apk}">
-    <srcfiles dir="${tester-app}">
-      <exclude name="bin/**"/>
-      <exclude name="res/**"/>
-    </srcfiles>
-  </uptodate>
-
-  <target name="app" depends="instrument-app,compile-tester" if="apk"/>
+  <target name="app" depends="instrument-app" if="apk"/>
 
   <target name="compile">
-    <mkdir dir="${build}"/>
-    <javac srcdir="${src}" destdir="${build}" includeantruntime="false">
-      <classpath>
-        <pathelement path="${classpath}"/>
-        <pathelement path="${android.jar}"/>
-        <pathelement path="${lib}/dx.jar"/>
-        <pathelement path="${lib}/soot.jar"/>
-      </classpath>
-    </javac>
-    <jar destfile="${build}/scheduler.jar" basedir="${build}" includes="myScheduler/**"/>
-    <jar destfile="${build}/instrumentor.jar" basedir="${build}" includes="myInstrumentor/**">
-      <manifest>
-        <attribute name="Main-Class" value="myInstrumentor.MyBodyTransformer"/>
-      </manifest>
-    </jar>
-    <java jar="${lib}/dx.jar" fork="true">
-      <arg value="--dex"/>
-      <arg value="--output=${build}/scheduler.dex"/>
-      <arg value="${build}/scheduler.jar"/>
-    </java>
+    <antcall target="scheduler">
+      <param name="target" value="dex" />
+    </antcall>  
+    <antcall target="instrumentor">
+      <param name="target" value="compile" />
+    </antcall>
+
+    <!-- Copy to build directory -->
+    <copy file="${scheduler-home}/build/scheduler.dex" todir="${build}"/>
+    <copy file="${instrumentor-home}/build/instrumentor.jar" todir="${build}"/>
   </target>
 
   <target name="instrument-app" depends="compile,generate-keystore"
@@ -152,7 +123,7 @@
       <arg value="classes.dex"/>
     </exec>
     <delete dir="sootOutput"/>
-    <java classname="myInstrumentor.MyBodyTransformer">
+    <java classname="ase.instrumentor.AseBodyTransformer">
       <classpath>
         <pathelement path="${classpath}"/>
         <pathelement path="${android.jar}"/>
@@ -168,25 +139,6 @@
       alias="${key-alias}" keystore="${key-store}"
       storepass="${key-storepass}" keypass="${key-pass}"/>
     <echo message="Instrumented ${app-name} is ${build}/${app-name}.apk"/>
-  </target>
-
-  <target name="compile-tester" depends="generate-keystore"
-          unless="tester-apk-up-to-date">
-
-    <echo message="(Re)compiling tester app."/>
-    <exec executable="android" dir="${tester-app}">
-      <arg value="update"/>
-      <arg value="project"/>
-      <arg value="-p"/>
-      <arg value="."/>
-    </exec>
-    <ant dir="${tester-app}" target="release"/>
-    <copy file="${tester-app}/bin/TestApk-release-unsigned.apk"
-      tofile="${tester-apk}"/>
-    <signjar jar="${tester-apk}"
-      alias="${key-alias}" keystore="${key-store}"
-      storepass="${key-storepass}" keypass="${key-pass}"/>
-    <echo message="Tester app is ${tester-app}"/>
   </target>
 
   <target name="generate-keystore" unless="keystore-generated">
@@ -213,9 +165,26 @@
     </exec>
   </target>
 
-  <target name="clean" description="Delete all generated files." >
-    <delete dir="${build}"/>
+  <target name="clean" description="Delete all generated files.">
+    <antcall target="scheduler">
+      <param name="target" value="clean" />
+    </antcall>  
+    <antcall target="instrumentor">
+      <param name="target" value="clean" />
+    </antcall>
     <delete dir="${output}"/>
-    <ant dir="tester-app" target="clean"/>
+    <delete dir="${build}"/>
   </target>
+
+  <target name="instrumentor">
+    <ant dir="${instrumentor-home}" target="${target}" inheritAll="false">
+    </ant>
+  </target>
+
+  <target name="scheduler">
+    <ant dir="${scheduler-home}" target="${target}" inheritAll="false">
+      <property name="norecurse" value="true"/>
+    </ant>
+  </target>
+
 </project>

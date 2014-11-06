@@ -1,0 +1,31 @@
+<project name="ase_instrumentor" default="compile">
+  <description>
+    Instrumentor
+  </description>
+
+  <property file="../../local.properties"/>
+  <property file="../../project.properties"/>
+
+  <property name="src" location="src"/>
+  <property name="lib" location="../../lib"/>
+  <property name="build" location="build"/>
+
+  <target name="compile">
+    <mkdir dir="${build}/classes"/>
+    <javac srcdir="${src}" destdir="${build}/classes" includeantruntime="false">
+      <classpath>
+        <pathelement path="${classpath}"/>
+        <pathelement path="${lib}/soot.jar"/>
+      </classpath>
+    </javac>
+    <jar destfile="${build}/instrumentor.jar" basedir="${build}/classes" includes="**">
+      <manifest>
+        <attribute name="Main-Class" value="ase.instrumentor.AseBodyTransformer"/>
+      </manifest>
+    </jar>
+  </target>
+
+  <target name="clean" description="Delete all generated files." >
+    <delete dir="${build}"/>
+  </target>
+</project>
