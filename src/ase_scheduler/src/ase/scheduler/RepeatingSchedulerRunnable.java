@@ -52,7 +52,7 @@ public class RepeatingSchedulerRunnable implements Runnable {
         boolean moreTests = true;
 
         while (moreTests) {
-//            AseTestBridge.launchMainActivity();
+            AseTestBridge.launchMainActivity();
             Log.i("DelayInfo", "Current delay indices:" + delaySeq.toString());
 
             // run a single test with a sequence of delay indices
@@ -63,11 +63,12 @@ public class RepeatingSchedulerRunnable implements Runnable {
             // end of current test, get new delay indices
             Log.i("DelayInfo", "Updating delay indices for next test..");
             moreTests = delaySeq.getNextDelaySequence(); // ///// returns false when ended
-            AseTestBridge.launchMainActivity();
+//            AseTestBridge.launchMainActivity();
         }
 
         Log.i("MyScheduler", "All tests has completed.");
         Log.i("DelayInfo", "All tests has completed.");
+        System.exit(0);
     }
 
     /*
