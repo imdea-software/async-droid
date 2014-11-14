@@ -100,16 +100,17 @@ def tear_down(app_name, do_uninstall=False):
     uninstall(app_name)
 
 def do_record():
-  # TODO why does `mode record` require the `numDelays` argument?
-  app_name = start_up(options.apkfile, "mode record", "numDelays 0")
+  app_name = start_up(options.apkfile, "mode record")
   print "Running %s in record mode." % app_name
   wait_for_close(app_name)
   print "Recording completed."
   tear_down(app_name, options.uninstall and options.mode == 'record')
 
 def do_replay():
-  # TODO why can't `mode replay` have a default `numDelays` argument?
-  app_name = start_up(options.apkfile, "mode replay", "numDelays %d" % options.delays)
+  if options.delays: 
+    app_name = start_up(options.apkfile, "mode replay", "numDelays %d" % options.delays)
+  else:
+    app_name = start_up(options.apkfile, "mode replay")
   print "Running %s in replay mode." % app_name
   if recording_exists(app_name):
     wait_for_close(app_name)
