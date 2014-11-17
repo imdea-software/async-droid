@@ -45,4 +45,4 @@ Then replaying them for schedules with/without a delay bound.
 
     python bin/aase.py --replay --delays 1 build/HelloWorldApp.apk
 
-<!-- And see the results in `logcatOutputs`. ->
+<!-- And see the results in `logcatOutputs`. -->
