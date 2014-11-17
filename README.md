@@ -34,8 +34,15 @@ example app in `example/HelloWorldApk.apk`:
     ant -Dapk=example/HelloWorldApp.apk
 
 (Note that the original `.apk` file will remain unmodified.)
-Then, test the instrumented application:
 
-    ./bin/run_it_all.sh example/HelloWorldApp.apk
+Then, test the instrumented application by:
 
-And see the results in `logcatOutputs`.
+Recording a set of user events: 
+
+	python bin/aase.py --record build/HelloWorldApp.apk
+	
+Then replaying them for schedules with/without a delay bound.
+
+    python bin/aase.py --replay --delays 1 build/HelloWorldApp.apk
+
+<!-- And see the results in `logcatOutputs`. ->
