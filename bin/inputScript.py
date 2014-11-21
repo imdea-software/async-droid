@@ -128,7 +128,7 @@ for id in vc.getViewIds():
     myView =  vc.findViewById(id)
 #    print "button: ", myView.getClass(), myView.getId(), myView.getCoords()
     if myView.isClickable():
-	    myView.touch()
-	    #device.type('sometext')
+        myView.touch()
+        #device.type('sometext')
     
-	
+    

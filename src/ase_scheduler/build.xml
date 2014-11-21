@@ -1,0 +1,62 @@
+<project name="ase_scheduler" default="compile">
+  <description>
+    Scheduler component
+  </description>
+
+  <property file="../../local.properties"/>
+  <property file="../../project.properties"/>
+
+  <property environment="env"/>
+
+  <condition property="android.sdk" value="${env.ANDROID_HOME}">
+    <isset property="env.ANDROID_HOME" />
+  </condition>
+
+  <condition property="android.api.version" value="${env.ANDROID_API_VERSION}">
+    <isset property="env.ANDROID_API_VERSION" />
+  </condition>
+
+  <property name="src" location="src"/>
+  <property name="lib" location="../../lib"/>
+  <property name="build" location="build"/>
+
+  <target name="compile">
+    <!-- Preconditions -->
+    <fail unless="android.sdk">
+      Android SDK not found.
+      Make sure to either set the android.sdk property in local.properties,
+      or to set the ANDROID_HOME environment variable.
+    </fail>
+    <fail unless="android.api.version">
+      Android API version unknown.
+      Make sure to either set an android.api.version property in local.properties,
+      or to set the ANDROID_API_VERSION environment variable.
+    </fail>
+    <property name="android.jar" location="${android.sdk}/platforms/android-${android.api.version}/android.jar"/>
+    <!-- Compile sources and generate jar -->
+    <mkdir dir="${build}/classes"/>
+    <javac srcdir="${src}" destdir="${build}/classes" includeantruntime="false">
+      <classpath>
+        <pathelement path="${classpath}"/>
+        <pathelement path="${android.jar}"/>
+        <pathelement path="${lib}/dx.jar"/>
+        <pathelement path="${lib}/soot.jar"/>
+      </classpath>
+    </javac>
+    <jar destfile="${build}/scheduler.jar" basedir="${build}/classes" includes="**"/>
+  </target>
+
+  <target name="dex" depends="compile">
+    <!-- Generate .dex from .jar -->
+    <java jar="${lib}/dx.jar" fork="true">
+      <arg value="--dex"/>
+      <arg value="--output=${build}/scheduler.dex"/>
+      <arg value="${build}/scheduler.jar"/>
+    </java>
+    <echo message="Successfully generated dex: ${build}/scheduler.dex"/>
+  </target>
+
+  <target name="clean" description="Delete all generated files." >
+    <delete dir="${build}"/>
+  </target>
+</project>

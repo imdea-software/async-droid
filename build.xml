@@ -1,47 +1,190 @@
-<project name="AndroidAppScheduleEnumerator" default="compile">
+<project name="AndroidAppScheduleEnumerator" default="app">
   <description>
     A tool for concurrency testing of Android apps.
   </description>
 
-  <property name="src" location="src"/>
+  <property file="local.properties"/>
+  <property file="project.properties"/>
+
+  <property environment="env"/>
+
+  <condition property="android.sdk" value="${env.ANDROID_HOME}">
+    <isset property="env.ANDROID_HOME" />
+  </condition>
+
+  <condition property="android.api.version" value="${env.ANDROID_API_VERSION}">
+    <isset property="env.ANDROID_API_VERSION" />
+  </condition>
+
+  <fail message="Please make sure that aapt is in your system path">
+    <condition>
+      <not>
+        <available file="aapt" filepath="${env.PATH}"/> 
+      </not>
+    </condition>
+  </fail>
+ 
+  <fail message="Please make sure that android executable is in your system path">
+    <condition>
+      <not>
+        <available file="android" filepath="${env.PATH}"/> 
+      </not>
+    </condition>
+  </fail>
+
+  <property name="android.jar" location="${android.sdk}/platforms/android-${android.api.version}/android.jar"/>
+
+  <basename property="app-name" file="${apk}" suffix=".apk"/>
+
   <property name="lib" location="lib"/>
   <property name="bin" location="bin"/>
+
   <property name="build" location="build"/>
+  <property name="output" location="logcatOutputs"/>
 
-  <property name="merger-jar" location="${build}/merger.jar"/>
-  <property name="scheduler-jar" location="${build}/scheduler.jar"/>
-  <property name="scheduler-dex" location="${build}/scheduler.dex"/>
-  <property name="instrumentor-jar" location="${build}/instrumentor.jar"/>
-  
-  <property name="dx-jar" location="${lib}/dx.jar"/>
-  <property name="soot-jar" location="${lib}/soot.jar"/>
+  <property name="scheduler-home" location="src/ase_scheduler"/>
+  <property name="instrumentor-home" location="src/ase_instrumentor"/>
 
-  <!-- TODO THIS SHOULD BE AN INPUT -->
-  <property name="android-sdk" location="/usr/local/opt/android-sdk"/>
-  <property name="android-sdk-version" value="19"/>
-  <property name="android-jar" location="${android-sdk}/platforms/android-${android-sdk-version}/android.jar"/>
+  <property name="key-alias" value="my_alias"/>
+  <property name="key-store" value="${build}/my.keystore"/>
+  <property name="key-storepass" value="abcdefg"/>
+  <property name="key-pass" value="abcdefg"/>
+
+  <available property="keystore-generated" file="${build}/my.keystore"/>
+
+  <uptodate property="instrumented-app-up-to-date"
+            targetfile="${build}/${app-name}.apk">
+    <srcresources>
+      <file file="${apk}"/>
+      <fileset dir="${instrumentor-home}/src">
+        <include name="**/*.java"/>
+      </fileset>
+      <fileset dir="${scheduler-home}/src">
+        <include name="**/*.java"/>
+      </fileset>
+      <file file="${build}/instrumentor.jar"/>
+      <file file="${build}/scheduler.jar"/>
+    </srcresources>
+  </uptodate>
+
+  <target name="app" depends="instrument-app" if="apk"/>
 
   <target name="compile">
-    <mkdir dir="${build}"/>
-    <javac srcdir="${src}" destdir="${build}" includeantruntime="false">
+    <antcall target="scheduler">
+      <param name="target" value="dex" />
+    </antcall>  
+    <antcall target="instrumentor">
+      <param name="target" value="compile" />
+    </antcall>
+
+    <!-- Copy to build directory -->
+    <copy file="${scheduler-home}/build/scheduler.dex" todir="${build}"/>
+    <copy file="${instrumentor-home}/build/instrumentor.jar" todir="${build}"/>
+  </target>
+
+  <target name="instrument-app" depends="compile,generate-keystore"
+          if="apk"
+          unless="instrumented-app-up-to-date">
+
+    <echo message="(Re)instrumenting ${app-name}"/>
+    <unzip src="${apk}" dest="${build}/${app-name}-extracted"/>
+    <java jar="${lib}/apktool.jar" fork="true">
+      <arg value="d"/>
+      <arg value="-f"/>
+      <arg value="${apk}"/>
+      <arg value="${build}/${app-name}-decoded"/>
+    </java>
+    <mkdir dir="${build}/${app-name}-merged"/>
+    <java classname="com.android.dx.merge.DexMerger" classpath="${lib}/dx.jar">
+      <arg value="${build}/${app-name}-merged/classes.dex"/>
+      <arg value="${build}/${app-name}-extracted/classes.dex"/>
+      <arg value="${build}/scheduler.dex"/>
+    </java>
+    <exec executable="aapt" dir="${build}/${app-name}-merged">
+      <arg value="package"/>
+      <arg value="-f"/>
+      <arg value="-M"/>
+      <arg value="${build}/${app-name}-decoded/AndroidManifest.xml"/>
+      <arg value="-S"/>
+      <arg value="${build}/${app-name}-decoded/res/"/>
+      <arg value="-I"/>
+      <arg value="${android.jar}"/>
+      <arg value="--min-sdk-version"/>
+      <arg value="${android.api.version}"/>
+      <arg value="--target-sdk-version"/>
+      <arg value="${android.api.version}"/>
+      <arg value="-F"/>
+      <arg value="${build}/${app-name}.apk"/>
+    </exec>
+    <exec executable="aapt" dir="${build}/${app-name}-merged">
+      <arg value="add"/>
+      <arg value="-f"/>
+      <arg value="${build}/${app-name}.apk"/>
+      <arg value="classes.dex"/>
+    </exec>
+    <delete dir="sootOutput"/>
+    <java classname="ase.instrumentor.AseBodyTransformer">
       <classpath>
         <pathelement path="${classpath}"/>
-        <pathelement path="${android-jar}"/>
-        <pathelement path="${dx-jar}"/>
-        <pathelement path="${soot-jar}"/>
+        <pathelement path="${android.jar}"/>
+        <pathelement path="${build}/instrumentor.jar"/>
+        <pathelement path="${lib}/soot.jar"/>
       </classpath>
-    </javac>
-    <jar destfile="${merger-jar}" basedir="${build}" includes="mergeDexFiles/**"/>
-    <jar destfile="${scheduler-jar}" basedir="${build}" includes="myScheduler/**"/>
-    <jar destfile="${instrumentor-jar}" basedir="${build}" includes="myInstrumentor/**"/>
-    <exec executable="dx">
-      <arg value="--dex"/>
-      <arg value="--output=${scheduler-dex}"/>
-      <arg value="${scheduler-jar}"/>
+      <arg value="${build}/${app-name}.apk"/>
+      <arg value="${android.sdk}/platforms"/>
+    </java>
+    <move file="sootOutput/${app-name}.apk" tofile="${build}/${app-name}.apk"/>
+    <delete dir="sootOutput"/>
+    <signjar jar="${build}/${app-name}.apk"
+      alias="${key-alias}" keystore="${key-store}"
+      storepass="${key-storepass}" keypass="${key-pass}"/>
+    <echo message="Instrumented ${app-name} is ${build}/${app-name}.apk"/>
+  </target>
+
+  <target name="generate-keystore" unless="keystore-generated">
+    <echo message="Regenerating keystore ${key-store}"/>
+    <exec executable="keytool">
+      <arg value="-genkey"/>
+      <arg value="-keyalg"/>
+      <arg value="RSA"/>
+      <arg value="-keysize"/>
+      <arg value="2048"/>
+      <arg value="-validity"/>
+      <arg value="10000"/>
+      <arg value="-noprompt"/>
+      <arg value="-dname"/>
+      <arg value="CN=a, OU=b, O=c, L=d, S=e, C=f"/>
+      <arg value="-alias"/>
+      <arg value="${key-alias}"/>
+      <arg value="-keystore"/>
+      <arg value="${key-store}"/>
+      <arg value="-storepass"/>
+      <arg value="${key-storepass}"/>
+      <arg value="-keypass"/>
+      <arg value="${key-pass}"/>
     </exec>
   </target>
 
-  <target name="clean" description="Delete all generated files." >
+  <target name="clean" description="Delete all generated files.">
+    <antcall target="scheduler">
+      <param name="target" value="clean" />
+    </antcall>  
+    <antcall target="instrumentor">
+      <param name="target" value="clean" />
+    </antcall>
+    <delete dir="${output}"/>
     <delete dir="${build}"/>
   </target>
+
+  <target name="instrumentor">
+    <ant dir="${instrumentor-home}" target="${target}" inheritAll="false">
+    </ant>
+  </target>
+
+  <target name="scheduler">
+    <ant dir="${scheduler-home}" target="${target}" inheritAll="false">
+      <property name="norecurse" value="true"/>
+    </ant>
+  </target>
+
 </project>

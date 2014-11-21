@@ -2,8 +2,9 @@
 from com.android.monkeyrunner import MonkeyRunner, MonkeyDevice
 import sys, printErrorScript
 
+
 if (len(sys.argv) != 2): # monkeyrunner <scriptFile> <FullPathOfApkFile>
-	print ("Enter the argument: <FullPathOfApkFile>")
+    print ("Enter the argument: <FullPathOfApkFile>")
 
 print "Application apk file: " + sys.argv[1]
 
@@ -12,8 +13,6 @@ device = MonkeyRunner.waitForConnection()
 
 # Installs the Android package
 installed = device.installPackage(sys.argv[1])
-
-
 if(installed == False):
-	printErrorScript.onInstallationError()
-	exit(1)
+    printErrorScript.onInstallationError()
+    exit(1)

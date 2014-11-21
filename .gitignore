@@ -3,5 +3,6 @@ bin/*.class
 logcatOutputs
 *~
 .DS_Store
-deneme.sh
-
+local.properties
+.idea
+*.iml
