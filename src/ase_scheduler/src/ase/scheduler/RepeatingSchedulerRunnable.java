@@ -26,17 +26,14 @@ public class RepeatingSchedulerRunnable implements Runnable {
     // Thread id of the currently scheduled thread
     private static long scheduled = 0L;
     private int segmentToProcess = 1;
-
-    private Context appContext;
     
     private boolean schedulingLogs = true;
 
     public RepeatingSchedulerRunnable(int numDelays, Context context) {
-        appContext = context;
         // event list will be read once and be fed into each inputRepeater
         Reader reader = IOFactory.getReader(context);
         List<AseEvent> eventsToRepeat = reader.read();
-        inputRepeater = new InputRepeater(appContext, eventsToRepeat);        
+        inputRepeater = new InputRepeater(context, eventsToRepeat);
         // use numInputs to generate the delay sequences
         delaySeq = new DelaySequence(numDelays, eventsToRepeat.size());
     }
@@ -52,7 +49,7 @@ public class RepeatingSchedulerRunnable implements Runnable {
         boolean moreTests = true;
 
         while (moreTests) {
-            AseTestBridge.launchMainActivity();
+            //AseTestBridge.launchMainActivity();
             Log.i("DelayInfo", "Current delay indices:" + delaySeq.toString());
 
             // run a single test with a sequence of delay indices
@@ -63,12 +60,12 @@ public class RepeatingSchedulerRunnable implements Runnable {
             // end of current test, get new delay indices
             Log.i("DelayInfo", "Updating delay indices for next test..");
             moreTests = delaySeq.getNextDelaySequence(); // ///// returns false when ended
-//            AseTestBridge.launchMainActivity();
+            AseTestBridge.launchMainActivity();
         }
 
         Log.i("MyScheduler", "All tests has completed.");
         Log.i("DelayInfo", "All tests has completed.");
-        System.exit(0);
+        //System.exit(0);
     }
 
     /*
@@ -79,7 +76,8 @@ public class RepeatingSchedulerRunnable implements Runnable {
         Thread inputThread = new Thread(inputRepeater);
         inputThread.setName("InputRepeater");
         inputThread.start();        
-        segmentToProcess = 1; 
+        segmentToProcess = 1;
+        scheduled = 0L;
         threads.clear();  // If comes after InputRepeater is registered, problematic!!!
         sendThreadInfo(inputThread); // Register this before scheduler runs since it may wait earlier
         // (initiation of myScheduler by UIthread, that waits when click)
@@ -269,9 +267,7 @@ public class RepeatingSchedulerRunnable implements Runnable {
         if (schedulingLogs)
             Log.i("Scheduled", "Scheduled thread id: " + scheduled + " Index: "
                     + threads.getWalkerIndex() + " NumUIBlocks:" + AseTestBridge.getNumUIBlocks());
-        
-        if(scheduled == 1)
-            AseTestBridge.decNumUIBlocks();
+
         current.notifyThread();
     }
 
