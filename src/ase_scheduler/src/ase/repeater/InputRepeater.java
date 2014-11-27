@@ -46,8 +46,7 @@ public class InputRepeater implements Runnable {
         
         for (int i=0; i<eventList.size(); i++) {
             AseTestBridge.waitMyTurn();
-            sendEventToApp(); 
-            AseTestBridge.incNumUIBlocks();  // posted event (runnable to click) into UI thread
+            sendEventToApp();
             inputsToGo --;
             Log.i("Repeater", "Posted a click.. InputsToGo:" + inputsToGo);
             AseTestBridge.notifyScheduler();
@@ -58,6 +57,7 @@ public class InputRepeater implements Runnable {
     
     // for now, only clicks
     public void sendEventToApp() {
+        AseTestBridge.incNumUIBlocks();  // posts event (runnable to click) into UI thread
         handlerToUI.post(new Runnable() {
             public void run() {
                 AseEvent event = eventList.get(inputsDispatched);
@@ -65,8 +65,7 @@ public class InputRepeater implements Runnable {
                 View view = ViewTraverser.CURRENT_ROOT_VIEW.findViewById(event.viewId);
 
                 if (view == null) {
-                    handlerToUI.post(this); 
-                    AseTestBridge.incNumUIBlocks();
+                    handlerToUI.post(this);
                     Log.i("Repeater", "Sending again " + Integer.toHexString(event.viewId));
                     AseTestBridge.notifyScheduler();    
                     return;
@@ -78,6 +77,7 @@ public class InputRepeater implements Runnable {
                 view.callOnClick();
                 Log.i("Repeater", "Clicked view: " + Integer.toHexString(view.getId()));
 
+                AseTestBridge.decNumUIBlocks(); // runnable to click consumed
                 AseTestBridge.notifyScheduler();
             }
         });

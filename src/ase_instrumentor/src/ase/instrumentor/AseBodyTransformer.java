@@ -46,7 +46,8 @@ public class AseBodyTransformer extends BodyTransformer {
             "-process-dir", args[0],
             "-android-jars", args[1],
             "-src-prec", "apk",
-            "-output-format", "dex"
+            "-output-format", "dex",
+            "-allow-phantom-refs"
         });
     }
 
@@ -83,17 +84,22 @@ public class AseBodyTransformer extends BodyTransformer {
             // skip
         } else if (methodName.equals("onCreate")) {
             instrumentOnCreateMethod(b);
-            
+
         } else if (methodName.equals("onCreateView")) {
             instrumentOnCreateViewMethod(b);
-            
+
         } else if (methodName.equals("doInBackground")) {
+            System.out.println("===========Instrumenting " + methodName + "..");
             instrumentDoInBackgMethod(b);
+
+        } else if (methodName.equals("onPostExecute")||
+                   methodName.equals("onProgressUpdate")) {
+            System.out.println("===========Instrumenting " + methodName + "..");
+            instrumentPublishPost(b);
 
         } else if (methodName.equals("run") ||
                    methodName.equals("handleMessage") ||
-                   methodName.equals("onPostExecute") ||
-                   methodName.equals("onProgressUpdate")) {
+                   methodName.equals("handleIntent")) {
 
             System.out.println("===========Instrumenting " + methodName + "..");
             instrumentMethod(b);
@@ -187,32 +193,33 @@ public class AseBodyTransformer extends BodyTransformer {
             u = iter.next();
             u.apply(new AbstractStmtSwitch() {
 
-                // increment numUIBlocks if 
-                // it published progress (posts onPublishProgress) or returns (posts onPostExecute)
-                /*public void caseInvokeStmt(InvokeStmt stmt) {                  
+                // increment numUIBlocks when publishes progress (posts onPublishProgress)
+                // and when it returns (posts onPostExecute)
+                public void caseInvokeStmt(InvokeStmt stmt) {
                     if (stmt.getInvokeExpr().getMethod().getName().equals("publishProgress")){
+                        units.insertAfter(staticInvocation(incNumUIBlocks), stmt);
                         units.insertAfter(staticInvocation(incNumUIBlocks), stmt);
                         System.out.println("Increment numUIBlocks stmt added after publishProgress..");
                     }
-                }*/
+                }
                 
                 public void caseReturnVoidStmt(ReturnVoidStmt stmt) {
-                    //units.insertBefore(staticInvocation(incNumUIBlocks), stmt);
-                    //System.out.println("Increment numUIBlocks stmt added after doInBackGround..");
+                    units.insertBefore(staticInvocation(incNumUIBlocks), stmt);
+                    System.out.println("Increment numUIBlocks stmt added after doInBackGround..");
                     units.insertBefore(staticInvocation(notifyScheduler), stmt);
                     System.out.println("Release CPU stmt added..");
                 }
                 
                 public void caseReturnStmt(ReturnStmt stmt) {
-                    //units.insertBefore(staticInvocation(incNumUIBlocks), stmt);
-                    //System.out.println("Increment numUIBlocks stmt added after doInBackGround..");
+                    units.insertBefore(staticInvocation(incNumUIBlocks), stmt);
+                    System.out.println("Increment numUIBlocks stmt added after doInBackGround..");
                     units.insertBefore(staticInvocation(notifyScheduler), stmt);
                     System.out.println("Release CPU stmt added..");
                 }
                 
                 public void caseRetStmt(RetStmt stmt) {
-                    //units.insertBefore(staticInvocation(incNumUIBlocks), stmt);
-                    //System.out.println("Increment numUIBlocks stmt added after doInBackGround..");
+                    units.insertBefore(staticInvocation(incNumUIBlocks), stmt);
+                    System.out.println("Increment numUIBlocks stmt added after doInBackGround..");
                     units.insertBefore(staticInvocation(notifyScheduler), stmt);
                     System.out.println("Release CPU stmt added..");
                 }
@@ -269,6 +276,59 @@ public class AseBodyTransformer extends BodyTransformer {
                     System.out.println("Enter monitor stmt added..");
                 }
                 
+                public void caseExitMonitorStmt(ExitMonitorStmt stmt){
+                    units.insertAfter(staticInvocation(exitMonitor), stmt);
+                    System.out.println("Exit monitor stmt added..");
+                }
+            });
+        }
+    }
+
+    /**
+     * Execution of that method is controlled by ase.scheduler
+     * (its code is executed in between waitMyTurn() and notifyScheduler())
+     */
+    private void instrumentPublishPost(final Body b){
+        final PatchingChain<Unit> units = b.getUnits();
+        Iterator<Unit> iter = units.snapshotIterator();
+
+        if(!iter.hasNext())
+            return;
+
+        Unit u = iter.next();
+        units.insertAfter(staticInvocation(waitMyTurn), u);
+        System.out.println("Wait for CPU stmt added..");
+
+        while (iter.hasNext()) {
+            u = iter.next();
+            u.apply(new AbstractStmtSwitch() {
+
+                public void caseReturnVoidStmt(ReturnVoidStmt stmt) {
+                    units.insertBefore(staticInvocation(decNumUIBlocks), stmt);
+                    System.out.println("Decrement numUIBlocks stmt added..");
+                    units.insertBefore(staticInvocation(notifyScheduler), stmt);
+                    System.out.println("Release CPU stmt added..");
+                }
+
+                public void caseReturnStmt(ReturnStmt stmt) {
+                    units.insertBefore(staticInvocation(decNumUIBlocks), stmt);
+                    System.out.println("Decrement numUIBlocks stmt added..");
+                    units.insertBefore(staticInvocation(notifyScheduler), stmt);
+                    System.out.println("Release CPU stmt added..");
+                }
+
+                public void caseRetStmt(RetStmt stmt) {
+                    units.insertBefore(staticInvocation(decNumUIBlocks), stmt);
+                    System.out.println("Decrement numUIBlocks stmt added..");
+                    units.insertBefore(staticInvocation(notifyScheduler), stmt);
+                    System.out.println("Release CPU stmt added..");
+                }
+
+                public void caseEnterMonitorStmt(EnterMonitorStmt stmt){
+                    units.insertAfter(staticInvocation(enterMonitor), stmt);
+                    System.out.println("Enter monitor stmt added..");
+                }
+
                 public void caseExitMonitorStmt(ExitMonitorStmt stmt){
                     units.insertAfter(staticInvocation(exitMonitor), stmt);
                     System.out.println("Exit monitor stmt added..");
