@@ -100,14 +100,6 @@ public class AseTestBridge {
             ViewTraverser.traverseViewIds(rootView);
         }
     }
-
-    /*
-     * application thread sends its info to the scheduler
-     * (necessary when it runs before added into scheduler's list)
-     */
-    public static void sendThreadInfo() {
-        scheduler.sendThreadInfo();
-    }
     
     /*
      * application thread waits for its signal to start/resume

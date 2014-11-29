@@ -3,12 +3,13 @@ package ase.scheduler;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 
 /* 
  * keeps the threads registered to the scheduler
  */
 public class PendingThreads {
-    private ArrayList<ThreadData> threads = new ArrayList<ThreadData>();
+    private List<ThreadData> threads = new ArrayList<ThreadData>();
     private int walkerIndex = -1; // index of the threadData to be scheduled
                                   // next, updated when a thread terminates
 
@@ -102,7 +103,7 @@ public class PendingThreads {
         String s = "Pending threads: ";
 
         for (ThreadData t : threads)
-            s = s.concat(" " + t.getName());
+            s = s.concat(" " + t);
 
         return s;
     }

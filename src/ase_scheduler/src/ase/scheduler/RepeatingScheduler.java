@@ -19,8 +19,9 @@ public class RepeatingScheduler implements Scheduler {
     }
 
     public void waitMyTurn() {
-        sch.sendThreadInfo(); // add thread to the scheduling list
-        sch.waitMyTurn(Thread.currentThread().getId());
+        Thread current = Thread.currentThread();
+        sch.captureThread(current); // add thread to the scheduling list
+        sch.waitMyTurn(current.getId());
     }
 
     public void yield() {
@@ -37,10 +38,5 @@ public class RepeatingScheduler implements Scheduler {
 
     public void exitMonitor() {
         sch.exitMonitor();
-    }
-
-    @Override
-    public void sendThreadInfo() {
-        sch.sendThreadInfo();      
     }
 }

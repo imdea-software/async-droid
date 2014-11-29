@@ -1,10 +1,10 @@
 package ase.scheduler;
 
-import java.util.Iterator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import android.content.Context;
-import android.os.Process;
 import android.util.Log;
 import ase.AseEvent;
 import ase.AseTestBridge;
@@ -21,13 +21,14 @@ public class RepeatingSchedulerRunnable implements Runnable {
     private ThreadData schedulerThreadData = new ThreadData(ThreadData.SCHEDULER_ID, null);
     private DelaySequence delaySeq;
     private InputRepeater inputRepeater;
-    
-    
+
     // Thread id of the currently scheduled thread
-    private static long scheduled = 0L;
+    private long scheduled = 0L;
     private int segmentToProcess = 1;
-    
-    private boolean schedulingLogs = true;
+
+    private final boolean schedulingLogs = true;
+
+    private Set<String> defaultThreadNames = null;
 
     public RepeatingSchedulerRunnable(int numDelays, Context context) {
         // event list will be read once and be fed into each inputRepeater
@@ -38,13 +39,14 @@ public class RepeatingSchedulerRunnable implements Runnable {
         delaySeq = new DelaySequence(numDelays, eventsToRepeat.size());
     }
 
+    @Override
     public void run() {
         Log.i("MyScheduler", "Scheduler has started in thread: "
                 + Thread.currentThread().getName() + " Id: "
                 + Thread.currentThread().getId());
 
         // must wait until the main (UI) thread wakes it
-        waitMyTurn(ThreadData.SCHEDULER_ID); 
+        waitMyTurn(ThreadData.SCHEDULER_ID);
 
         boolean moreTests = true;
 
@@ -75,11 +77,11 @@ public class RepeatingSchedulerRunnable implements Runnable {
         inputRepeater.reset();
         Thread inputThread = new Thread(inputRepeater);
         inputThread.setName("InputRepeater");
-        inputThread.start();        
+        inputThread.start();
         segmentToProcess = 1;
         scheduled = 0L;
         threads.clear();  // If comes after InputRepeater is registered, problematic!!!
-        sendThreadInfo(inputThread); // Register this before scheduler runs since it may wait earlier
+        captureThread(inputThread); // Register this before scheduler runs since it may wait earlier
         // (initiation of myScheduler by UIthread, that waits when click)
         // (InputRepeater immediately wants to be scheduled, it needs to be in the list)
     }
@@ -91,34 +93,36 @@ public class RepeatingSchedulerRunnable implements Runnable {
         int idleSteps = 0;
         do {
             // add current user threads into list!! do not wait for them to register!!
-            getAllUserThreads();
+            captureAllThreads();
             // walker keeps the index of the thread to be scheduled
             threads.increaseWalker();
-            
+
             ThreadData current = threads.getCurrentThread();
             Log.v("Scheduled", threads.toString());
             Log.v("Scheduled", "Current: " + current.getName() + " Walker Index: " + threads.getWalkerIndex());
-            
-            if(okToSchedule(current)){
+
+            if (okToSchedule(current)) {
                 // check whether the thread will be delayed
-                if (segmentToProcess == delaySeq.getNextDelayIndex()) {
+                while (segmentToProcess == delaySeq.getNextDelayIndex()) {
                     Log.i("MyScheduler", "Delayed Thread Id: " + current.getId() + " Last Processed: " + segmentToProcess);
                     Log.i("DelayInfo", "Consumed delay: " + segmentToProcess);
-                    
-                    threads.increaseWalker(); // delay (what if this is not ok to schedule??????) //// DETECTED BUG!!!!
-                    current = threads.getCurrentThread();
-                    while(!okToSchedule(current)) {  /// not infinite loop, at least one of them is ok (the delayed one)
-                        threads.increaseWalker();   /// go for a ready-to-run thread 
-                        current = threads.getCurrentThread(); 
-                    }
-                    
-                    delaySeq.spendCurrentDelayIndex(); 
+
+                    segmentToProcess++;
+
+                    /// not infinite loop, at least one of them is ok (the delayed one)
+                    do {
+                        threads.increaseWalker(); // delay - go for a ready-to-run thread
+                        current = threads.getCurrentThread();
+                    } while (!okToSchedule(current));
+
+                    delaySeq.spendCurrentDelayIndex();
                 }
 
                 idleSteps = 0;
-                notifyNext();
+                notifyThread(current);
                 waitMyTurn(ThreadData.SCHEDULER_ID);
-            }else{
+                segmentToProcess++;
+            } else {
                 idleSteps++;  // scheduled thread has no message to execute
             }
         } while (!(delaySeq.isEndOfCurrentDelaySequence() && idleSteps == threads.getSize()));
@@ -128,40 +132,29 @@ public class RepeatingSchedulerRunnable implements Runnable {
          *      - main has executed posted blocks, inputRepeater has no left inputs to repeat
          *      - looper threads are idle and no one is waiting to be scheduled
          */
-           
+
     }
-    
+
     /*
      * Collect application's user threads
      */
-    private void getAllUserThreads(){
-        Iterator<Thread> allThreads = Thread.getAllStackTraces().keySet().iterator();
-        while (allThreads.hasNext()) {
-            Thread t = allThreads.next();
+    private void captureAllThreads() {
+        Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
+        for (Thread t : threadSet) {
             if (!t.getName().equalsIgnoreCase("SchedulerThread")
-                    && isUserThread(t)
-                    && !threads.capturedBefore(t.getId()))
-                sendThreadInfo(t); // no need to send info from other threads?
+                    && isUserThread(t))
+                captureThread(t); // no need to send info from other threads?
         }
     }
-    
+
     /*
      * false for default application threads (except for the main thread)
      */
-    private static boolean isUserThread(Thread t) {
+    private boolean isUserThread(Thread t) {
         String name = t.getName();
-        if (name.equalsIgnoreCase("GC")
-                || name.equalsIgnoreCase("Signal Catcher")
-                || name.equalsIgnoreCase("JDWP")
-                || name.equalsIgnoreCase("Compiler")
-                || name.equalsIgnoreCase("ReferenceQueueDaemon")
-                || name.equalsIgnoreCase("FinalizerDaemon")
-                || name.equalsIgnoreCase("FinalizerWatchdogDaemon")
-                || name.startsWith("Binder"))
-            return false;
-        return true;
+        return !(getDefaultThreadNames().contains(name) || name.startsWith("Binder"));
     }
-    
+
     /*
      * Check if the currently visited thread will be scheduled: 
      *  - isWaiting:  (executed waitMyTurn() and will notify (was not in monitor))
@@ -176,15 +169,15 @@ public class RepeatingSchedulerRunnable implements Runnable {
         if(current.isWaiting())
             return true;
         // if an event is sent to main thread (user input, publishProgress or postExecute)
-        if(current.getId() == 1 && AseTestBridge.getNumUIBlocks() >=1 ) 
+        if(current.getId() == 1 && AseTestBridge.getNumUIBlocks() >=1 )
             return true;
         // if the InputRepeater has input to post to main
-        if(current.getName().equalsIgnoreCase("InputRepeater") && inputRepeater.hasMoreInputs()) 
+        if(current.getName().equalsIgnoreCase("InputRepeater") && inputRepeater.hasMoreInputs())
             return true;
         // if a looper thread has a non-empty message queue (may not yet executed waitMyTurn())
         if(current.getId() != 1 && current.hasMsgToHandle())
             return true;
-        
+
         return false;
     }
 
@@ -236,20 +229,11 @@ public class RepeatingSchedulerRunnable implements Runnable {
     }
 
     /*
-     * Send current thread info to the scheduler This method is called by a
-     * thread itself to be registered
-     */
-    public void sendThreadInfo() {
-        Thread thisThread = Thread.currentThread();
-        sendThreadInfo(thisThread);
-    }
-
-    /*
      * Send current thread info to the scheduler This method is called by the
      * scheduler to register existing threads
      */
-    public void sendThreadInfo(Thread thisThread) {
-        long id = (long) thisThread.getId();
+    public void captureThread(Thread thisThread) {
+        long id = thisThread.getId();
         if (!threads.capturedBefore(id)) {
             threads.addThread(new ThreadData(id, thisThread));
 
@@ -261,8 +245,7 @@ public class RepeatingSchedulerRunnable implements Runnable {
     /*
      * Scheduler notifies the next task to be scheduled
      */
-    private void notifyNext() {
-        ThreadData current = threads.getCurrentThread();
+    private void notifyThread(ThreadData current) {
         scheduled = current.getId();
         if (schedulingLogs)
             Log.i("Scheduled", "Scheduled thread id: " + scheduled + " Index: "
@@ -301,9 +284,9 @@ public class RepeatingSchedulerRunnable implements Runnable {
         }
 
         scheduled = ThreadData.SCHEDULER_ID;
-        
+
         // synchronized(this){
-        segmentToProcess++; // data race not critical here ?
+        // segmentToProcess++; // data race not critical here ?
         // }
 
         // thread consumes the notification block
@@ -339,6 +322,20 @@ public class RepeatingSchedulerRunnable implements Runnable {
         me.exitedMonitor();
     }
 
+    public Set<String> getDefaultThreadNames() {
+        if (defaultThreadNames == null) {
+            defaultThreadNames = new HashSet<>();
+            defaultThreadNames.add("GC");
+            defaultThreadNames.add("Signal Catcher");
+            defaultThreadNames.add("JDWP");
+            defaultThreadNames.add("Compiler");
+            defaultThreadNames.add("ReferenceQueueDaemon");
+            defaultThreadNames.add("FinalizerDaemon");
+            defaultThreadNames.add("FinalizerWatchdogDaemon");
+            defaultThreadNames.add("SchedulerThread");
+        }
+        return defaultThreadNames;
+    }
 }
 
 // scheduled and currentIndex are guaranteed to be not accessed by more than one threads concurrently

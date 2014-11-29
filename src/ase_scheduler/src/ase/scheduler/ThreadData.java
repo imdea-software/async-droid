@@ -104,4 +104,12 @@ public class ThreadData {
         return !LooperReader.getInstance().hasEmptyLooper(thread);
     }
 
+    @Override
+    public String toString() {
+        return "[" +
+                "id=" + id +
+                ", name=" + thread.getName() +
+                ", state=" + thread.getState().toString() +
+                "]";
+    }
 }
