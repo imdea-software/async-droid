@@ -17,6 +17,7 @@ import ase.util.Reader;
  */
 public class RepeatingScheduler implements Scheduler, Runnable {
 
+    private Context context;
     private PendingThreads threads = new PendingThreads();
     private ThreadData schedulerThreadData = new ThreadData(ThreadData.SCHEDULER_ID, null);
     private DelaySequence delaySeq;
@@ -30,6 +31,7 @@ public class RepeatingScheduler implements Scheduler, Runnable {
     private Set<String> defaultThreadNames = null;
 
     public RepeatingScheduler(int numDelays, Context context) {
+        this.context = context;
         // event list will be read once and be fed into each inputRepeater
         Reader reader = IOFactory.getReader(context);
         List<AseEvent> eventsToRepeat = reader.read();
@@ -66,9 +68,20 @@ public class RepeatingScheduler implements Scheduler, Runnable {
         Log.i("MyScheduler", "All tests has completed.");
         Log.i("DelayInfo", "All tests has completed.");
 
-        // TODO would be better to call Activity.finish() here
-        // TODO but how to get our hands on the current activity?
-        System.exit(0);
+
+        // TODO now the app closes but we still need to rearrange this
+        // create a new activity - clear top and and get the activity reference
+        AseTestBridge.launchMainActivity();
+
+        // sleep until the new activity is created
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        // finish the created activity
+        AseTestBridge.finishCurrentActivity();
     }
 
     /*
