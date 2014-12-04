@@ -73,7 +73,7 @@ public class AseTestBridge {
                 } else {
                     Log.i("MyScheduler", "Running in repeat mode with delay bound 0 (default setting)");
                 }
-                scheduler = new RepeatingScheduler(numDelays, act.getApplicationContext(), act.getWindow().getDecorView().getRootView());
+                scheduler = new RepeatingScheduler(numDelays, act.getApplicationContext());
                 return;
             }
             Log.i("MyScheduler", "Scheduler mode cannot be identified.");

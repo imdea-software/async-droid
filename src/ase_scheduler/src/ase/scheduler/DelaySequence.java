@@ -4,15 +4,52 @@ public class DelaySequence {
 
     private int[] delaySequence;
     private int numDelays;
-    private int currentIndexToDelay = 0;
-    private boolean isEnded;
+    private int maxDelayIndex;
+    private int currentIndexToDelay;
 
     public DelaySequence(int numDelays, int maxDelayIndex) {
         this.numDelays = numDelays;
-        delaySequence = new int[numDelays];
+        this.maxDelayIndex = maxDelayIndex;
+    }
+
+    public boolean hasNext() {
+        if (delaySequence == null)
+            return true;
 
         for (int i = 0; i < numDelays; i++)
-            delaySequence[i] = maxDelayIndex - numDelays + i;
+            if (delaySequence[i] > 0)
+                return true;
+
+        return false;
+    }
+
+    public void next() {
+        if (delaySequence == null) {
+
+            // on the first call
+            delaySequence = new int[numDelays];
+            for (int i = 0; i < numDelays; i++)
+                delaySequence[i] = maxDelayIndex - numDelays + i;
+
+        } else {
+
+            // on subsequent calls
+            int decrementPoint = -1;
+            for (int i = 0; i < numDelays; i++) {
+                if (delaySequence[i] > 0) {
+                    decrementPoint = i;
+                    break;
+                }
+            }
+
+            // otherwise hasNext() should have returned false
+            assert(decrementPoint > 0);
+
+            delaySequence[decrementPoint]--;
+            for (int i = decrementPoint - 1; i >= 0; i--)
+                delaySequence[i] = Math.max(delaySequence[i + 1] - 1, 0);
+        }
+        currentIndexToDelay = 0;
     }
 
     public int getNextDelayIndex() {
@@ -39,35 +76,6 @@ public class DelaySequence {
         if (currentIndexToDelay >= numDelays)
             return true;
         return false;
-    }
-
-    public boolean isEndOfAllDelaySequences() {
-        return isEnded;
-    }
-
-    public boolean getNextDelaySequence() {
-        int decrementPoint = -1;
-        for (int i = 0; i < numDelays; i++) {
-            if (delaySequence[i] > 0) {
-                decrementPoint = i;
-                break;
-            }
-        }
-        // cannot update delay values
-        // numIndices has all 0, test has finished
-        if (decrementPoint == -1) {
-            isEnded = true;
-            return false;
-        }
-
-        delaySequence[decrementPoint]--;
-
-        for (int i = decrementPoint - 1; i >= 0; i--) {
-            delaySequence[i] = Math.max(delaySequence[i + 1] - 1, 0);
-        }
-
-        currentIndexToDelay = 0;
-        return true;
     }
 
     public int getDelayAtIndex(int index) {

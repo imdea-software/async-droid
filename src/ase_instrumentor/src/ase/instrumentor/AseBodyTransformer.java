@@ -36,8 +36,6 @@ public class AseBodyTransformer extends BodyTransformer {
         PackManager.v().getPack("jtp").add(
             new Transform("jtp.myInstrumenter", new AseBodyTransformer()));
 
-        excludePackages();
-
         soot.Main.main(new String[]{
             "-debug",
             "-prepend-classpath",
@@ -49,15 +47,6 @@ public class AseBodyTransformer extends BodyTransformer {
         });
     }
 
-    private static void excludePackages() {
-        List<String> excludeList = new ArrayList<>();
-        excludeList.add("ase");
-        excludeList.add("android.support");
-        excludeList.add("org.apache");
-        excludeList.add("org.xml");
-        excludeList.add("org.json");
-        Options.v().set_exclude(excludeList);
-    }
 
     private static void init() {
         if (aseTestBridgeClass != null)
@@ -89,7 +78,17 @@ public class AseBodyTransformer extends BodyTransformer {
         SootClass clazz = b.getMethod().getDeclaringClass();
         SootClass activityClass = Scene.v().getSootClass("android.app.Activity");
 
-        if (hasParentClass(clazz, activityClass) && methodName.equals("onCreate")) {
+        if (className.startsWith("ase.")) {
+            // skip
+        } else if (className.startsWith("android.support")) {
+            // skip
+        } else if (className.startsWith("org.apache")) {
+            // skip
+        } else if (className.startsWith("org.xml")) {
+            // skip
+        } else if (className.startsWith("org.json")) {
+            // skip
+        } else if (hasParentClass(clazz, activityClass) && methodName.equals("onCreate")) {
             instrumentOnCreateMethod(b);
 
         } else if (methodName.equals("onCreateView")) {
