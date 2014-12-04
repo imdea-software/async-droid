@@ -1,7 +1,9 @@
 package ase.instrumentor;
 
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import soot.Body;
@@ -16,14 +18,8 @@ import soot.SootMethod;
 import soot.Transform;
 import soot.Unit;
 import soot.Value;
-import soot.jimple.AbstractStmtSwitch;
-import soot.jimple.EnterMonitorStmt;
-import soot.jimple.ExitMonitorStmt;
-import soot.jimple.InvokeStmt;
-import soot.jimple.Jimple;
-import soot.jimple.RetStmt;
-import soot.jimple.ReturnStmt;
-import soot.jimple.ReturnVoidStmt;
+import soot.jimple.*;
+import soot.options.Options;
 
 public class AseBodyTransformer extends BodyTransformer {
 
@@ -40,6 +36,8 @@ public class AseBodyTransformer extends BodyTransformer {
         PackManager.v().getPack("jtp").add(
             new Transform("jtp.myInstrumenter", new AseBodyTransformer()));
 
+        excludePackages();
+
         soot.Main.main(new String[]{
             "-debug",
             "-prepend-classpath",
@@ -49,6 +47,16 @@ public class AseBodyTransformer extends BodyTransformer {
             "-output-format", "dex",
             "-allow-phantom-refs"
         });
+    }
+
+    private static void excludePackages() {
+        List<String> excludeList = new ArrayList<>();
+        excludeList.add("ase");
+        excludeList.add("android.support");
+        excludeList.add("org.apache");
+        excludeList.add("org.xml");
+        excludeList.add("org.json");
+        Options.v().set_exclude(excludeList);
     }
 
     private static void init() {
@@ -78,11 +86,10 @@ public class AseBodyTransformer extends BodyTransformer {
         String className = b.getMethod().getDeclaringClass().toString();
         String methodName = b.getMethod().getName();
 
-        if (className.startsWith("ase.")) {
-            // skip
-        } else if (className.startsWith("android.support")) {
-            // skip
-        } else if (methodName.equals("onCreate")) {
+        SootClass clazz = b.getMethod().getDeclaringClass();
+        SootClass activityClass = Scene.v().getSootClass("android.app.Activity");
+
+        if (hasParentClass(clazz, activityClass) && methodName.equals("onCreate")) {
             instrumentOnCreateMethod(b);
 
         } else if (methodName.equals("onCreateView")) {
@@ -120,6 +127,13 @@ public class AseBodyTransformer extends BodyTransformer {
         }*/
     }
 
+    private boolean hasParentClass(SootClass clazz, SootClass ancestor) {
+        if(clazz == ancestor)
+            return true;
+        if(clazz.getName().equalsIgnoreCase("java.lang.Object"))
+            return false;
+        return hasParentClass(clazz.getSuperclass(), ancestor);
+    }
     /**
      * Adds a statement to initiate ase scheduler
      * Also adds a call to setActivityViewTraverser 
@@ -129,19 +143,23 @@ public class AseBodyTransformer extends BodyTransformer {
         final PatchingChain<Unit> units = b.getUnits();
         Iterator<Unit> iter = units.snapshotIterator();
 
+        // initiate scheduler as the first statement
+        // since the latter statements may call async tasks
+        Stmt stmt = ((JimpleBody) b).getFirstNonIdentityStmt();
+        units.insertBefore(staticInvocation(initiateScheduler, b.getThisLocal()), stmt);
+        System.out.println("===========Initiate Scheduler stmt added..");
+
         while (iter.hasNext()) {
             Unit u = iter.next();
             u.apply(new AbstractStmtSwitch() {
 
                 public void caseReturnVoidStmt(ReturnVoidStmt stmt) {
-                    units.insertBefore(staticInvocation(initiateScheduler, b.getThisLocal()), stmt);
-                    System.out.println("===========Initiate Scheduler stmt added..");
-                        
                     units.insertBefore(staticInvocation(setActivityViewTraverser, b.getThisLocal()), stmt);
                     System.out.println("===========ActivityViewTraversal stmt added..");
                 }
 
             });
+
         }
     }
 
@@ -360,4 +378,5 @@ public class AseBodyTransformer extends BodyTransformer {
     private static InvokeStmt staticInvocation(SootMethod m, Value arg) {
         return Jimple.v().newInvokeStmt(Jimple.v().newStaticInvokeExpr(m.makeRef(),arg));
     }
+
 }

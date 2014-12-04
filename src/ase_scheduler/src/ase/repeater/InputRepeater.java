@@ -38,7 +38,12 @@ public class InputRepeater implements Runnable {
     public void run() {
         Log.i("Repeater", "In thread: " + Thread.currentThread().getName()
                 + " " + Thread.currentThread().getId());
-        
+
+        // will loop only once
+        // more efficient than if check and notify
+        // each time root view is set in every onCreate
+        while(ViewTraverser.CURRENT_ROOT_VIEW == null);
+
         Log.i("Repeater", "Repeating inputs.");
         if (eventList.isEmpty()) {
             Log.i("Repeater", "No events to repeat.");
@@ -74,7 +79,8 @@ public class InputRepeater implements Runnable {
                 // counter provides invoking the events in order
                 incrementInputsDispatched();
                 
-                view.callOnClick();
+                //view.callOnClick();
+                view.performClick();
                 Log.i("Repeater", "Clicked view: " + Integer.toHexString(view.getId()));
 
                 AseTestBridge.decNumUIBlocks(); // runnable to click consumed
