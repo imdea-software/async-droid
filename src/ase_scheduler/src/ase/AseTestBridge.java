@@ -154,8 +154,8 @@ public class AseTestBridge {
     }
     
     public static void launchMainActivity() {
-        String packageName = context.getPackageName();
-        Intent i = context.getPackageManager().getLaunchIntentForPackage(packageName);
+        String packageName = appContext.getPackageName();
+        Intent i = appContext.getPackageManager().getLaunchIntentForPackage(packageName);
         //clear the entire stack, except for the activity being launched
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         appContext.startActivity(i);
