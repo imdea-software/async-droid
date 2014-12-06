@@ -2,12 +2,10 @@ package ase.repeater;
 
 import java.util.List;
 
-import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.view.View;
-import android.widget.GridView;
 import android.widget.ListView;
 import ase.AseEvent;
 import ase.AseItemClickEvent;
@@ -31,7 +29,7 @@ public class InputRepeater implements Runnable {
     // ensures the correct order of invocations when view is not in the layout
     private int inputsDispatched = 0;
     
-    public InputRepeater(Context context, List<AseEvent> events) {
+    public InputRepeater(List<AseEvent> events) {
         eventList = events;
         handlerToUI = new Handler(Looper.getMainLooper());
         inputsToGo=eventList.size();

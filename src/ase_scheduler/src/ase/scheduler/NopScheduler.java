@@ -1,7 +1,6 @@
 package ase.scheduler;
 
 public class NopScheduler implements Scheduler {
-    PendingThreads threads = new PendingThreads();
 
     public NopScheduler() {
 

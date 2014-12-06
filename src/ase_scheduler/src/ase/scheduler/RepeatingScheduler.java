@@ -17,7 +17,6 @@ import ase.util.Reader;
  */
 public class RepeatingScheduler implements Scheduler, Runnable {
 
-    private Context context;
     private PendingThreads threads = new PendingThreads();
     private ThreadData schedulerThreadData = new ThreadData(ThreadData.SCHEDULER_ID, null);
     private DelaySequence delaySeq;
@@ -31,11 +30,10 @@ public class RepeatingScheduler implements Scheduler, Runnable {
     private Set<String> defaultThreadNames = null;
 
     public RepeatingScheduler(int numDelays, Context context) {
-        this.context = context;
         // event list will be read once and be fed into each inputRepeater
         Reader reader = IOFactory.getReader(context);
         List<AseEvent> eventsToRepeat = reader.read();
-        inputRepeater = new InputRepeater(context, eventsToRepeat);
+        inputRepeater = new InputRepeater(eventsToRepeat);
         // use numInputs to generate the delay sequences
         delaySeq = new DelaySequence(numDelays, eventsToRepeat.size());
     }

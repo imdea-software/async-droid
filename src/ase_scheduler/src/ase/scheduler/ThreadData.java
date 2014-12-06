@@ -28,10 +28,6 @@ public class ThreadData {
 
     private Thread thread;
 
-    /*
-     * public ThreadData(long id){ this.id = id; }
-     */
-
     public ThreadData(long id, Thread t) {
         this.id = id;
         this.thread = t;
@@ -83,13 +79,6 @@ public class ThreadData {
             return b.booleanValue();
         }
         return false;
-    }
-
-    public boolean isInBlock() {
-        if (willNotify.isEmpty())
-            return false;
-        else
-            return true;
     }
 
     public boolean isWaiting() {
