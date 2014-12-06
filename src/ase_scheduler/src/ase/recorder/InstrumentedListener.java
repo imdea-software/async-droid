@@ -4,6 +4,7 @@ import android.content.Context;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
+import ase.AseClickEvent;
 import ase.AseEvent;
 import ase.util.IOFactory;
 import ase.util.Recorder;
@@ -28,8 +29,7 @@ public class InstrumentedListener implements OnClickListener {
             return;
         }
 
-        AseEvent event = new AseEvent();
-        event.viewId = id;
+        AseEvent event = new AseClickEvent(id);
         recorder.record(event);
 
         if (ownListener != null)

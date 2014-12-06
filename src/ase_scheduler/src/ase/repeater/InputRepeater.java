@@ -7,7 +7,10 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.view.View;
+import android.widget.GridView;
+import android.widget.ListView;
 import ase.AseEvent;
+import ase.AseItemClickEvent;
 import ase.AseTestBridge;
 import ase.recorder.ViewTraverser;
 
@@ -42,7 +45,9 @@ public class InputRepeater implements Runnable {
         // will loop only once
         // more efficient than if check and notify
         // each time root view is set in every onCreate
-        while(ViewTraverser.CURRENT_ROOT_VIEW == null);
+        while (ViewTraverser.CURRENT_ROOT_VIEW == null) {
+            // do nothing
+        }
 
         Log.i("Repeater", "Repeating inputs.");
         if (eventList.isEmpty()) {
@@ -56,7 +61,7 @@ public class InputRepeater implements Runnable {
             Log.i("Repeater", "Posted a click.. InputsToGo:" + inputsToGo);
             AseTestBridge.notifyScheduler();
         }
-        
+
         Log.i("Repeater", "Completed posting inputs.");
     }
     
@@ -78,10 +83,9 @@ public class InputRepeater implements Runnable {
           
                 // counter provides invoking the events in order
                 incrementInputsDispatched();
-                
-                //view.callOnClick();
-                view.performClick();
-                Log.i("Repeater", "Clicked view: " + Integer.toHexString(view.getId()));
+
+                // call event listener
+                injectEvent(event, view);
 
                 AseTestBridge.decNumUIBlocks(); // runnable to click consumed
                 AseTestBridge.notifyScheduler();
@@ -89,11 +93,28 @@ public class InputRepeater implements Runnable {
         });
     }
 
+    public void injectEvent(AseEvent event, View view) {
+        if(event.type == AseEvent.EventType.CLICK) {
+            //view.callOnClick();
+            view.performClick();
+            Log.i("Repeater", "Clicked view: " + Integer.toHexString(view.getId()));
+        } else if(event.type == AseEvent.EventType.ITEMCLICK) {
+            AseItemClickEvent clickEvent = (AseItemClickEvent) event;
+            if(view instanceof ListView) {
+                ((ListView) view).smoothScrollToPosition(clickEvent.itemPos);
+                ((ListView) view).performItemClick(view, clickEvent.itemPos, clickEvent.itemId);
+                Log.i("Repeater", "Clicked view: " + Integer.toHexString(view.getId()) + " Position: " + clickEvent.itemPos);
+            } else {
+                Log.i("Repeater", "Cannot replay adapter views other than ListView");
+            }
+        }
+    }
+
     public void incrementInputsDispatched(){
         inputsDispatched ++;
     }
 
-    public void reset(){
+    public void reset() {
         inputsToGo=eventList.size();
         inputsDispatched = 0;
     }
