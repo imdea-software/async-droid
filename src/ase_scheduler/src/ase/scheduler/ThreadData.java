@@ -28,10 +28,6 @@ public class ThreadData {
 
     private Thread thread;
 
-    /*
-     * public ThreadData(long id){ this.id = id; }
-     */
-
     public ThreadData(long id, Thread t) {
         this.id = id;
         this.thread = t;
@@ -85,13 +81,6 @@ public class ThreadData {
         return false;
     }
 
-    public boolean isInBlock() {
-        if (willNotify.isEmpty())
-            return false;
-        else
-            return true;
-    }
-
     public boolean isWaiting() {
         return isWaiting;
     }
@@ -104,4 +93,12 @@ public class ThreadData {
         return !LooperReader.getInstance().hasEmptyLooper(thread);
     }
 
+    @Override
+    public String toString() {
+        return "[" +
+                "id=" + id +
+                ", name=" + thread.getName() +
+                ", state=" + thread.getState().toString() +
+                "]";
+    }
 }

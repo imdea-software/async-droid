@@ -2,6 +2,7 @@ package ase.util;
 
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 
 import android.content.Context;
 import android.util.Log;
@@ -19,19 +20,7 @@ public class FileRecorder implements Recorder {
 
     @Override
     public void record(AseEvent event) {
-        FileOutputStream fOut;
-        try {
-            fOut = context.openFileOutput(file, Context.MODE_APPEND);
-            OutputStreamWriter osw = new OutputStreamWriter(fOut);
-            osw.append(event.viewId + "\n");
-            osw.flush();
-            osw.close();
-            Log.i("Recorder", "Recorded: " + Integer.toHexString(event.viewId));
-        } catch (Exception e) {
-            Log.e("Recorder",
-                    "Could not record event "
-                            + Integer.toHexString(event.viewId), e);
-        }
+        recordEvent(event);
     }
 
     @Override
@@ -44,6 +33,20 @@ public class FileRecorder implements Recorder {
             Log.i("Recorder", "Cleared records in " + file);
         } catch (Exception e) {
             Log.e("Recorder", "Cannot clear records in " + file);
+        }
+    }
+
+    public void recordEvent(AseEvent event) {
+        FileOutputStream fOut;
+        try {
+            fOut = context.openFileOutput(file, Context.MODE_APPEND);
+            PrintWriter writer = new PrintWriter(fOut);
+            writer.println(event.toString());
+            writer.flush();
+            writer.close();
+            Log.i("Recorder", "Recorded: " + Integer.toHexString(event.viewId) + " Value: " + event.toString());
+        } catch (Exception e) {
+            Log.e("Recorder", "Could not record event "  + Integer.toHexString(event.viewId), e);
         }
     }
 }

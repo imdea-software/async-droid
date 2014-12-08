@@ -28,8 +28,9 @@ public class AseTestBridge {
     private static SchedulerMode mode;
     private static boolean initiated = false;
     
-    // application context to be used in utils and the scheduler
-    private static Context context;
+    // application appContext to be used in utils and the scheduler
+    private static Context appContext;
+    private static Activity currentAct;
    
 
     /*
@@ -42,6 +43,7 @@ public class AseTestBridge {
             setTestParameters(act);
             scheduler.runScheduler();  
         }
+        currentAct = act;
     }
 
     /**
@@ -50,7 +52,7 @@ public class AseTestBridge {
      * to be used to relaunch mainActivity after each test case
      */
     private static void setTestParameters(Activity act) {
-        context = act.getApplicationContext(); 
+        appContext = act.getApplicationContext();
 
         Intent intent = act.getIntent();
         Bundle bundle = intent.getExtras();
@@ -73,7 +75,7 @@ public class AseTestBridge {
                 } else {
                     Log.i("MyScheduler", "Running in repeat mode with delay bound 0 (default setting)");
                 }
-                scheduler = new RepeatingScheduler(numDelays, act.getApplicationContext(), act.getWindow().getDecorView().getRootView());
+                scheduler = new RepeatingScheduler(numDelays, act.getApplicationContext());
                 return;
             }
             Log.i("MyScheduler", "Scheduler mode cannot be identified.");
@@ -99,14 +101,6 @@ public class AseTestBridge {
         if (mode == SchedulerMode.RECORD) {
             ViewTraverser.traverseViewIds(rootView);
         }
-    }
-
-    /*
-     * application thread sends its info to the scheduler
-     * (necessary when it runs before added into scheduler's list)
-     */
-    public static void sendThreadInfo() {
-        scheduler.sendThreadInfo();
     }
     
     /*
@@ -160,10 +154,16 @@ public class AseTestBridge {
     }
     
     public static void launchMainActivity() {
-        String packageName = context.getPackageName();
-        Intent i = context.getPackageManager().getLaunchIntentForPackage(packageName);
+        String packageName = appContext.getPackageName();
+        Intent i = appContext.getPackageManager().getLaunchIntentForPackage(packageName);
+        //clear the entire stack, except for the activity being launched
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        context.startActivity(i);
+        appContext.startActivity(i);
+    }
+
+    public static void finishCurrentActivity() {
+        Log.i("MyScheduler", "Finishing activity.");
+        currentAct.finish();
     }
 
 }

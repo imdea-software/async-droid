@@ -1,32 +1,13 @@
 package ase.util;
 
 import java.lang.reflect.Field;
-import java.util.ArrayList;
 
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.AdapterView;
 
 public class ReflectionUtils {
-
-    public static ArrayList<Integer> getViewsInApp(String packageName) {
-        ArrayList<Integer> viewIDs = new ArrayList<Integer>();
-
-        try {
-            Class<?> r = Class.forName(packageName + ".R$id");
-
-            for (Field f : r.getDeclaredFields()) {
-                viewIDs.add((Integer) f.getInt(new Object()));
-                // Log.i("ReflectionUtils", " " +
-                // Integer.toHexString(f.getInt(new Object())));
-            }
-
-        } catch (Exception e) {
-            Log.i("ReflectionUtils", "Exception during reflection!");
-        }
-
-        return viewIDs;
-    }
 
     public static OnClickListener getOnClickListener(View view) {
         OnClickListener listener = null;
@@ -39,8 +20,7 @@ public class ReflectionUtils {
             Object myLiObject = null;
             myLiObject = listenerInfoField.get(view);
 
-            // get the field mOnClickListener, that holds the listener and cast
-            // it to a listener
+            // get the field mOnClickListener
             Field listenerField = null;
             listenerField = Class.forName("android.view.View$ListenerInfo")
                     .getDeclaredField("mOnClickListener");
@@ -51,6 +31,30 @@ public class ReflectionUtils {
             listener = null;
         }
         return listener;
+    }
+
+    public static AdapterView.OnItemClickListener getOnItemClickListener(AdapterView view) {
+        AdapterView.OnItemClickListener listener = null;
+        try {
+            // get the field mOnClickListener that holds the listener
+            Field listenerField = null;
+            listenerField = getSuperClassOfType(view.getClass(), AdapterView.class.getName()).getDeclaredField("mOnItemClickListener");
+            listenerField.setAccessible(true);
+            listener = (AdapterView.OnItemClickListener) listenerField.get(view);
+        } catch (Exception ex) {
+            listener = null;
+        }
+        return listener;
+    }
+
+    public static Class getSuperClassOfType(Class clazz, String superClassName) {
+        Class tempClass = clazz;
+        while (tempClass != null && !tempClass.getName().equals(superClassName))
+            tempClass = tempClass.getSuperclass();
+
+        Log.i("Recorder", tempClass == null ? "null" : tempClass.getName());
+
+        return tempClass;
     }
 
 }

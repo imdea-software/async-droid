@@ -3,11 +3,6 @@ package ase.scheduler;
 public interface Scheduler {
 
     void runScheduler();
-
-    /*
-     * application thread sends its info
-     */
-    void sendThreadInfo();
     
     /*
      * application thread waits for its signal to start/resume

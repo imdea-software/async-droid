@@ -5,6 +5,8 @@ import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.View.OnClickListener;
+import android.widget.AdapterView;
+import android.widget.ListView;
 
 public class ViewTraverser {
 
@@ -33,6 +35,7 @@ public class ViewTraverser {
     }
 
     private static void traverseChildViewIds(View view) {
+
         if (view instanceof ViewGroup) {
             ViewGroup group = (ViewGroup) view;
             for (int i = 0; i < group.getChildCount(); i++) {
@@ -40,15 +43,21 @@ public class ViewTraverser {
                 Log.v("ViewLogger", "traversed: " + child.getClass().getSimpleName() + " "
                                 + Integer.toHexString(child.getId()));
 
-                // add listener to the traversed view
-                if (!child.getClass().getSimpleName().contains("Layout")) {
-                    OnClickListener listener = new InstrumentedListener(child,
-                            applicationContext); // //////////////
-                    child.setOnClickListener(listener); // ////////////////////
+                if(child instanceof AdapterView) {
+                    Log.i("ViewLogger", "Adapter view: Id: " + child.getId() + " " + ((AdapterView) child).getCount());
+                    // add onItemClickListener to the adapter
+                    AdapterView.OnItemClickListener listener = new InstrumentedItemClickListener((AdapterView)child, applicationContext);
+                    ((AdapterView)child).setOnItemClickListener(listener);
+
+                } else if (!child.getClass().getSimpleName().contains("Layout")) {
+                    // add onClickListener to the traversed view
+                    OnClickListener listener = new InstrumentedListener(child, applicationContext);
+                    child.setOnClickListener(listener);
                 }
 
                 traverseChildViewIds(child);
             }
         }
     }
+
 }

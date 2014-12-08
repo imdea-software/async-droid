@@ -1,7 +1,6 @@
 package ase.scheduler;
 
 public class NopScheduler implements Scheduler {
-    PendingThreads threads = new PendingThreads();
 
     public NopScheduler() {
 
@@ -38,11 +37,4 @@ public class NopScheduler implements Scheduler {
         // TODO Auto-generated method stub
 
     }
-
-    @Override
-    public void sendThreadInfo() {
-        // TODO Auto-generated method stub
-        
-    }
-
 }
