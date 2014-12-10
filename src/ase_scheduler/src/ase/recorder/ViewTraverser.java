@@ -7,6 +7,7 @@ import android.view.ViewGroup;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.Spinner;
 
 public class ViewTraverser {
 
@@ -44,10 +45,19 @@ public class ViewTraverser {
                                 + Integer.toHexString(child.getId()));
 
                 if(child instanceof AdapterView) {
-                    Log.i("ViewLogger", "Adapter view: Id: " + child.getId() + " " + ((AdapterView) child).getCount());
-                    // add onItemClickListener to the adapter
-                    AdapterView.OnItemClickListener listener = new InstrumentedItemClickListener((AdapterView)child, applicationContext);
-                    ((AdapterView)child).setOnItemClickListener(listener);
+                    if(child instanceof ListView) {
+                        Log.i("ViewLogger", "List view: Id: " + child.getId() + " " + ((AdapterView) child).getCount());
+                        // add onItemClickListener to the adapter
+                        AdapterView.OnItemClickListener listener = new InstrumentedItemClickListener((AdapterView) child, applicationContext);
+                        ((AdapterView) child).setOnItemClickListener(listener);
+                    } else if (child instanceof Spinner) {
+                        Log.i("ViewLogger", "Spinner view: Id: " + child.getId() + " " + ((AdapterView) child).getCount());
+                        // add onItemClickListener to the adapter
+                        AdapterView.OnItemSelectedListener listener = new InstrumentedItemSelectedListener((AdapterView) child, applicationContext);
+                        ((AdapterView) child).setOnItemSelectedListener(listener);
+                    } else {
+                        Log.i("ViewLogger", "Cannot record grid view or gallery view");
+                    }
 
                 } else if (!child.getClass().getSimpleName().contains("Layout")) {
                     // add onClickListener to the traversed view
