@@ -5,11 +5,7 @@ import java.util.List;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
-import android.view.View;
-import android.widget.ListView;
-import ase.AseEvent;
-import ase.AseItemClickEvent;
-import ase.AseTestBridge;
+import ase.*;
 import ase.recorder.ViewTraverser;
 
 
@@ -28,6 +24,7 @@ public class InputRepeater implements Runnable {
     // incremented when posted task to UI could invoke (view exists in current layout) the event
     // ensures the correct order of invocations when view is not in the layout
     private int inputsDispatched = 0;
+    private int trials = 0;
     
     public InputRepeater(List<AseEvent> events) {
         eventList = events;
@@ -70,42 +67,27 @@ public class InputRepeater implements Runnable {
             public void run() {
                 AseEvent event = eventList.get(inputsDispatched);
                 AseTestBridge.waitMyTurn();
-                View view = ViewTraverser.CURRENT_ROOT_VIEW.findViewById(event.viewId);
 
-                if (view == null) {
+                if(!event.isFirable()) {
+                    if (trials > 10) return;
                     handlerToUI.post(this);
+                    trials ++;
                     Log.i("Repeater", "Sending again " + Integer.toHexString(event.viewId));
                     AseTestBridge.notifyScheduler();    
                     return;
                 }
-          
+
                 // counter provides invoking the events in order
                 incrementInputsDispatched();
+                trials = 0;
 
-                // call event listener
-                injectEvent(event, view);
+                // call event's listener
+                event.injectEvent();
 
                 AseTestBridge.decNumUIBlocks(); // runnable to click consumed
                 AseTestBridge.notifyScheduler();
             }
         });
-    }
-
-    public void injectEvent(AseEvent event, View view) {
-        if(event.type == AseEvent.EventType.CLICK) {
-            //view.callOnClick();
-            view.performClick();
-            Log.i("Repeater", "Clicked view: " + Integer.toHexString(view.getId()));
-        } else if(event.type == AseEvent.EventType.ITEMCLICK) {
-            AseItemClickEvent clickEvent = (AseItemClickEvent) event;
-            if(view instanceof ListView) {
-                ((ListView) view).smoothScrollToPosition(clickEvent.itemPos);
-                ((ListView) view).performItemClick(view, clickEvent.itemPos, clickEvent.itemId);
-                Log.i("Repeater", "Clicked view: " + Integer.toHexString(view.getId()) + " Position: " + clickEvent.itemPos);
-            } else {
-                Log.i("Repeater", "Cannot replay adapter views other than ListView");
-            }
-        }
     }
 
     public void incrementInputsDispatched(){

@@ -5,6 +5,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import ase.recorder.ViewTraverser;
 import ase.scheduler.RecordingScheduler;
@@ -12,6 +14,7 @@ import ase.scheduler.NopScheduler;
 import ase.scheduler.RepeatingScheduler;
 import ase.scheduler.Scheduler;
 import ase.scheduler.SchedulerData;
+import ase.util.IOFactory;
 
 
 /*
@@ -30,7 +33,8 @@ public class AseTestBridge {
     
     // application appContext to be used in utils and the scheduler
     private static Context appContext;
-    private static Activity currentAct;
+    public static Activity currentAct;  /////////////////
+    public static Menu actionBarMenu;
    
 
     /*
@@ -164,6 +168,37 @@ public class AseTestBridge {
     public static void finishCurrentActivity() {
         Log.i("MyScheduler", "Finishing activity.");
         currentAct.finish();
+    }
+
+    // to be used for replay
+    public static void setActionBarMenu(Menu menu) {
+        // Need the menu reference only in replay mode
+        if(!(scheduler instanceof RepeatingScheduler))
+            return;
+
+        if(menu== null)
+            Log.i("Repeater", "Menu is null");
+        actionBarMenu = menu;
+    }
+
+    public static void setRecorderForActionBar(final MenuItem item) {
+        // Recorder works only in record mode
+        if(!(scheduler instanceof RecordingScheduler)) {
+            Log.i("Recorder", "Not in record mode");
+            return;
+        }
+
+        if(item == null) {
+            Log.i("Repeater", "Item is null");
+            return;
+        }
+        AseEvent event;
+        if (item.getItemId() != android.R.id.home) {
+             event = new AseActionBarEvent(item.getItemId());
+        } else {
+             event = new AseNavigateUpEvent(item.getItemId(), AseTestBridge.currentAct.getComponentName().flattenToString());
+        }
+        IOFactory.getRecorder(appContext).record(event);
     }
 
 }

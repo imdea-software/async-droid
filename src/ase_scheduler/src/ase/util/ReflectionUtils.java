@@ -36,11 +36,23 @@ public class ReflectionUtils {
     public static AdapterView.OnItemClickListener getOnItemClickListener(AdapterView view) {
         AdapterView.OnItemClickListener listener = null;
         try {
-            // get the field mOnClickListener that holds the listener
             Field listenerField = null;
             listenerField = getSuperClassOfType(view.getClass(), AdapterView.class.getName()).getDeclaredField("mOnItemClickListener");
             listenerField.setAccessible(true);
             listener = (AdapterView.OnItemClickListener) listenerField.get(view);
+        } catch (Exception ex) {
+            listener = null;
+        }
+        return listener;
+    }
+
+    public static AdapterView.OnItemSelectedListener getOnItemSelectedListener(AdapterView view) {
+        AdapterView.OnItemSelectedListener listener = null;
+        try {
+            Field listenerField = null;
+            listenerField = getSuperClassOfType(view.getClass(), AdapterView.class.getName()).getDeclaredField("mOnItemSelectedListener");
+            listenerField.setAccessible(true);
+            listener = (AdapterView.OnItemSelectedListener) listenerField.get(view);
         } catch (Exception ex) {
             listener = null;
         }

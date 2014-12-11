@@ -6,3 +6,5 @@ logcatOutputs
 local.properties
 .idea
 *.iml
+out
+example

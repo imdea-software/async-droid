@@ -3,7 +3,7 @@ package ase;
 public abstract class AseEvent {
 
     public enum EventType {
-        CLICK, ITEMCLICK
+        CLICK, ITEMCLICK, ACTIONBAR, NAVIGATEUP
     }
 
     public final EventType type;
@@ -13,4 +13,8 @@ public abstract class AseEvent {
         this.type = type;
         this.viewId = viewId;
     }
+
+    abstract public boolean isFirable();
+
+    abstract public void injectEvent();
 }

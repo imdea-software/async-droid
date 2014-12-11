@@ -46,7 +46,7 @@ public class FileRecorder implements Recorder {
             writer.close();
             Log.i("Recorder", "Recorded: " + Integer.toHexString(event.viewId) + " Value: " + event.toString());
         } catch (Exception e) {
-            Log.e("Recorder", "Could not record event "  + Integer.toHexString(event.viewId), e);
+            Log.e("Recorder", "Could not record event with id: "  + Integer.toHexString(event.viewId), e);
         }
     }
 }
