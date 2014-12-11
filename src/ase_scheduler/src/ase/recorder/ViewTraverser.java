@@ -37,6 +37,12 @@ public class ViewTraverser {
 
     private static void traverseChildViewIds(View view) {
 
+        if(view.getClass().getSimpleName().equals("ActionBarContainer")) {
+            Log.i("ViewLogger", "ActionBarContainer Detail: " + view.toString() + " ID: " + view.getId());
+            // traverseActionBar(view);
+            return;
+        }
+
         if (view instanceof ViewGroup) {
             ViewGroup group = (ViewGroup) view;
             for (int i = 0; i < group.getChildCount(); i++) {
@@ -69,5 +75,24 @@ public class ViewTraverser {
             }
         }
     }
+/*
+    private static void traverseActionBar(View view) {
+        if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) view;
+            for (int i = 0; i < group.getChildCount(); i++) {
+                View child = group.getChildAt(i);
+                Log.v("ViewLogger", "traversed: " + child.getClass().getSimpleName() + " "
+                        + Integer.toHexString(child.getId()));
+
+                if (child.getClass().getSimpleName().equals("ImageView")) {
+                    // add listener to the parent of HomeView
+                    OnClickListener listener = new ListenerToRecordUp(child, applicationContext);
+                    child.setOnClickListener(listener);
+                }
+
+                traverseActionBar(child);
+            }
+        }
+    }*/
 
 }

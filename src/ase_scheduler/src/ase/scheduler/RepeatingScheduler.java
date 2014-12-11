@@ -42,6 +42,8 @@ public class RepeatingScheduler implements Scheduler, Runnable {
         Thread t = new Thread(this);
         t.setName("SchedulerThread");
         t.start();
+        // capture all threads before waking it up?
+        // otherwise some other threads can wait before the scheduler collects the threads info
         wakeScheduler();
     }
 
@@ -145,6 +147,8 @@ public class RepeatingScheduler implements Scheduler, Runnable {
          *      - looper threads are idle and no one is waiting to be scheduled
          */
 
+        ThreadData main = threads.getThreadById(1);
+        notifyThread(main);
     }
 
     /*

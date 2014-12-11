@@ -9,9 +9,7 @@ import java.util.Scanner;
 
 import android.content.Context;
 import android.util.Log;
-import ase.AseClickEvent;
-import ase.AseItemClickEvent;
-import ase.AseEvent;
+import ase.*;
 
 public class FileReader implements Reader {
 
@@ -60,10 +58,15 @@ public class FileReader implements Reader {
         AseEvent event = null;
         if(type == AseEvent.EventType.CLICK) {
             event = new AseClickEvent(viewId);
-        }
-        if(type == AseEvent.EventType.ITEMCLICK) {
+        } else if(type == AseEvent.EventType.ITEMCLICK) {
             event = new AseItemClickEvent(viewId, Integer.parseInt(tokens[2]), Integer.parseInt(tokens[3]));
             Log.i("FileReader", "Pos: " + ((AseItemClickEvent) event).itemPos);
+        } else if (type == AseEvent.EventType.ACTIONBAR) {
+            event = new AseActionBarEvent(viewId);
+            Log.i("FileReader", "Menu id: " + viewId);
+        } else if (type == AseEvent.EventType.NAVIGATEUP) {
+            event = new AseNavigateUpEvent(viewId, tokens[2]);
+            Log.i("FileReader", "Read navigate up");
         }
         return event;
     }

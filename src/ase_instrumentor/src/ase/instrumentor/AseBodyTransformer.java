@@ -19,13 +19,14 @@ import soot.Transform;
 import soot.Unit;
 import soot.Value;
 import soot.jimple.*;
+import soot.jimple.internal.JIdentityStmt;
 import soot.options.Options;
 
 public class AseBodyTransformer extends BodyTransformer {
 
     private static SootClass aseTestBridgeClass;
     private static SootMethod initiateScheduler, waitMyTurn, notifyScheduler, enterMonitor, exitMonitor, incNumUIBlocks, decNumUIBlocks;
-    private static SootMethod setActivityViewTraverser, setFragmentViewTraverser;
+    private static SootMethod setActivityViewTraverser, setFragmentViewTraverser, setActionBarMenu, setRecorderForActionBar;
 
     private static SootClass activityClass;
 
@@ -48,7 +49,7 @@ public class AseBodyTransformer extends BodyTransformer {
     }
 
 
-    private static void init() {
+    private void init() {
         if (aseTestBridgeClass != null)
             return;
 
@@ -62,7 +63,9 @@ public class AseBodyTransformer extends BodyTransformer {
         decNumUIBlocks = aseTestBridgeClass.getMethod("void decNumUIBlocks()");
         setActivityViewTraverser = aseTestBridgeClass.getMethod("void setActivityViewTraverser(android.app.Activity)");
         setFragmentViewTraverser = aseTestBridgeClass.getMethod("void setFragmentViewTraverser(android.view.View)");
-        
+        setActionBarMenu = aseTestBridgeClass.getMethod("void setActionBarMenu(android.view.Menu)");
+        setRecorderForActionBar = aseTestBridgeClass.getMethod("void setRecorderForActionBar(android.view.MenuItem)");
+
         activityClass = Scene.v().getSootClass("android.app.Activity");
     }
 
@@ -93,6 +96,12 @@ public class AseBodyTransformer extends BodyTransformer {
 
         } else if (methodName.equals("onCreateView")) {
             instrumentOnCreateViewMethod(b);
+
+        } else if (methodName.equals("onCreateOptionsMenu")) {  //////////////////////////
+            instrumentonCreateOptionsMenu(b);
+
+        } else if (methodName.equals("onOptionsItemSelected")) {  //////////////////////////
+            instrumentOnOptionsItemSelected(b);
 
         } else if (methodName.equals("doInBackground")) {
             System.out.println("===========Instrumenting " + methodName + "..");
@@ -354,7 +363,32 @@ public class AseBodyTransformer extends BodyTransformer {
         }
     }
 
-    private static Local createLocal(Body body, String name, String type) {
+    private void instrumentonCreateOptionsMenu(final Body b) {
+        final PatchingChain<Unit> units = b.getUnits();
+        Iterator<Unit> iter = units.snapshotIterator();
+
+        iter.next(); // the identity statement for the method
+        JIdentityStmt stmt = (JIdentityStmt) iter.next(); // the identity statement for the parameter
+        Value param = stmt.getLeftOp();
+
+        units.insertAfter(staticInvocation(setActionBarMenu, param), stmt);
+        System.out.println("===========Action bar menu is set..");
+
+    }
+    private void instrumentOnOptionsItemSelected(final Body b) {
+        final PatchingChain<Unit> units = b.getUnits();
+        Iterator<Unit> iter = units.snapshotIterator();
+
+        iter.next(); // the identity statement for the method
+        JIdentityStmt stmt = (JIdentityStmt) iter.next(); // the identity statement for the parameter
+        Value param = stmt.getLeftOp();
+
+        units.insertAfter(staticInvocation(setRecorderForActionBar, param), stmt);
+        System.out.println("===========Action bar recorder is added..");
+
+    }
+
+    private Local createLocal(Body body, String name, String type) {
         Local l = Jimple.v().newLocal(name, RefType.v(type));
         body.getLocals().add(l);
         return l;
@@ -366,15 +400,15 @@ public class AseBodyTransformer extends BodyTransformer {
         return l;
     } 
 
-    private static InvokeStmt staticInvocation(SootMethod m) {
+    private InvokeStmt staticInvocation(SootMethod m) {
         return Jimple.v().newInvokeStmt(Jimple.v().newStaticInvokeExpr(m.makeRef()));
     }
 
-    private static InvokeStmt staticInvocation(SootMethod m, Local arg) {
+    private InvokeStmt staticInvocation(SootMethod m, Local arg) {
         return Jimple.v().newInvokeStmt(Jimple.v().newStaticInvokeExpr(m.makeRef(),arg));
     }
     
-    private static InvokeStmt staticInvocation(SootMethod m, Value arg) {
+    private InvokeStmt staticInvocation(SootMethod m, Value arg) {
         return Jimple.v().newInvokeStmt(Jimple.v().newStaticInvokeExpr(m.makeRef(),arg));
     }
 
