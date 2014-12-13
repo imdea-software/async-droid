@@ -3,7 +3,6 @@ package ase;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -16,26 +15,19 @@ import ase.scheduler.Scheduler;
 import ase.scheduler.SchedulerData;
 import ase.util.IOFactory;
 
-
 /*
  *  static interface class between the scheduler and the app under test
  */
 public class AseTestBridge {
 
-    public enum SchedulerMode {
-        NOP, RECORD, REPEAT
-    };
-
     private static Scheduler scheduler;
     private static SchedulerData schedulerData;
-    private static SchedulerMode mode;
     private static boolean initiated = false;
     
     // application appContext to be used in utils and the scheduler
     private static Context appContext;
     public static Activity currentAct;  /////////////////
     public static Menu actionBarMenu;
-   
 
     /*
      * called by UI thread with the application context
@@ -58,51 +50,36 @@ public class AseTestBridge {
     private static void setTestParameters(Activity act) {
         appContext = act.getApplicationContext();
 
-        Intent intent = act.getIntent();
-        Bundle bundle = intent.getExtras();
-        
-        if (intent.hasExtra("mode")) {
-            String smode = bundle.getString("mode");
-            
-            if (smode.equalsIgnoreCase("record")) {
-                mode = SchedulerMode.RECORD;
-                Log.i("MyScheduler", "Running in record mode");
+        Parameters parameters = IOFactory.getParameters(appContext);
+
+        Log.i("MyScheduler", "Running in " + parameters.getMode() + " mode...");
+        switch (parameters.getSchedulerMode()) {
+            case RECORD:
                 scheduler = new RecordingScheduler(act);
-                return;
-            }
-            if ((smode.equalsIgnoreCase("repeat") || smode.equalsIgnoreCase("replay"))) {
-                mode = SchedulerMode.REPEAT;
-                int numDelays = 0;
-                if (intent.hasExtra("numDelays")) {
-                    numDelays = Integer.parseInt(bundle.getString("numDelays"));
-                    Log.i("MyScheduler", "Running in repeat mode with delay bound " + numDelays);
-                } else {
-                    Log.i("MyScheduler", "Running in repeat mode with delay bound 0 (default setting)");
-                }
-                scheduler = new RepeatingScheduler(numDelays, act.getApplicationContext());
-                return;
-            }
-            Log.i("MyScheduler", "Scheduler mode cannot be identified.");
+                break;
+            case REPEAT:
+                Log.i("MyScheduler", "Number of delays: " + parameters.getNumDelays());
+                scheduler = new RepeatingScheduler(parameters.getNumDelays(), appContext);
+                break;
+            case NOP:
+                scheduler = new NopScheduler();
         }
-         
-        mode = SchedulerMode.NOP;
-        Log.i("MyScheduler", "No Scheduler is used");
-        scheduler = new NopScheduler();   
+        Log.i("MyScheduler", "Scheduler initialized for mode " + parameters.getMode());
     }
 
     public static void setActivityViewTraverser(Activity act) {
         View v = act.getWindow().getDecorView().getRootView();
-        if (mode == SchedulerMode.RECORD) {
+        if (scheduler.getSchedulerMode() == SchedulerMode.RECORD) {
             ViewTraverser.setViewViewerContext(act.getApplicationContext());
             ViewTraverser.setRootView(v);
             ViewTraverser.traverseViewIds(v.getRootView());
-        } else if (mode == SchedulerMode.REPEAT) {
+        } else if (scheduler.getSchedulerMode() == SchedulerMode.REPEAT) {
             ViewTraverser.setRootView(v);
         }
     }
 
     public static void setFragmentViewTraverser(View rootView) {
-        if (mode == SchedulerMode.RECORD) {
+        if (scheduler.getSchedulerMode() == SchedulerMode.RECORD) {
             ViewTraverser.traverseViewIds(rootView);
         }
     }

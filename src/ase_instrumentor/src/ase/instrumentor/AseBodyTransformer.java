@@ -36,7 +36,7 @@ public class AseBodyTransformer extends BodyTransformer {
 
         PackManager.v().getPack("jtp").add(
             new Transform("jtp.myInstrumenter", new AseBodyTransformer()));
-
+        
         soot.Main.main(new String[]{
             "-debug",
             "-prepend-classpath",
@@ -90,6 +90,8 @@ public class AseBodyTransformer extends BodyTransformer {
         } else if (className.startsWith("org.xml")) {
             // skip
         } else if (className.startsWith("org.json")) {
+            // skip
+        } else if (className.startsWith("com.google.gson")) {
             // skip
         } else if (hasParentClass(clazz, activityClass) && methodName.equals("onCreate")) {
             instrumentOnCreateMethod(b);

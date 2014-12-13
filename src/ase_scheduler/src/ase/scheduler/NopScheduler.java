@@ -1,9 +1,15 @@
 package ase.scheduler;
 
+import ase.SchedulerMode;
+
 public class NopScheduler implements Scheduler {
 
     public NopScheduler() {
+    }
 
+    @Override
+    public SchedulerMode getSchedulerMode() {
+        return SchedulerMode.NOP;
     }
 
     @Override

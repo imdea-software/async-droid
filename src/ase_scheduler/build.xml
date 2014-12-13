@@ -41,9 +41,12 @@
         <pathelement path="${android.jar}"/>
         <pathelement path="${lib}/dx.jar"/>
         <pathelement path="${lib}/soot.jar"/>
+        <pathelement path="${lib}/gson-2.2.4.jar"/>
       </classpath>
     </javac>
-    <jar destfile="${build}/scheduler.jar" basedir="${build}/classes" includes="**"/>
+    <jar destfile="${build}/scheduler.jar" basedir="${build}/classes" includes="**">
+        <zipgroupfileset dir="${lib}" includes="gson-2.2.4.jar" />
+    </jar>
   </target>
 
   <target name="dex" depends="compile">

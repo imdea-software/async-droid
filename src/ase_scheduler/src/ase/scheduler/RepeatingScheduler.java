@@ -8,6 +8,7 @@ import android.content.Context;
 import android.util.Log;
 import ase.AseEvent;
 import ase.AseTestBridge;
+import ase.SchedulerMode;
 import ase.repeater.InputRepeater;
 import ase.util.IOFactory;
 import ase.util.Reader;
@@ -36,6 +37,11 @@ public class RepeatingScheduler implements Scheduler, Runnable {
         inputRepeater = new InputRepeater(eventsToRepeat);
         // use numInputs to generate the delay sequences
         delaySeq = new DelaySequence(numDelays, eventsToRepeat.size());
+    }
+
+    @Override
+    public SchedulerMode getSchedulerMode() {
+        return SchedulerMode.REPEAT;
     }
 
     public void runScheduler() {

@@ -1,6 +1,10 @@
 package ase.scheduler;
 
+import ase.SchedulerMode;
+
 public interface Scheduler {
+
+    SchedulerMode getSchedulerMode();
 
     void runScheduler();
     
@@ -28,5 +32,4 @@ public interface Scheduler {
      * application thread exits a monitor
      */
     void exitMonitor();
-
 }

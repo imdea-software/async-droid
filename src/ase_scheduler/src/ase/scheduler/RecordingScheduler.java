@@ -1,6 +1,7 @@
 package ase.scheduler;
 
 import android.app.Activity;
+import ase.SchedulerMode;
 import ase.util.IOFactory;
 import ase.util.Recorder;
 
@@ -35,6 +36,11 @@ public class RecordingScheduler implements Scheduler {
     public void exitMonitor() {
         // TODO Auto-generated method stub
 
+    }
+
+    @Override
+    public SchedulerMode getSchedulerMode() {
+        return SchedulerMode.RECORD;
     }
 
     @Override

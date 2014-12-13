@@ -16,6 +16,7 @@
       <classpath>
         <pathelement path="${classpath}"/>
         <pathelement path="${lib}/soot.jar"/>
+        <pathelement path="${lib}/gson-2.2.4.jar"/>
       </classpath>
     </javac>
     <jar destfile="${build}/instrumentor.jar" basedir="${build}/classes" includes="**">
