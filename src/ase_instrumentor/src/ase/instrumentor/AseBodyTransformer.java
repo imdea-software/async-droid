@@ -36,7 +36,7 @@ public class AseBodyTransformer extends BodyTransformer {
 
         PackManager.v().getPack("jtp").add(
             new Transform("jtp.myInstrumenter", new AseBodyTransformer()));
-        
+
         soot.Main.main(new String[]{
             "-debug",
             "-prepend-classpath",
@@ -80,6 +80,7 @@ public class AseBodyTransformer extends BodyTransformer {
 
         SootClass clazz = b.getMethod().getDeclaringClass();
         SootClass activityClass = Scene.v().getSootClass("android.app.Activity");
+        SootClass applicationClass = Scene.v().getSootClass("android.app.Application");
 
         if (className.startsWith("ase.")) {
             // skip
@@ -93,7 +94,7 @@ public class AseBodyTransformer extends BodyTransformer {
             // skip
         } else if (className.startsWith("com.google.gson")) {
             // skip
-        } else if (hasParentClass(clazz, activityClass) && methodName.equals("onCreate")) {
+        } else if (methodName.equals("onCreate") && (hasParentClass(clazz, activityClass) /*|| hasParentClass(clazz, applicationClass)*/)) {
             instrumentOnCreateMethod(b);
 
         } else if (methodName.equals("onCreateView")) {

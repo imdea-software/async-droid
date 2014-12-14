@@ -34,7 +34,7 @@ public class ParametersReader {
             parameters = new Gson().fromJson(inBuff, Parameters.class);
 
         } catch (Exception e) {
-            Log.e("FileReader", "Could not read event from file: " + file, e);
+            Log.e("FileReader", "Could not read from file: " + file, e);
         }
 
         return parameters;
