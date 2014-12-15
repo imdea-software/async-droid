@@ -104,7 +104,7 @@ def create_json_file(mode, delays):
 
   test_params = {
     "mode": modeStr,
-    "numDelay": delays
+    "numDelays": delays
   }
   out_file = open("parameters.json","w")
   json.dump(test_params, out_file, indent=4)                                    
