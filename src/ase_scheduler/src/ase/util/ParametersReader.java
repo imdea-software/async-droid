@@ -6,6 +6,7 @@ import ase.Parameters;
 import com.google.gson.Gson;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 
@@ -22,13 +23,12 @@ public class ParametersReader {
         this.file = file;
     }
 
-
     public Parameters readObject() {
         Parameters parameters = Parameters.EMPTY;
         FileInputStream fIn;
 
         try {
-            fIn = context.openFileInput(file);
+            fIn = new FileInputStream (new File(file));
             BufferedReader inBuff = new BufferedReader(new InputStreamReader(fIn));
 
             parameters = new Gson().fromJson(inBuff, Parameters.class);

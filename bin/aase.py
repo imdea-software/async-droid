@@ -110,8 +110,7 @@ def create_json_file(mode, delays):
   json.dump(test_params, out_file, indent=4)                                    
   out_file.close()
   app_name = package_name(options.apkfile)
-  adb("push parameters.json /data/data/%s/files/parameters.json" % app_name)
-
+  adb("push parameters.json /sdcard/parameters.json")
 
 def do_record():
   create_json_file(options.mode, 0)
