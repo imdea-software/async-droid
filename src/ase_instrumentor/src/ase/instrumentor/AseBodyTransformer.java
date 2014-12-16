@@ -94,7 +94,7 @@ public class AseBodyTransformer extends BodyTransformer {
             // skip
         } else if (className.startsWith("com.google.gson")) {
             // skip
-        } else if (methodName.equals("onCreate") && (hasParentClass(clazz, activityClass) /*|| hasParentClass(clazz, applicationClass)*/)) {
+        } else if (methodName.equals("onCreate") && (hasParentClass(clazz, activityClass) || hasParentClass(clazz, applicationClass))) {
             instrumentOnCreateMethod(b);
 
         } else if (methodName.equals("onCreateView")) {
