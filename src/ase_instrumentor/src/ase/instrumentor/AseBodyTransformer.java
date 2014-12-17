@@ -54,7 +54,7 @@ public class AseBodyTransformer extends BodyTransformer {
             return;
 
         aseTestBridgeClass = Scene.v().getSootClass("ase.AseTestBridge");
-        initiateScheduler = aseTestBridgeClass.getMethod("void initiateScheduler(android.app.Activity)");
+        initiateScheduler = aseTestBridgeClass.getMethod("void initiateScheduler(android.content.Context)");
         waitMyTurn = aseTestBridgeClass.getMethod("void waitMyTurn()");
         notifyScheduler = aseTestBridgeClass.getMethod("void notifyScheduler()");
         enterMonitor = aseTestBridgeClass.getMethod("void enterMonitor()");
@@ -94,8 +94,11 @@ public class AseBodyTransformer extends BodyTransformer {
             // skip
         } else if (className.startsWith("com.google.gson")) {
             // skip
-        } else if (methodName.equals("onCreate") && (hasParentClass(clazz, activityClass) || hasParentClass(clazz, applicationClass))) {
-            instrumentOnCreateMethod(b);
+        } else if (methodName.equals("onCreate")) {
+            if (hasParentClass(clazz, activityClass))
+                instrumentOnCreateMethod(b, true); // instrument for UI traversing
+            else if (hasParentClass(clazz, applicationClass))
+                instrumentOnCreateMethod(b, false);
 
         } else if (methodName.equals("onCreateView")) {
             instrumentOnCreateViewMethod(b);
@@ -122,7 +125,7 @@ public class AseBodyTransformer extends BodyTransformer {
             System.out.println("===========Instrumenting " + methodName + "..");
             instrumentMethod(b);
 
-        } 
+        }
 
         // No need to instrument input event handlers any more!
         // The execution order of input event handlers are controlled in blocks
@@ -147,10 +150,10 @@ public class AseBodyTransformer extends BodyTransformer {
     }
     /**
      * Adds a statement to initiate ase scheduler
-     * Also adds a call to setActivityViewTraverser 
+     * If instrumentUI is true, adds a call to setActivityViewTraverser
      * to set root view of the app and traverse the views in the activity layout
      */
-    private void instrumentOnCreateMethod(final Body b) {
+    private void instrumentOnCreateMethod(final Body b, boolean instrumentUI) {
         final PatchingChain<Unit> units = b.getUnits();
         Iterator<Unit> iter = units.snapshotIterator();
 
@@ -160,17 +163,19 @@ public class AseBodyTransformer extends BodyTransformer {
         units.insertBefore(staticInvocation(initiateScheduler, b.getThisLocal()), stmt);
         System.out.println("===========Initiate Scheduler stmt added..");
 
-        while (iter.hasNext()) {
-            Unit u = iter.next();
-            u.apply(new AbstractStmtSwitch() {
+        // if it is an Activity onCreate, than instrument for UI traversal
+        if(instrumentUI) {
+            while (iter.hasNext()) {
+                Unit u = iter.next();
+                u.apply(new AbstractStmtSwitch() {
 
                 public void caseReturnVoidStmt(ReturnVoidStmt stmt) {
-                    units.insertBefore(staticInvocation(setActivityViewTraverser, b.getThisLocal()), stmt);
-                    System.out.println("===========ActivityViewTraversal stmt added..");
-                }
+                        units.insertBefore(staticInvocation(setActivityViewTraverser, b.getThisLocal()), stmt);
+                        System.out.println("===========ActivityViewTraversal stmt added..");
+                    }
 
             });
-
+            }
         }
     }
 

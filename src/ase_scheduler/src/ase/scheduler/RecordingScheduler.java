@@ -1,14 +1,14 @@
 package ase.scheduler;
 
-import android.app.Activity;
+import android.content.Context;
 import ase.SchedulerMode;
 import ase.util.IOFactory;
 import ase.util.Recorder;
 
 public class RecordingScheduler implements Scheduler {
 
-    public RecordingScheduler(Activity act) {
-        Recorder recorder = IOFactory.getRecorder(act.getApplicationContext());
+    public RecordingScheduler(Context context) {
+        Recorder recorder = IOFactory.getRecorder(context);
         recorder.clear();
     }
 

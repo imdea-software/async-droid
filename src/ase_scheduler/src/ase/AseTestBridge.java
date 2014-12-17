@@ -30,16 +30,18 @@ public class AseTestBridge {
     public static Menu actionBarMenu;
 
     /*
-     * called by UI thread with the application context
+     * called by UI thread in onCreate method of Activity or Application
+     * with the application/activity instance as parameter
      */
-    public static void initiateScheduler(Activity act) {
+    public static void initiateScheduler(Context context) {
         if (!initiated) {
             initiated = true;
             schedulerData = new SchedulerData();
-            setTestParameters(act);
+            setTestParameters(context);
             scheduler.runScheduler();  
         }
-        currentAct = act;
+        if(context instanceof Activity)
+            currentAct = (Activity) context;
     }
 
     /**
@@ -47,15 +49,14 @@ public class AseTestBridge {
      * Also sets the application context 
      * to be used to relaunch mainActivity after each test case
      */
-    private static void setTestParameters(Activity act) {
-        appContext = act.getApplicationContext();
-
+    private static void setTestParameters(Context context) {
+        appContext = context.getApplicationContext();
         Parameters parameters = IOFactory.getParameters(appContext);
 
         Log.i("MyScheduler", "Running in " + parameters.getMode() + " mode...");
         switch (parameters.getSchedulerMode()) {
             case RECORD:
-                scheduler = new RecordingScheduler(act);
+                scheduler = new RecordingScheduler(context);
                 break;
             case REPEAT:
                 Log.i("MyScheduler", "Number of delays: " + parameters.getNumDelays());
