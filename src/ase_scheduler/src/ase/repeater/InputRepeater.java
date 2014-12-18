@@ -50,11 +50,11 @@ public class InputRepeater implements Runnable {
         }
         
         for (int i=0; i<eventList.size(); i++) {
-            AseTestBridge.waitMyTurn();
+            AseTestBridge.waitForDispatch();
             sendEventToApp();
             inputsToGo --;
             Log.i("Repeater", "Posted a click.. InputsToGo:" + inputsToGo);
-            AseTestBridge.notifyScheduler();
+            AseTestBridge.notifyDispatcher();
         }
 
         Log.i("Repeater", "Completed posting inputs.");
@@ -66,14 +66,14 @@ public class InputRepeater implements Runnable {
         handlerToUI.post(new Runnable() {
             public void run() {
                 AseEvent event = eventList.get(inputsDispatched);
-                AseTestBridge.waitMyTurn();
+                AseTestBridge.waitForDispatch();
 
                 if(!event.isFirable()) {
                     if (trials > 10) return;
                     handlerToUI.post(this);
                     trials ++;
                     Log.i("Repeater", "Sending again " + Integer.toHexString(event.viewId));
-                    AseTestBridge.notifyScheduler();    
+                    AseTestBridge.notifyDispatcher();  
                     return;
                 }
 
@@ -85,7 +85,7 @@ public class InputRepeater implements Runnable {
                 event.injectEvent();
 
                 AseTestBridge.decNumUIBlocks(); // runnable to click consumed
-                AseTestBridge.notifyScheduler();
+                AseTestBridge.notifyDispatcher();
             }
         });
     }
