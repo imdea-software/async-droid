@@ -1,6 +1,6 @@
 package ase.scheduler;
 
-public class SchedulerData {
+public class ExecutionData {
     
     // UI blocks inserted by inputRepeater, onPublishProgress or onPostExecute
     // keeps track of UI thread status

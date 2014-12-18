@@ -8,11 +8,11 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import ase.recorder.ViewTraverser;
-import ase.scheduler.RecordingScheduler;
-import ase.scheduler.NopScheduler;
-import ase.scheduler.RepeatingScheduler;
-import ase.scheduler.Scheduler;
-import ase.scheduler.SchedulerData;
+import ase.scheduler.RecordingMode;
+import ase.scheduler.NopMode;
+import ase.scheduler.RepeatingMode;
+import ase.scheduler.ExecutionMode;
+import ase.scheduler.ExecutionData;
 import ase.util.IOFactory;
 
 /*
@@ -20,32 +20,31 @@ import ase.util.IOFactory;
  */
 public class AseTestBridge {
 
-    private static Scheduler scheduler;
-    private static SchedulerData schedulerData;
+    private static ExecutionMode executionMode;
+    private static ExecutionData executionData;
     private static boolean initiated = false;
     
     // application appContext to be used in utils and the scheduler
     private static Context appContext;
-    public static Activity currentAct;  /////////////////
+    public static Activity currentAct;
     public static Menu actionBarMenu;
 
-    /*
+    /**
      * called by UI thread in onCreate method of Activity or Application
      * with the application/activity instance as parameter
      */
-    public static void initiateScheduler(Context context) {
+    public static void initiateTesting(Context context) {
         if (!initiated) {
             initiated = true;
-            schedulerData = new SchedulerData();
+            executionData = new ExecutionData();
             setTestParameters(context);
-            scheduler.runScheduler();  
         }
         if(context instanceof Activity)
             currentAct = (Activity) context;
     }
 
     /**
-     * Sets the scheduler mode and number of delays
+     * Sets the execution mode and bound parameter (number of delays)
      * Also sets the application context 
      * to be used to relaunch mainActivity after each test case
      */
@@ -53,34 +52,35 @@ public class AseTestBridge {
         appContext = context.getApplicationContext();
         Parameters parameters = IOFactory.getParameters(appContext);
 
-        Log.i("MyScheduler", "Running in " + parameters.getMode() + " mode...");
+        Log.i("AsyncDroid", "Running in " + parameters.getMode() + " mode...");
         switch (parameters.getSchedulerMode()) {
             case RECORD:
-                scheduler = new RecordingScheduler(context);
+                executionMode = new RecordingMode(context);
                 break;
             case REPEAT:
-                Log.i("MyScheduler", "Number of delays: " + parameters.getNumDelays());
-                scheduler = new RepeatingScheduler(parameters.getNumDelays(), appContext);
+                Log.i("AsyncDroid", "Number of delays: " + parameters.getNumDelays());
+                executionMode = new RepeatingMode(parameters.getNumDelays(), appContext);
+                executionMode.runScheduler();  
                 break;
             case NOP:
-                scheduler = new NopScheduler();
+                executionMode = new NopMode();
         }
-        Log.i("MyScheduler", "Scheduler initialized for mode " + parameters.getMode());
+        Log.i("AsyncDroid", "Scheduler initialized for mode " + parameters.getMode());
     }
 
     public static void setActivityViewTraverser(Activity act) {
         View v = act.getWindow().getDecorView().getRootView();
-        if (scheduler.getSchedulerMode() == SchedulerMode.RECORD) {
+        if (executionMode.getExecutionModeType() == ExecutionModeType.RECORD) {
             ViewTraverser.setViewViewerContext(act.getApplicationContext());
             ViewTraverser.setRootView(v);
             ViewTraverser.traverseViewIds(v.getRootView());
-        } else if (scheduler.getSchedulerMode() == SchedulerMode.REPEAT) {
+        } else if (executionMode.getExecutionModeType() == ExecutionModeType.REPEAT) {
             ViewTraverser.setRootView(v);
         }
     }
 
     public static void setFragmentViewTraverser(View rootView) {
-        if (scheduler.getSchedulerMode() == SchedulerMode.RECORD) {
+        if (executionMode.getExecutionModeType() == ExecutionModeType.RECORD) {
             ViewTraverser.traverseViewIds(rootView);
         }
     }
@@ -88,51 +88,51 @@ public class AseTestBridge {
     /*
      * application thread waits for its signal to start/resume
      */
-    public static void waitMyTurn() {
-        scheduler.waitMyTurn();
+    public static void waitForDispatch() {
+        executionMode.waitForDispatch();
     }
 
     /*
      * application thread yields
      */
     public static void yield() {
-        scheduler.yield();
+        executionMode.yield();
     }
     
 
     /*
      * application thread notify scheduler when they are completed
      */
-    public static void notifyScheduler() {
-        scheduler.notifyScheduler();
+    public static void notifyDispatcher() {
+        executionMode.notifyDispatcher();
     }
 
     /*
      * application thread enters in a monitor
      */
     public static void enterMonitor() {
-        scheduler.enterMonitor();
+        executionMode.enterMonitor();
     }
 
     /*
      * application thread exits a monitor
      */
     public static void exitMonitor() {
-        scheduler.exitMonitor();
+        executionMode.exitMonitor();
     }
     
     public static void incNumUIBlocks() {
-        Log.v("MyScheduler", "Incremented numUIBlocks by: " + Thread.currentThread().getName());
-        schedulerData.incNumUIBlocks();
+        Log.v("AsyncDroid", "Incremented numUIBlocks by: " + Thread.currentThread().getName());
+        executionData.incNumUIBlocks();
     }
     
     public static void decNumUIBlocks() {
-        Log.v("MyScheduler", "Decremented numUIBlocks by: " + Thread.currentThread().getName());
-        schedulerData.decNumUIBlocks();
+        Log.v("AsyncDroid", "Decremented numUIBlocks by: " + Thread.currentThread().getName());
+        executionData.decNumUIBlocks();
     }
     
     public static int getNumUIBlocks() {
-        return schedulerData.getNumUIBlocks();
+        return executionData.getNumUIBlocks();
     }
     
     public static void launchMainActivity() {
@@ -144,14 +144,14 @@ public class AseTestBridge {
     }
 
     public static void finishCurrentActivity() {
-        Log.i("MyScheduler", "Finishing activity.");
+        Log.i("AsyncDroid", "Finishing activity.");
         currentAct.finish();
     }
 
     // to be used for replay
     public static void setActionBarMenu(Menu menu) {
         // Need the menu reference only in replay mode
-        if(!(scheduler instanceof RepeatingScheduler))
+        if(!(executionMode instanceof RepeatingMode))
             return;
 
         if(menu== null)
@@ -161,7 +161,7 @@ public class AseTestBridge {
 
     public static void setRecorderForActionBar(final MenuItem item) {
         // Recorder works only in record mode
-        if(!(scheduler instanceof RecordingScheduler)) {
+        if(!(executionMode instanceof RecordingMode)) {
             Log.i("Recorder", "Not in record mode");
             return;
         }

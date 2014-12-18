@@ -1,17 +1,17 @@
 package ase.scheduler;
 
-import ase.SchedulerMode;
+import ase.ExecutionModeType;
 
-public interface Scheduler {
+public interface ExecutionMode {
 
-    SchedulerMode getSchedulerMode();
+    ExecutionModeType getExecutionModeType();
 
     void runScheduler();
     
     /*
      * application thread waits for its signal to start/resume
      */
-    void waitMyTurn();
+    void waitForDispatch();
 
     /*
      * application thread yields
@@ -21,7 +21,7 @@ public interface Scheduler {
     /*
      * application thread notify scheduler when they are completed
      */
-    void notifyScheduler();
+    void notifyDispatcher();
 
     /*
      * application thread enters in a monitor

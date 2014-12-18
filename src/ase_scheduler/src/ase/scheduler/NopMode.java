@@ -1,19 +1,19 @@
 package ase.scheduler;
 
-import android.content.Context;
-import ase.SchedulerMode;
-import ase.util.IOFactory;
-import ase.util.Recorder;
+import ase.ExecutionModeType;
 
-public class RecordingScheduler implements Scheduler {
+public class NopMode implements ExecutionMode {
 
-    public RecordingScheduler(Context context) {
-        Recorder recorder = IOFactory.getRecorder(context);
-        recorder.clear();
+    public NopMode() {
     }
 
     @Override
-    public void waitMyTurn() {
+    public ExecutionModeType getExecutionModeType() {
+        return ExecutionModeType.NOP;
+    }
+
+    @Override
+    public void waitForDispatch() {
         // TODO Auto-generated method stub
     }
 
@@ -23,7 +23,7 @@ public class RecordingScheduler implements Scheduler {
     }
 
     @Override
-    public void notifyScheduler() {
+    public void notifyDispatcher() {
         // TODO Auto-generated method stub
     }
 
@@ -36,11 +36,6 @@ public class RecordingScheduler implements Scheduler {
     public void exitMonitor() {
         // TODO Auto-generated method stub
 
-    }
-
-    @Override
-    public SchedulerMode getSchedulerMode() {
-        return SchedulerMode.RECORD;
     }
 
     @Override

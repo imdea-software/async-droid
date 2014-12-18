@@ -5,7 +5,7 @@ package ase;
  */
 public class Parameters {
 
-    public static final Parameters EMPTY = new Parameters(SchedulerMode.NOP);
+    public static final Parameters EMPTY = new Parameters(ExecutionModeType.NOP);
 
     private String mode;
     private int numDelays;
@@ -13,7 +13,7 @@ public class Parameters {
     public Parameters() {
     }
 
-    private Parameters(SchedulerMode mode) {
+    private Parameters(ExecutionModeType mode) {
         this.mode = mode.toString();
     }
 
@@ -33,7 +33,7 @@ public class Parameters {
         this.numDelays = numDelays;
     }
 
-    public SchedulerMode getSchedulerMode() {
-        return SchedulerMode.valueOf(mode);
+    public ExecutionModeType getSchedulerMode() {
+        return ExecutionModeType.valueOf(mode);
     }
 }

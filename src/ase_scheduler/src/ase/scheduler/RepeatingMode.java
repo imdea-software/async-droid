@@ -6,7 +6,7 @@ import android.content.Context;
 import android.util.Log;
 import ase.AseEvent;
 import ase.AseTestBridge;
-import ase.SchedulerMode;
+import ase.ExecutionModeType;
 import ase.repeater.InputRepeater;
 import ase.util.IOFactory;
 import ase.util.Reader;
@@ -14,7 +14,7 @@ import ase.util.Reader;
 /*
  * Schedules the application threads using a particular number of delays
  */
-public class RepeatingScheduler implements Scheduler, Runnable {
+public class RepeatingMode implements ExecutionMode, Runnable {
 
     private PendingThreads threads = new PendingThreads();
     private ThreadData schedulerThreadData = new ThreadData(ThreadData.SCHEDULER_ID, null);
@@ -27,7 +27,7 @@ public class RepeatingScheduler implements Scheduler, Runnable {
 
     private final boolean schedulingLogs = true;
 
-    public RepeatingScheduler(int numDelays, Context context) {
+    public RepeatingMode(int numDelays, Context context) {
         // event list will be read once and be fed into each inputRepeater
         Reader reader = IOFactory.getReader(context);
         List<AseEvent> eventsToRepeat = reader.read();
@@ -54,7 +54,7 @@ public class RepeatingScheduler implements Scheduler, Runnable {
 
     @Override
     public void run() {
-        Log.i("MyScheduler", "Scheduler has started in thread: "
+        Log.i("AseScheduler", "Scheduler has started in thread: "
                 + Thread.currentThread().getName() + " Id: "
                 + Thread.currentThread().getId());
 
@@ -67,10 +67,10 @@ public class RepeatingScheduler implements Scheduler, Runnable {
             Log.i("DelayInfo", "Current delay indices:" + delaySeq.toString());
             initiateSingleTest();
             runSingleTest();
-            Log.i("MyScheduler", "Test has completed.");
+            Log.i("AseScheduler", "Test has completed.");
         }
 
-        Log.i("MyScheduler", "All tests has completed.");
+        Log.i("AseScheduler", "All tests has completed.");
         Log.i("DelayInfo", "All tests has completed.");
 
 
@@ -101,7 +101,7 @@ public class RepeatingScheduler implements Scheduler, Runnable {
         scheduled = 0L;
         threads.clear();  // If comes after InputRepeater is registered, problematic!!!
         threads.captureThread(inputThread); // Register this before scheduler runs since it may wait earlier
-        // (initiation of myScheduler by UIthread, that waits when click)
+        // (initiation of AseScheduler by UIthread, that waits when click)
         // (InputRepeater immediately wants to be scheduled, it needs to be in the list)
     }
 
@@ -123,7 +123,7 @@ public class RepeatingScheduler implements Scheduler, Runnable {
             if(okToSchedule(current)){
                 // check whether the thread will be delayed
                 if (segmentToProcess == delaySeq.getNextDelayIndex()) {
-                    Log.i("MyScheduler", "Delayed Thread Id: " + current.getId() + " Last Processed: " + segmentToProcess);
+                    Log.i("AseScheduler", "Delayed Thread Id: " + current.getId() + " Last Processed: " + segmentToProcess);
                     Log.i("DelayInfo", "Consumed delay: " + segmentToProcess);
 
                     segmentToProcess++;
@@ -184,7 +184,7 @@ public class RepeatingScheduler implements Scheduler, Runnable {
         return false;
     }
 
-    public void waitMyTurn() {
+    public void waitForDispatch() {
         Thread current =  Thread.currentThread();
         threads.captureThread(current); // add thread to the scheduling list // is it necessary?
         waitMyTurn(current.getId());
@@ -200,14 +200,14 @@ public class RepeatingScheduler implements Scheduler, Runnable {
 
             // ThreadData of waiting task should be in the list!!
             if (me == null) { // I should not hit this statement:
-                Log.e("MyScheduler", "THREAD WHAT WAITS ITS TURN IS NOT IN THE LIST!!! " + threadId);
+                Log.e("AseScheduler", "THREAD WHAT WAITS ITS TURN IS NOT IN THE LIST!!! " + threadId);
                 return;
             }
 
             // it can be suspended only if it is not in a monitor
             if (me.getCurrentMonitors() > 0) {
                 // will not be blocked by scheduler and will not notify the scheduler after completion
-                Log.v("MyScheduler", "Thread has acquired monitor(s), is not suspended.. Id:" + me.getId());
+                Log.v("AseScheduler", "Thread has acquired monitor(s), is not suspended.. Id:" + me.getId());
                 me.pushWaitBlock(false); // corresponding notifyScheduler will not actually notify
                 return;
             }
@@ -225,14 +225,14 @@ public class RepeatingScheduler implements Scheduler, Runnable {
         }
 
         if (schedulingLogs)
-            Log.v("MyScheduler", "I am waiting. ThreadId: " + threadId);
+            Log.v("AseScheduler", "I am waiting. ThreadId: " + threadId);
 
         while (scheduled != threadId) {
             me.waitThread();
         }
 
         if (schedulingLogs)
-            Log.v("MyScheduler", "I am executing. ThreadId: " + threadId);
+            Log.v("AseScheduler", "I am executing. ThreadId: " + threadId);
     }
 
     /*
@@ -251,27 +251,27 @@ public class RepeatingScheduler implements Scheduler, Runnable {
      * Threads notify scheduler when they are completed This is also the case in
      * message/runnable processing in a looper In case no more messages arrive
      */
-    public void notifyScheduler() {
+    public void notifyDispatcher() {
 
         ThreadData me = threads.getThreadById(Thread.currentThread().getId());
 
         // if already notified the scheduler, me is null
         // I should not hit this statement:
         if (me == null) {
-            Log.e("MyScheduler",
+            Log.e("AseScheduler",
                     "THREAD NOTIFYING SCHEDULER NOT IN THE LIST!!!");
             return;
         }
 
         if (schedulingLogs)
-            Log.v("MyScheduler", "Block is finished. Thread Id: "
+            Log.v("AseScheduler", "Block is finished. Thread Id: "
                     + Thread.currentThread().getId() + " Last Processed: "
                     + segmentToProcess);
 
         // A thread did not actually wait in corresponding waitMyTurn
         // (either it was already in block (nested wait stmts) or it had monitors)
         if (!me.popWaitBlock()) {
-            Log.v("MyScheduler", "I am NOTT notifying the scheduler. Thread Id: "
+            Log.v("AseScheduler", "I am NOTT notifying the scheduler. Thread Id: "
                             + Thread.currentThread().getId());
             return;
         }
@@ -281,7 +281,7 @@ public class RepeatingScheduler implements Scheduler, Runnable {
         // thread consumes the notification block
         me.setIsWaiting(false);
         if (schedulingLogs)
-            Log.v("MyScheduler", "I am notifying the scheduler. Thread Id: "
+            Log.v("AseScheduler", "I am notifying the scheduler. Thread Id: "
                     + Thread.currentThread().getId());
         schedulerThreadData.notifyThread();
     }
@@ -292,7 +292,7 @@ public class RepeatingScheduler implements Scheduler, Runnable {
      */
     public void wakeScheduler() {
         scheduled = ThreadData.SCHEDULER_ID;
-        Log.i("MyScheduler", "Waky waky!");
+        Log.i("AseScheduler", "Waky waky!");
         schedulerThreadData.notifyThread();
     }
 
@@ -311,8 +311,8 @@ public class RepeatingScheduler implements Scheduler, Runnable {
     }
 
     @Override
-    public SchedulerMode getSchedulerMode() {
-        return SchedulerMode.REPEAT;
+    public ExecutionModeType getExecutionModeType() {
+        return ExecutionModeType.REPEAT;
     }
 
 }

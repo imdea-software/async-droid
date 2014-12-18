@@ -1,19 +1,19 @@
 package ase.scheduler;
 
-import ase.SchedulerMode;
+import android.content.Context;
+import ase.ExecutionModeType;
+import ase.util.IOFactory;
+import ase.util.Recorder;
 
-public class NopScheduler implements Scheduler {
+public class RecordingMode implements ExecutionMode {
 
-    public NopScheduler() {
+    public RecordingMode(Context context) {
+        Recorder recorder = IOFactory.getRecorder(context);
+        recorder.clear();
     }
 
     @Override
-    public SchedulerMode getSchedulerMode() {
-        return SchedulerMode.NOP;
-    }
-
-    @Override
-    public void waitMyTurn() {
+    public void waitForDispatch() {
         // TODO Auto-generated method stub
     }
 
@@ -23,7 +23,7 @@ public class NopScheduler implements Scheduler {
     }
 
     @Override
-    public void notifyScheduler() {
+    public void notifyDispatcher() {
         // TODO Auto-generated method stub
     }
 
@@ -36,6 +36,11 @@ public class NopScheduler implements Scheduler {
     public void exitMonitor() {
         // TODO Auto-generated method stub
 
+    }
+
+    @Override
+    public ExecutionModeType getExecutionModeType() {
+        return ExecutionModeType.RECORD;
     }
 
     @Override

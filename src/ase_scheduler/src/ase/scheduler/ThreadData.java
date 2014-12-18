@@ -40,7 +40,7 @@ public class ThreadData {
     public String getName() {
         if(thread!=null)
             return thread.getName();
-       Log.e("MyScheduler", "Reading name of a null-thread");
+       Log.e("AseScheduler", "Reading name of a null-thread");
        return null;
     }
 
@@ -65,7 +65,6 @@ public class ThreadData {
     }
 
     public int getCurrentMonitors() {
-        // Log.v("MyScheduler", "Monitors: " + currentMonitors );
         return currentMonitors;
     }
 
