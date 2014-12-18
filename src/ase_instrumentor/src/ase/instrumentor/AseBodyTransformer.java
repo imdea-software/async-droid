@@ -1,9 +1,7 @@
 package ase.instrumentor;
 
 
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 import soot.Body;
@@ -20,15 +18,12 @@ import soot.Unit;
 import soot.Value;
 import soot.jimple.*;
 import soot.jimple.internal.JIdentityStmt;
-import soot.options.Options;
 
 public class AseBodyTransformer extends BodyTransformer {
 
     private static SootClass aseTestBridgeClass;
     private static SootMethod initiateScheduler, waitMyTurn, notifyScheduler, enterMonitor, exitMonitor, incNumUIBlocks, decNumUIBlocks;
     private static SootMethod setActivityViewTraverser, setFragmentViewTraverser, setActionBarMenu, setRecorderForActionBar;
-
-    private static SootClass activityClass;
 
     public static void main(String[] args) {
         // args[0]: directory from which to process classes
@@ -66,7 +61,6 @@ public class AseBodyTransformer extends BodyTransformer {
         setActionBarMenu = aseTestBridgeClass.getMethod("void setActionBarMenu(android.view.Menu)");
         setRecorderForActionBar = aseTestBridgeClass.getMethod("void setRecorderForActionBar(android.view.MenuItem)");
 
-        activityClass = Scene.v().getSootClass("android.app.Activity");
     }
 
     @Override
