@@ -22,7 +22,7 @@ import soot.jimple.internal.JIdentityStmt;
 public class AseBodyTransformer extends BodyTransformer {
 
     private static SootClass aseTestBridgeClass;
-    private static SootMethod initiateScheduler, waitMyTurn, notifyScheduler, enterMonitor, exitMonitor, incNumUIBlocks, decNumUIBlocks;
+    private static SootMethod initiateTesting, waitForDispatch, notifyDispatcher, enterMonitor, exitMonitor, incNumUIBlocks, decNumUIBlocks;
     private static SootMethod setActivityViewTraverser, setFragmentViewTraverser, setActionBarMenu, setRecorderForActionBar;
 
     public static void main(String[] args) {
@@ -49,9 +49,9 @@ public class AseBodyTransformer extends BodyTransformer {
             return;
 
         aseTestBridgeClass = Scene.v().getSootClass("ase.AseTestBridge");
-        initiateScheduler = aseTestBridgeClass.getMethod("void initiateScheduler(android.content.Context)");
-        waitMyTurn = aseTestBridgeClass.getMethod("void waitMyTurn()");
-        notifyScheduler = aseTestBridgeClass.getMethod("void notifyScheduler()");
+        initiateTesting = aseTestBridgeClass.getMethod("void initiateTesting(android.content.Context)");
+        waitForDispatch = aseTestBridgeClass.getMethod("void waitForDispatch()");
+        notifyDispatcher = aseTestBridgeClass.getMethod("void notifyDispatcher()");
         enterMonitor = aseTestBridgeClass.getMethod("void enterMonitor()");
         exitMonitor = aseTestBridgeClass.getMethod("void exitMonitor()");
         incNumUIBlocks = aseTestBridgeClass.getMethod("void incNumUIBlocks()");
@@ -154,7 +154,7 @@ public class AseBodyTransformer extends BodyTransformer {
         // initiate scheduler as the first statement
         // since the latter statements may call async tasks
         Stmt stmt = ((JimpleBody) b).getFirstNonIdentityStmt();
-        units.insertBefore(staticInvocation(initiateScheduler, b.getThisLocal()), stmt);
+        units.insertBefore(staticInvocation(initiateTesting, b.getThisLocal()), stmt);
         System.out.println("===========Initiate Scheduler stmt added..");
 
         // if it is an Activity onCreate, than instrument for UI traversal
@@ -214,7 +214,7 @@ public class AseBodyTransformer extends BodyTransformer {
             return;
         
         Unit u = iter.next();
-        units.insertAfter(staticInvocation(waitMyTurn), u);
+        units.insertAfter(staticInvocation(waitForDispatch), u);
         System.out.println("Wait for CPU stmt added..");
 
         while (iter.hasNext()) {
@@ -234,21 +234,21 @@ public class AseBodyTransformer extends BodyTransformer {
                 public void caseReturnVoidStmt(ReturnVoidStmt stmt) {
                     units.insertBefore(staticInvocation(incNumUIBlocks), stmt);
                     System.out.println("Increment numUIBlocks stmt added after doInBackGround..");
-                    units.insertBefore(staticInvocation(notifyScheduler), stmt);
+                    units.insertBefore(staticInvocation(notifyDispatcher), stmt);
                     System.out.println("Release CPU stmt added..");
                 }
                 
                 public void caseReturnStmt(ReturnStmt stmt) {
                     units.insertBefore(staticInvocation(incNumUIBlocks), stmt);
                     System.out.println("Increment numUIBlocks stmt added after doInBackGround..");
-                    units.insertBefore(staticInvocation(notifyScheduler), stmt);
+                    units.insertBefore(staticInvocation(notifyDispatcher), stmt);
                     System.out.println("Release CPU stmt added..");
                 }
                 
                 public void caseRetStmt(RetStmt stmt) {
                     units.insertBefore(staticInvocation(incNumUIBlocks), stmt);
                     System.out.println("Increment numUIBlocks stmt added after doInBackGround..");
-                    units.insertBefore(staticInvocation(notifyScheduler), stmt);
+                    units.insertBefore(staticInvocation(notifyDispatcher), stmt);
                     System.out.println("Release CPU stmt added..");
                 }
                 
@@ -277,7 +277,7 @@ public class AseBodyTransformer extends BodyTransformer {
             return;
         
         Unit u = iter.next();
-        units.insertAfter(staticInvocation(waitMyTurn), u);
+        units.insertAfter(staticInvocation(waitForDispatch), u);
         System.out.println("Wait for CPU stmt added..");
 
         while (iter.hasNext()) {
@@ -285,17 +285,17 @@ public class AseBodyTransformer extends BodyTransformer {
             u.apply(new AbstractStmtSwitch() {
 
                 public void caseReturnVoidStmt(ReturnVoidStmt stmt) {
-                    units.insertBefore(staticInvocation(notifyScheduler), stmt);
+                    units.insertBefore(staticInvocation(notifyDispatcher), stmt);
                     System.out.println("Release CPU stmt added..");
                 }
                 
                 public void caseReturnStmt(ReturnStmt stmt) {
-                    units.insertBefore(staticInvocation(notifyScheduler), stmt);
+                    units.insertBefore(staticInvocation(notifyDispatcher), stmt);
                     System.out.println("Release CPU stmt added..");
                 }
                 
                 public void caseRetStmt(RetStmt stmt) {
-                    units.insertBefore(staticInvocation(notifyScheduler), stmt);
+                    units.insertBefore(staticInvocation(notifyDispatcher), stmt);
                     System.out.println("Release CPU stmt added..");
                 }
                 
@@ -324,7 +324,7 @@ public class AseBodyTransformer extends BodyTransformer {
             return;
 
         Unit u = iter.next();
-        units.insertAfter(staticInvocation(waitMyTurn), u);
+        units.insertAfter(staticInvocation(waitForDispatch), u);
         System.out.println("Wait for CPU stmt added..");
 
         while (iter.hasNext()) {
@@ -334,21 +334,21 @@ public class AseBodyTransformer extends BodyTransformer {
                 public void caseReturnVoidStmt(ReturnVoidStmt stmt) {
                     units.insertBefore(staticInvocation(decNumUIBlocks), stmt);
                     System.out.println("Decrement numUIBlocks stmt added..");
-                    units.insertBefore(staticInvocation(notifyScheduler), stmt);
+                    units.insertBefore(staticInvocation(notifyDispatcher), stmt);
                     System.out.println("Release CPU stmt added..");
                 }
 
                 public void caseReturnStmt(ReturnStmt stmt) {
                     units.insertBefore(staticInvocation(decNumUIBlocks), stmt);
                     System.out.println("Decrement numUIBlocks stmt added..");
-                    units.insertBefore(staticInvocation(notifyScheduler), stmt);
+                    units.insertBefore(staticInvocation(notifyDispatcher), stmt);
                     System.out.println("Release CPU stmt added..");
                 }
 
                 public void caseRetStmt(RetStmt stmt) {
                     units.insertBefore(staticInvocation(decNumUIBlocks), stmt);
                     System.out.println("Decrement numUIBlocks stmt added..");
-                    units.insertBefore(staticInvocation(notifyScheduler), stmt);
+                    units.insertBefore(staticInvocation(notifyDispatcher), stmt);
                     System.out.println("Release CPU stmt added..");
                 }
 

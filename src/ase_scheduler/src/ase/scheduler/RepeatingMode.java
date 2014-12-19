@@ -18,28 +18,22 @@ public class RepeatingMode implements ExecutionMode, Runnable {
 
     private PendingThreads threads = new PendingThreads();
     private ThreadData schedulerThreadData = new ThreadData(ThreadData.SCHEDULER_ID, null);
-    private DelaySequence delaySeq;
     private InputRepeater inputRepeater;
+    private Scheduler scheduler;
 
     // Thread id of the currently scheduled thread
     private static long scheduled = 0L;
-    private int segmentToProcess = 1;
 
     private final boolean schedulingLogs = true;
-
+    
     public RepeatingMode(int numDelays, Context context) {
         // event list will be read once and be fed into each inputRepeater
         Reader reader = IOFactory.getReader(context);
         List<AseEvent> eventsToRepeat = reader.read();
         inputRepeater = new InputRepeater(eventsToRepeat);
 
-        // use numInputs to generate the delay sequences
-        setSchedulerParameters(numDelays, eventsToRepeat.size());
-    }
-
-    ////////////
-    private void setSchedulerParameters(int bound, int inputSize) {
-        delaySeq = new DelaySequence(bound, inputSize);
+        scheduler = new RRScheduler(threads, inputRepeater);
+        scheduler.initiateScheduler(numDelays, eventsToRepeat.size()); ////NEW!!
     }
 
     @Override
@@ -47,8 +41,8 @@ public class RepeatingMode implements ExecutionMode, Runnable {
         Thread t = new Thread(this);
         t.setName("SchedulerThread");
         t.start();
-        // capture all threads before waking it up?
-        // otherwise some other threads can wait before the scheduler collects the threads info
+        // prevent threads to wait for dispatch before the scheduler has them in its list
+        threads.captureAllThreads();
         wakeScheduler();
     }
 
@@ -59,20 +53,17 @@ public class RepeatingMode implements ExecutionMode, Runnable {
                 + Thread.currentThread().getId());
 
         // must wait until the main (UI) thread wakes it
-        waitMyTurn(ThreadData.SCHEDULER_ID);
+        waitForDispatch(ThreadData.SCHEDULER_ID);
 
-        while (delaySeq.hasNext()) {
-            AseTestBridge.launchMainActivity();
-            delaySeq.next();
-            Log.i("DelayInfo", "Current delay indices:" + delaySeq.toString());
-            initiateSingleTest();
-            runSingleTest();
-            Log.i("AseScheduler", "Test has completed.");
+        while (scheduler.hasMoreTestCases()) {
+            AseTestBridge.launchMainActivity();           
+            initiateTestCase();
+            runTestCase();
+            cleanTestCaseData();
         }
 
         Log.i("AseScheduler", "All tests has completed.");
         Log.i("DelayInfo", "All tests has completed.");
-
 
         // TODO now the app closes but we still need to rearrange this
         // create a new activity - clear top and and get the activity reference
@@ -92,114 +83,56 @@ public class RepeatingMode implements ExecutionMode, Runnable {
     /*
      * Reset single test parameters
      */
-    public void initiateSingleTest() {
-        inputRepeater.reset();
+    public void initiateTestCase() {       
+        scheduler.initiateTestCase(); // NEW!!!
+            
         Thread inputThread = new Thread(inputRepeater);
         inputThread.setName("InputRepeater");
         inputThread.start();
-        segmentToProcess = 1;
-        scheduled = 0L;
-        threads.clear();  // If comes after InputRepeater is registered, problematic!!!
+        // If comes after InputRepeater is registered, problematic
         threads.captureThread(inputThread); // Register this before scheduler runs since it may wait earlier
-        // (initiation of AseScheduler by UIthread, that waits when click)
-        // (InputRepeater immediately wants to be scheduled, it needs to be in the list)
     }
-
+    
     /*
      * A single test following one delay sequence
      */
-    public void runSingleTest() {
-        int idleSteps = 0;
-        do {
-            // add current user threads into list!! do not wait for them to register!!
+    public void runTestCase() {
+        ThreadData current = null;
+
+        while (!scheduler.isEndOfTestCase()) {
             threads.captureAllThreads();
-            // walker keeps the index of the thread to be scheduled
-            threads.increaseWalker();
-
-            ThreadData current = threads.getCurrentThread();
-            Log.v("Scheduled", threads.toString());
-            Log.v("Scheduled", "Current: " + current.getName() + " Walker Index: " + threads.getWalkerIndex());
-
-            if(okToSchedule(current)){
-                // check whether the thread will be delayed
-                if (segmentToProcess == delaySeq.getNextDelayIndex()) {
-                    Log.i("AseScheduler", "Delayed Thread Id: " + current.getId() + " Last Processed: " + segmentToProcess);
-                    Log.i("DelayInfo", "Consumed delay: " + segmentToProcess);
-
-                    segmentToProcess++;
-
-                    /// not infinite loop, at least one of them is ok (the delayed one)
-                    do {
-                        threads.increaseWalker(); // delay - go for a ready-to-run thread
-                        current = threads.getCurrentThread();
-                    } while (!okToSchedule(current));
-
-                    delaySeq.spendCurrentDelayIndex();
-                }
-
-                idleSteps = 0;
-                notifyThread(current);
-                waitMyTurn(ThreadData.SCHEDULER_ID);
-                segmentToProcess++;
-            }else{
-                idleSteps++;  // scheduled thread has no message to execute
+            current = scheduler.selectNextThread();
+            
+            if (current == null) {
+                Log.e("AseScheduler", "No thread is selected.");
+                continue; // check if end of test
             }
-        } while (!(delaySeq.isEndOfCurrentDelaySequence() && idleSteps == threads.getSize()));
-        /* end of current test if:
-         *  - current delay sequence has completed (all delays are executed) and
-         *  - all threads are idle in a loop (no threads are okToSchedule) ensures:
-         *      - main has executed posted blocks, inputRepeater has no left inputs to repeat
-         *      - looper threads are idle and no one is waiting to be scheduled
-         */
+            
+            notifyThread(current);
+            waitForDispatch(ThreadData.SCHEDULER_ID);
+        }
 
+        Log.i("AseScheduler", "Test has completed.");
         ThreadData main = threads.getThreadById(1);
         notifyThread(main);
     }
-
-
-
-    /*
-     * Check if the currently visited thread will be scheduled:
-     *  - isWaiting:  (executed waitMyTurn() and will notify (was not in monitor))
-     *  - is InputRepeater and has inputs to post
-     *  - hasMsgToHandle: has a non-empty message queue
-     * Keep the number of blocks for the main thread instead of hasMsgToHandle
-     * (if you allow anytime when UI has sth in its message queue
-     * it has sth internal and does not notify the scheduler, all threads do wait!!)
-     */
-    private boolean okToSchedule(ThreadData current){
-        // if already went into waitMyTurn() and will notify (was not in monitor)
-        if(current.isWaiting())
-            return true;
-        // if an event is sent to main thread (user input, publishProgress or postExecute)
-        if(current.getId() == 1 && AseTestBridge.getNumUIBlocks() >=1 )
-            return true;
-        // if the InputRepeater has input to post to main
-        if(current.getName().equalsIgnoreCase("InputRepeater") && inputRepeater.hasMoreInputs()) 
-            return true;
-        // if a looper thread has a non-empty message queue (may not yet executed waitMyTurn())
-        if(current.getId() != 1 && current.hasMsgToHandle())
-            return true;
-
-        return false;
-    }
-
-    public void waitForDispatch() {
-        Thread current =  Thread.currentThread();
-        threads.captureThread(current); // add thread to the scheduling list // is it necessary?
-        waitMyTurn(current.getId());
+    
+    public void cleanTestCaseData() {
+        scheduled = 0L;
+        inputRepeater.reset();
+        threads.clear();
     }
 
     /*
      * Worker (or scheduler) thread waits for its signal to execute
      */
-    public void waitMyTurn(long threadId) {
+    public void waitForDispatch(long threadId) {
         ThreadData me;
         if (threadId != ThreadData.SCHEDULER_ID) {
             me = threads.getThreadById(threadId);
 
             // ThreadData of waiting task should be in the list!!
-            if (me == null) { // I should not hit this statement:
+            if (me == null) { // should not hit this statement:
                 Log.e("AseScheduler", "THREAD WHAT WAITS ITS TURN IS NOT IN THE LIST!!! " + threadId);
                 return;
             }
@@ -234,6 +167,12 @@ public class RepeatingMode implements ExecutionMode, Runnable {
         if (schedulingLogs)
             Log.v("AseScheduler", "I am executing. ThreadId: " + threadId);
     }
+    
+    public void waitForDispatch() {
+        Thread current =  Thread.currentThread();
+        threads.captureThread(current); // add thread to the scheduling list in case it executes before capturing
+        waitForDispatch(current.getId());
+    }
 
     /*
      * Scheduler notifies the next task to be scheduled
@@ -265,8 +204,7 @@ public class RepeatingMode implements ExecutionMode, Runnable {
 
         if (schedulingLogs)
             Log.v("AseScheduler", "Block is finished. Thread Id: "
-                    + Thread.currentThread().getId() + " Last Processed: "
-                    + segmentToProcess);
+                    + Thread.currentThread().getId());
 
         // A thread did not actually wait in corresponding waitMyTurn
         // (either it was already in block (nested wait stmts) or it had monitors)
@@ -319,7 +257,3 @@ public class RepeatingMode implements ExecutionMode, Runnable {
 
 // scheduled and currentIndex are guaranteed to be not accessed by more than one threads concurrently
 // either one of the application threads or the scheduler thread can access it
-
-// BoundedSearch
-// checkBoundBeforeScheduling()
-// updateBoundParameterAfterScheduling()
