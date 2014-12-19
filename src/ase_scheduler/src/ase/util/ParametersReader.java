@@ -28,9 +28,9 @@ public class ParametersReader {
         FileInputStream fIn;
 
         try {
-            fIn = new FileInputStream (new File(file));
+            fIn = context.openFileInput(file);
             BufferedReader inBuff = new BufferedReader(new InputStreamReader(fIn));
-
+            
             parameters = new Gson().fromJson(inBuff, Parameters.class);
 
         } catch (Exception e) {

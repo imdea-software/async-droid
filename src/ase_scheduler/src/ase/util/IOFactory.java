@@ -6,7 +6,8 @@ import ase.Parameters;
 public class IOFactory {
 
     private static final String DEFAULT_TRACE_FILE = "events.trc";
-    private static final String DEFAULT_PARAMETER_FILE = "//sdcard//parameters.json";
+   // private static final String DEFAULT_PARAMETER_FILE = "//sdcard//parameters.json";
+    private static final String DEFAULT_PARAMETER_FILE = "parameters.json";
 
     private static Parameters PARAMETERS;
 
