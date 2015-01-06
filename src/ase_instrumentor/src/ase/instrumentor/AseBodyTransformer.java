@@ -82,6 +82,12 @@ public class AseBodyTransformer extends BodyTransformer {
             // skip
         } else if (className.startsWith("org.apache")) {
             // skip
+        } else if (className.startsWith("org.droidparts")) {
+            // skip
+        } else if (className.startsWith("com.google")) {
+            // skip
+        } else if (className.startsWith("org.acra")) {
+            // skip
         } else if (className.startsWith("org.xml")) {
             // skip
         } else if (className.startsWith("org.json")) {

@@ -11,7 +11,7 @@ public class AseActionBarEvent extends AseEvent {
 
     //public final int menuItemId;
 
-    // viewId is the id of the AdapterView
+    // viewId is the id of the ActionBAr
     // menuItemId is the id of the Menu item
     public AseActionBarEvent(int menuItemId) {
 

@@ -1,6 +1,5 @@
 package ase;
 
-import android.content.ComponentName;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.util.Log;
@@ -33,7 +32,6 @@ public class AseNavigateUpEvent extends AseEvent {
     @Override
     public void injectEvent() {
         //AseTestBridge.currentAct.onNavigateUp();
-
         MenuItem item = new HomeMenuItem();
         ((HomeMenuItem)item).setItemId(android.R.id.home);
         AseTestBridge.currentAct.onOptionsItemSelected(item);
