@@ -29,10 +29,10 @@ public class AseActionBarEvent extends AseEvent {
         if (AseTestBridge.currentAct.hasWindowFocus()) {
             //AseTestBridge.currentAct.openOptionsMenu();
             Menu menu = AseTestBridge.actionBarMenu;
-            MenuItem item = menu.findItem(viewId);
-            if(item == null)
-                Log.i("Repeater", "Item is null");
-            return (item != null);
+            if (menu != null) {
+                MenuItem item = menu.findItem(viewId);
+                return (item != null);
+            }
         }
         return false;
     }

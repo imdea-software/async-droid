@@ -7,6 +7,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
 import android.content.Context;
 import android.util.Log;
 import ase.*;
@@ -15,10 +19,15 @@ public class FileReader implements Reader {
 
     private final Context context;
     private final String file;
-
+    
+    private final JsonParser parser;
+    private final Gson gson;
+    
     public FileReader(Context context, String file) {
         this.context = context;
         this.file = file;
+        this.parser = new JsonParser();
+        this.gson = new Gson();
     }
 
     @Override
@@ -49,26 +58,10 @@ public class FileReader implements Reader {
         return events;
     }
 
+    @SuppressWarnings( {"unchecked", "rawtypes"} )
     private AseEvent createEventFromLine(String line) {
-        String tokens[] = line.split(" ");
-
-        AseEvent.EventType type = AseEvent.EventType.valueOf(tokens[0]);
-        int viewId = Integer.parseInt(tokens[1]);
-
-        AseEvent event = null;
-        if(type == AseEvent.EventType.CLICK) {
-            event = new AseClickEvent(viewId);
-        } else if(type == AseEvent.EventType.ITEMCLICK) {
-            event = new AseItemClickEvent(viewId, Integer.parseInt(tokens[2]), Integer.parseInt(tokens[3]));
-            Log.i("FileReader", "Pos: " + ((AseItemClickEvent) event).itemPos);
-        } else if (type == AseEvent.EventType.ACTIONBAR) {
-            event = new AseActionBarEvent(viewId);
-            Log.i("FileReader", "Menu id: " + viewId);
-        } else if (type == AseEvent.EventType.NAVIGATEUP) {
-            event = new AseNavigateUpEvent(viewId, tokens[2]);
-            Log.i("FileReader", "Read navigate up");
-        }
-        return event;
+        JsonObject eventObj = parser.parse(line).getAsJsonObject();
+        Class eventClass = AseEvent.getEventClass(eventObj.get("type").getAsString());
+        return (AseEvent) gson.fromJson(eventObj, eventClass);
     }
-
 }
