@@ -12,6 +12,7 @@ import ase.recorder.ViewTraverser;
 
 public class InputRepeater implements Runnable {
 
+    private final int MAX_TRIALS = 10;
     // its thread data is created and added into scheduler list when it
     // registers (sends its info) and waits for its turn
     private List<AseEvent> eventList;
@@ -73,7 +74,7 @@ public class InputRepeater implements Runnable {
             AseTestBridge.waitForDispatch();
 
             if(!event.isFirable()) {
-                if (message.arg1 > 10) return;
+                if (message.arg1 > MAX_TRIALS) return;
                 Message m = handlerForEventInjection.obtainMessage(1, message.arg1+1); // increment trials
                 this.sendMessage(m);
                 Log.i("Repeater", "Sending again " + Integer.toHexString(event.viewId));
