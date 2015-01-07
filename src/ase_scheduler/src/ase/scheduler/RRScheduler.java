@@ -27,7 +27,7 @@ public class RRScheduler extends Scheduler {
         
     @Override
     public boolean isEndOfTestCase() {
-        return delaySeq.isEndOfCurrentDelaySequence() && (idleSteps >= threads.getSize());
+        return delaySeq.isEndOfCurrentDelaySequence() && (selectNextThread() == null);
     }
     
     @Override
@@ -50,27 +50,20 @@ public class RRScheduler extends Scheduler {
             Log.v("Scheduled", threads.toString());
             Log.v("Scheduled", "Current: " + current.getName() + " Walker Index: " + threads.getWalkerIndex());
 
-            if(okToSchedule(current)){
+            if(okToSchedule(current)) {
                 // check whether the thread will be delayed
                 if (segmentToProcess == delaySeq.getNextDelayIndex()) {
                     Log.i("AseScheduler", "Delayed Thread Id: " + current.getId() + " Last Processed: " + segmentToProcess);
                     Log.i("DelayInfo", "Consumed delay: " + segmentToProcess);
-
-                    segmentToProcess++;
-
-                    /// not infinite loop, at least one of them is ok (the delayed one)
-                    do {
-                        threads.increaseWalker(); // delay - go for a ready-to-run thread
-                        current = threads.getCurrentThread();
-                    } while (!okToSchedule(current));
-
                     delaySeq.spendCurrentDelayIndex();
+                    segmentToProcess ++;
+                    return selectNextThread(); // terminates since delaySeq is not infinite
                 }
 
                 segmentToProcess ++;
                 return current;
                 
-            }else{
+            } else {
                 idleSteps++;  // scheduled thread has no message to execute
             }
         }
