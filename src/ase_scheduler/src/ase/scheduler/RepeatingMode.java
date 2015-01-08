@@ -1,5 +1,9 @@
 package ase.scheduler;
 
+import java.io.FileOutputStream;
+import java.io.PrintWriter;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 import android.content.Context;
@@ -21,19 +25,27 @@ public class RepeatingMode implements ExecutionMode, Runnable {
     private InputRepeater inputRepeater;
     private Scheduler scheduler;
 
+    private int numTasksToDispatch = 0;
+    
     // Thread id of the currently scheduled thread
-    private static long scheduled = 0L;
+    private static long scheduled = 0L;    
+    private int numCompletedTests = 0;
 
     private final boolean schedulingLogs = true;
+    private String logFile = "TestLogs";
+    private String logStream = "";
     
     public RepeatingMode(int numDelays, Context context) {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH-mm-ss");
+        logFile += dateFormat.format(new Date()) + ".log" ;
+               
         // event list will be read once and be fed into each inputRepeater
         Reader reader = IOFactory.getReader(context);
         List<AseEvent> eventsToRepeat = reader.read();
         inputRepeater = new InputRepeater(eventsToRepeat);
 
         scheduler = new RRScheduler(threads, inputRepeater);
-        scheduler.initiateScheduler(numDelays, eventsToRepeat.size()); ////NEW!!
+        scheduler.initiateScheduler(numDelays, eventsToRepeat.size()); 
     }
 
     @Override
@@ -57,9 +69,9 @@ public class RepeatingMode implements ExecutionMode, Runnable {
 
         while (scheduler.hasMoreTestCases()) {
             AseTestBridge.launchMainActivity();           
-            initiateTestCase();
+            setUpTestCase();
             runTestCase();
-            cleanTestCaseData();
+            tearDownTestCase();
         }
 
         Log.i("AseScheduler", "All tests has completed.");
@@ -81,11 +93,10 @@ public class RepeatingMode implements ExecutionMode, Runnable {
     }
 
     /*
-     * Reset single test parameters
+     * Set up single test parameters
      */
-    public void initiateTestCase() {       
-        scheduler.initiateTestCase(); // NEW!!!
-            
+    public void setUpTestCase() {       
+        scheduler.setUpTestCase();
         Thread inputThread = new Thread(inputRepeater);
         inputThread.setName("InputRepeater");
         inputThread.start();
@@ -94,7 +105,7 @@ public class RepeatingMode implements ExecutionMode, Runnable {
     }
     
     /*
-     * A single test following one delay sequence
+     * A single test executing a particular thread schedule
      */
     public void runTestCase() {
         ThreadData current = null;
@@ -102,12 +113,13 @@ public class RepeatingMode implements ExecutionMode, Runnable {
         while (!scheduler.isEndOfTestCase()) {
             threads.captureAllThreads();
             current = scheduler.selectNextThread();
-            
+
             if (current == null) {
                 Log.e("AseScheduler", "No thread is selected.");
                 continue; // check if end of test
             }
             
+            logSchedulingDecision(current);
             notifyThread(current);
             waitForDispatch(ThreadData.SCHEDULER_ID);
         }
@@ -117,12 +129,38 @@ public class RepeatingMode implements ExecutionMode, Runnable {
         notifyThread(main);
     }
     
-    public void cleanTestCaseData() {
+    private void logSchedulingDecision(ThreadData current) {
+        logStream += threads.toString() + "\n" + "Scheduled: " + current.getName() + "\n";
+    }
+    
+    /*
+     * Clean test case data
+     */
+    public void tearDownTestCase() {
+        scheduler.tearDownTestCase();
+        numCompletedTests ++;
+        saveTestCaseLogs();
         scheduled = 0L;
         inputRepeater.reset();
-        threads.clear();
+        threads.clearThreads();
+        logStream = "";
     }
 
+    public void saveTestCaseLogs() {
+        Context context = AseTestBridge.getApplicationContext();
+        FileOutputStream fOut;
+        try {
+            fOut = context.openFileOutput(logFile, Context.MODE_APPEND);
+            PrintWriter writer = new PrintWriter(fOut);
+            writer.println(logStream);
+            writer.flush();
+            writer.close();
+            Log.i("AseScheduler", "Saved scheduling logs for test case: "  + numCompletedTests);
+        } catch (Exception e) {
+            Log.e("AseScheduler", "Could not save scheduling logs for test case: "  + numCompletedTests);
+        }
+    }
+    
     /*
      * Worker (or scheduler) thread waits for its signal to execute
      */
@@ -158,14 +196,15 @@ public class RepeatingMode implements ExecutionMode, Runnable {
         }
 
         if (schedulingLogs)
-            Log.v("AseScheduler", "I am waiting. ThreadId: " + threadId);
+            logStream += "    --- Waiting - ThreadId: " + threadId + "\n";
 
         while (scheduled != threadId) {
+            me.setTaskNum(numTasksToDispatch++); // to be used by the scheduler
             me.waitThread();
         }
 
         if (schedulingLogs)
-            Log.v("AseScheduler", "I am executing. ThreadId: " + threadId);
+            logStream += "    --- Executing - ThreadId: " + threadId + "\n";
     }
     
     public void waitForDispatch() {
@@ -179,9 +218,9 @@ public class RepeatingMode implements ExecutionMode, Runnable {
      */
     private void notifyThread(ThreadData current) {
         scheduled = current.getId();
-        if (schedulingLogs)
-            Log.i("Scheduled", "Scheduled thread id: " + scheduled + " Index: "
-                    + threads.getWalkerIndex() + " NumUIBlocks:" + AseTestBridge.getNumUIBlocks());
+        //if (schedulingLogs)
+            //logStream += "Scheduled thread id: " + scheduled + " Index: "
+            //        + threads.getWalkerIndex() + " NumUIBlocks:" + AseTestBridge.getNumUIBlocks()) + "\n";
 
         current.notifyThread();
     }
@@ -202,14 +241,14 @@ public class RepeatingMode implements ExecutionMode, Runnable {
             return;
         }
 
-        if (schedulingLogs)
-            Log.v("AseScheduler", "Block is finished. Thread Id: "
-                    + Thread.currentThread().getId());
+        //if (schedulingLogs)
+        logStream += "    --- Completed - Thread Id: "
+                    + Thread.currentThread().getId() + "\n";
 
         // A thread did not actually wait in corresponding waitMyTurn
         // (either it was already in block (nested wait stmts) or it had monitors)
         if (!me.popWaitBlock()) {
-            Log.v("AseScheduler", "I am NOTT notifying the scheduler. Thread Id: "
+            Log.v("AseScheduler", "NOTT notifying - Thread Id: "
                             + Thread.currentThread().getId());
             return;
         }
@@ -219,8 +258,8 @@ public class RepeatingMode implements ExecutionMode, Runnable {
         // thread consumes the notification block
         me.setIsWaiting(false);
         if (schedulingLogs)
-            Log.v("AseScheduler", "I am notifying the scheduler. Thread Id: "
-                    + Thread.currentThread().getId());
+            logStream += "    --- Notifying - Thread Id: "
+                    + Thread.currentThread().getId() + "\n";
         schedulerThreadData.notifyThread();
     }
 
@@ -235,7 +274,8 @@ public class RepeatingMode implements ExecutionMode, Runnable {
     }
 
     public void yield() {
-
+        // to be implemented
+        // use the stack of wait blocks of a thread 
     }
 
     public void enterMonitor() {

@@ -1,12 +1,17 @@
 package ase.scheduler;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 import ase.AseTestBridge;
 import ase.repeater.InputRepeater;
 
 public abstract class Scheduler {
 
     protected PendingThreads threads;
-    protected InputRepeater inputRepeater;
+    protected InputRepeater inputRepeater;    
+    protected ThreadData scheduledThread;
+
     
     public Scheduler (PendingThreads threads, InputRepeater inputRepeater) {
         this.threads = threads;
@@ -15,14 +20,16 @@ public abstract class Scheduler {
     
     public abstract void initiateScheduler(int bound, int numInputs);
     
-    public abstract void initiateTestCase();
+    public abstract void setUpTestCase();
+    
+    public abstract void tearDownTestCase();
 
+    public abstract boolean isEndOfTestCase();
+    
     public abstract boolean hasMoreTestCases();
     
     public abstract ThreadData selectNextThread();
-    
-    public abstract boolean isEndOfTestCase();
-    
+
     /*
      * Check if the currently visited thread will be scheduled:
      *  - isWaiting:  (executed waitMyTurn() and will notify (was not in monitor))
@@ -33,6 +40,8 @@ public abstract class Scheduler {
      * it has sth internal and does not notify the scheduler, all threads do wait!!)
      */
     protected boolean okToSchedule(ThreadData current){
+        if(current == null) return false;
+        
         // if already went into waitMyTurn() and will notify (was not in monitor)
         if(current.isWaiting())
             return true;
