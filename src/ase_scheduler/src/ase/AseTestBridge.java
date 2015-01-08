@@ -26,8 +26,8 @@ public class AseTestBridge {
     
     // application appContext to be used in utils and the scheduler
     private static Context appContext;
-    public static Activity currentAct;
-    public static Menu actionBarMenu;
+    private static Activity currentAct;
+    private static Menu actionBarMenu;
 
     /**
      * called by UI thread in onCreate method of Activity or Application
@@ -179,4 +179,15 @@ public class AseTestBridge {
         IOFactory.getRecorder(appContext).record(event);
     }
 
+    public static Context getApplicationContext() {
+        return appContext;
+    }
+    
+    public static Activity getCurrentActivity() {
+        return currentAct;
+    }
+    
+    public static Menu getActionBarMenu() {
+        return actionBarMenu;
+    }
 }
