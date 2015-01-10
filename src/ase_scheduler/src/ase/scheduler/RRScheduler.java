@@ -1,18 +1,22 @@
 package ase.scheduler;
 
 import android.util.Log;
+import ase.AseTestBridge;
 import ase.repeater.InputRepeater;
 import ase.scheduler.PendingThreads.ThreadType;
+import ase.util.LooperReader;
+import ase.util.log.Logger;
 
 public class RRScheduler extends Scheduler {
     private DelaySequence delaySeq;
     private int segmentToProcess = 1;
     private int walkerIndex = -1;
     
+    int postponed = 0;
     int idleSteps = 0;
     
-    public RRScheduler(PendingThreads threads, InputRepeater inputRepeater) {
-        super(threads, inputRepeater);
+    public RRScheduler(PendingThreads threads, InputRepeater inputRepeater, Logger logger) {
+        super(threads, inputRepeater, logger);
     }
     
     @Override
@@ -30,7 +34,15 @@ public class RRScheduler extends Scheduler {
         
     @Override
     public boolean isEndOfTestCase() {
-        return delaySeq.isEndOfCurrentDelaySequence() && (selectNextThread() == null);
+        return delaySeq.isEndOfCurrentDelaySequence() && !hasAvailableThreads();
+    }
+    
+    public boolean hasAvailableThreads() {
+        for(int i=0; i<threads.getSize(); i++) {
+            if(okToSchedule(threads.getThreadByIndex(i, ThreadType.ANY)))
+                    return true;
+        }
+        return false;
     }
     
     @Override
@@ -52,8 +64,11 @@ public class RRScheduler extends Scheduler {
             increaseWalker();
 
             ThreadData current = threads.getThreadByIndex(walkerIndex, ThreadType.ANY);
-            Log.v("Scheduled", threads.toString());
-            Log.v("Scheduled", "Current: " + current.getName() + " Walker Index: " + getWalkerIndex());
+           
+            logger.i("Main", LooperReader.getInstance().dumpQueue(threads.getThreadById(1).getThread()));
+            logger.i("RRScheduler", threads.toString());
+            logger.i("RRScheduler", threads.toString());
+            logger.i("RRScheduler", "Current: " + current.getName() + " Walker Index: " + getWalkerIndex());
 
             if(okToSchedule(current)) {
                 // check whether the thread will be delayed
@@ -64,11 +79,11 @@ public class RRScheduler extends Scheduler {
                     segmentToProcess ++;
                     return selectNextThread(); // terminates since delaySeq is not infinite
                 }
-
                 segmentToProcess ++;
                 return current;
                 
             } else {
+                logger.i("RRScheduler", "OkToSchedule is false for " + current.getName() + " numUIblocks: " + AseTestBridge.getNumUIBlocks());
                 idleSteps++;  // scheduled thread has no message to execute
             }
         }

@@ -8,6 +8,7 @@ import android.os.Message;
 import android.util.Log;
 import ase.*;
 import ase.recorder.ViewTraverser;
+import ase.util.log.Logger;
 
 
 public class InputRepeater implements Runnable {
@@ -26,9 +27,12 @@ public class InputRepeater implements Runnable {
     // ensures the correct order of invocations when view is not in the layout
     private int inputsDispatched = 0;
     
-    public InputRepeater(List<AseEvent> events) {
+    private Logger fileLog;
+    
+    public InputRepeater(List<AseEvent> events, Logger fileLog) {
         eventList = events;
         inputsToGo=eventList.size();
+        this.fileLog = fileLog;
     }
     
     @Override
@@ -73,11 +77,15 @@ public class InputRepeater implements Runnable {
             AseEvent event = eventList.get(inputsDispatched);
             AseTestBridge.waitForDispatch();
 
+            // execute asynchronous transactions that load fragments 
+            AseTestBridge.executeFragmentTransactions();
+            
             if(!event.isFirable()) {
-                if (message.arg1 > MAX_TRIALS) return;
-                Message m = handlerForEventInjection.obtainMessage(1, message.arg1+1); // increment trials
+                if (message.arg1 >= MAX_TRIALS) return;
+                Message m = handlerForEventInjection.obtainMessage(1); 
+                m.arg1 = message.arg1 + 1; // increment trials
                 this.sendMessage(m);
-                Log.i("Repeater", "Sending again " + Integer.toHexString(event.viewId));
+                Log.i("Repeater", "Trial: " + m.arg1 + " Sending again " + Integer.toHexString(event.viewId));
                 AseTestBridge.notifyDispatcher();  
                 return;
             }
@@ -87,6 +95,7 @@ public class InputRepeater implements Runnable {
             // call event's listener
             event.injectEvent();
 
+            fileLog.i("Repeated", "" + event.toString());
             AseTestBridge.decNumUIBlocks(); // runnable to click consumed
             AseTestBridge.notifyDispatcher();
         }

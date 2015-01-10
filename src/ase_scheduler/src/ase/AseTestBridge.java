@@ -1,6 +1,7 @@
 package ase;
 
 import android.app.Activity;
+import android.app.FragmentManager;
 import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
@@ -178,6 +179,10 @@ public class AseTestBridge {
         }
         IOFactory.getRecorder(appContext).record(event);
     }
+    
+    public static ExecutionModeType getExecutionMode() {
+        return executionMode.getExecutionModeType();
+    }
 
     public static Context getApplicationContext() {
         return appContext;
@@ -189,5 +194,10 @@ public class AseTestBridge {
     
     public static Menu getActionBarMenu() {
         return actionBarMenu;
+    }
+    
+    public static void executeFragmentTransactions() {
+        FragmentManager fm = currentAct.getFragmentManager();
+        fm.executePendingTransactions();
     }
 }

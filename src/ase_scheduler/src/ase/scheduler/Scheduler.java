@@ -1,21 +1,21 @@
 package ase.scheduler;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
 import ase.AseTestBridge;
 import ase.repeater.InputRepeater;
+import ase.util.log.Logger;
 
 public abstract class Scheduler {
 
     protected PendingThreads threads;
     protected InputRepeater inputRepeater;    
     protected ThreadData scheduledThread;
+    protected Logger logger;
 
     
-    public Scheduler (PendingThreads threads, InputRepeater inputRepeater) {
+    public Scheduler (PendingThreads threads, InputRepeater inputRepeater, Logger logger) {
         this.threads = threads;
         this.inputRepeater = inputRepeater;
+        this.logger = logger;
     }
     
     public abstract void initiateScheduler(int bound, int numInputs);

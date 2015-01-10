@@ -24,6 +24,7 @@ public class LooperReader {
             messagesField.setAccessible(true);
             nextField = Message.class.getDeclaredField("next");
             nextField.setAccessible(true);
+
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -68,36 +69,44 @@ public class LooperReader {
         return false;
     }
 
-    public void dumpQueue(Thread t) {
+    public String dumpQueue(Thread t) {
+        
+        
         Looper looper = getLooper(t);
         if (looper == null)
-            return;
+            return "";
 
         try {
             MessageQueue messageQueue = (MessageQueue) queueField.get(looper);
-            dumpQueue(messageQueue);
+            return dumpQueue(messageQueue);
         } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
+        
+        return "";
     }
 
-    public void dumpQueue(MessageQueue messageQueue) {
+    public String dumpQueue(MessageQueue messageQueue) {
+        StringBuilder sb = new StringBuilder();
         try {
             Message nextMessage = (Message) messagesField.get(messageQueue);
             // Log.d("LooperReader", "Begin dumping queue");
-            dumpMessages(nextMessage);
+            dumpMessages(nextMessage, sb);
             // Log.d("LooperReader", "End dumping queue");
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         }
+        
+        return sb.toString();
     }
 
-    public void dumpMessages(Message message) throws IllegalAccessException {
+    public void dumpMessages(Message message, StringBuilder sb) throws IllegalAccessException {
         if (message != null) {
-            Log.d("LooperReader", message.toString());
+            //Log.d("LooperReader", message.toString());
+            sb.append("\t" + message.toString() + "\n");
             Message next = (Message) nextField.get(message);
-            dumpMessages(next);
+            dumpMessages(next, sb);
         }
     }
 }
