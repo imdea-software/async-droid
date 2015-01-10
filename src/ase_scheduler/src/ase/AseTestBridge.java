@@ -122,20 +122,6 @@ public class AseTestBridge {
         executionMode.exitMonitor();
     }
     
-    public static void incNumUIBlocks() {
-        Log.v("AsyncDroid", "Incremented numUIBlocks by: " + Thread.currentThread().getName());
-        executionData.incNumUIBlocks();
-    }
-    
-    public static void decNumUIBlocks() {
-        Log.v("AsyncDroid", "Decremented numUIBlocks by: " + Thread.currentThread().getName());
-        executionData.decNumUIBlocks();
-    }
-    
-    public static int getNumUIBlocks() {
-        return executionData.getNumUIBlocks();
-    }
-    
     public static void launchMainActivity() {
         String packageName = appContext.getPackageName();
         Intent i = appContext.getPackageManager().getLaunchIntentForPackage(packageName);

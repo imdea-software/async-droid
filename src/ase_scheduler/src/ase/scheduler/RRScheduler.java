@@ -64,9 +64,8 @@ public class RRScheduler extends Scheduler {
             increaseWalker();
 
             ThreadData current = threads.getThreadByIndex(walkerIndex, ThreadType.ANY);
-           
-            logger.i("Main", LooperReader.getInstance().dumpQueue(threads.getThreadById(1).getThread()));
-            logger.i("RRScheduler", threads.toString());
+    
+            logger.i("Main Looper Contents:", LooperReader.getInstance().dumpQueue(threads.getThreadById(1).getThread()));
             logger.i("RRScheduler", threads.toString());
             logger.i("RRScheduler", "Current: " + current.getName() + " Walker Index: " + getWalkerIndex());
 
@@ -83,7 +82,7 @@ public class RRScheduler extends Scheduler {
                 return current;
                 
             } else {
-                logger.i("RRScheduler", "OkToSchedule is false for " + current.getName() + " numUIblocks: " + AseTestBridge.getNumUIBlocks());
+                logger.i("RRScheduler", "OkToSchedule is false for " + current.getName());
                 idleSteps++;  // scheduled thread has no message to execute
             }
         }

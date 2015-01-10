@@ -1,7 +1,11 @@
 package ase.scheduler;
 
+import java.util.List;
+
+import android.os.Message;
 import ase.AseTestBridge;
 import ase.repeater.InputRepeater;
+import ase.util.LooperReader;
 import ase.util.log.Logger;
 
 public abstract class Scheduler {
@@ -46,7 +50,7 @@ public abstract class Scheduler {
         if(current.isWaiting())
             return true;
         // if an event is sent to main thread (user input, publishProgress or postExecute)
-        if(current.getId() == 1 && AseTestBridge.getNumUIBlocks() >=1 )
+        if(current.getId() == 1 && (hasInputInMainLooper() || hasAsyncTaskInMainLooper()))
             return true;
         // if the InputRepeater has input to post to main
        if(current.getName().equalsIgnoreCase("InputRepeater") && inputRepeater.hasMoreInputs()) 
@@ -58,4 +62,24 @@ public abstract class Scheduler {
         return false;
     }
 
+    protected boolean hasInputInMainLooper() {
+        List<Message> messages = LooperReader.getInstance().getMessages(threads.getThreadById(1).getThread());
+        
+        for(Message m: messages) {
+            if(m.getTarget() != null && m.getTarget().getClass().getName().startsWith("ase.repeater.InputRepeater"))
+                return true;
+        }
+        return false;
+    }
+
+    protected boolean hasAsyncTaskInMainLooper() {
+        List<Message> messages = LooperReader.getInstance().getMessages(threads.getThreadById(1).getThread());
+        
+        // Main looper has an asynctask message - onPostExecute or onPublishResult 
+        for(Message m: messages) {
+            if(m.getTarget() != null && m.getTarget().getClass().getName().startsWith("android.os.AsyncTask") && (m.what == 1 || m.what == 2))
+                return true;
+        }
+        return false;
+    }
 }
