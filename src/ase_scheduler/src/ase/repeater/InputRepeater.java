@@ -64,8 +64,6 @@ public class InputRepeater implements Runnable {
     }
     
     public void sendEventToApp() {
-        AseTestBridge.incNumUIBlocks();  // posts event (message to click) into UI thread
-        
         // Message arg1 is the number of trials to inject the event
         Message m = handlerForEventInjection.obtainMessage(1, 0);
         handlerForEventInjection.sendMessage(m);
@@ -96,7 +94,6 @@ public class InputRepeater implements Runnable {
             event.injectEvent();
 
             fileLog.i("Repeated", "" + event.toString());
-            AseTestBridge.decNumUIBlocks(); // runnable to click consumed
             AseTestBridge.notifyDispatcher();
         }
         
