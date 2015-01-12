@@ -13,7 +13,6 @@ import ase.scheduler.RecordingMode;
 import ase.scheduler.NopMode;
 import ase.scheduler.RepeatingMode;
 import ase.scheduler.ExecutionMode;
-import ase.scheduler.ExecutionData;
 import ase.util.IOFactory;
 
 /*
@@ -22,9 +21,9 @@ import ase.util.IOFactory;
 public class AseTestBridge {
 
     private static ExecutionMode executionMode;
-    private static ExecutionData executionData;
     private static boolean initiated = false;
     
+    private static AppRuntimeData appData;
     // application appContext to be used in utils and the scheduler
     private static Context appContext;
     private static Activity currentAct;
@@ -37,7 +36,6 @@ public class AseTestBridge {
     public static void initiateTesting(Context context) {
         if (!initiated) {
             initiated = true;
-            executionData = new ExecutionData();
             setTestParameters(context);
         }
         if(context instanceof Activity)
