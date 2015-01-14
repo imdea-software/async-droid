@@ -160,6 +160,7 @@ public class PendingThreads {
             threads.clear();
         }
 
+        @SuppressWarnings("unused")
         public synchronized boolean isEmpty() {
             return threads.isEmpty();
         }

@@ -63,6 +63,7 @@ public class ReflectionUtils {
         return listener;
     }
     
+    @SuppressWarnings("rawtypes")
     public static AdapterView.OnItemClickListener getOnItemClickListener(AdapterView view) {
         AdapterView.OnItemClickListener listener = null;
         try {
@@ -76,6 +77,7 @@ public class ReflectionUtils {
         return listener;
     }
 
+    @SuppressWarnings("rawtypes")
     public static AdapterView.OnItemSelectedListener getOnItemSelectedListener(AdapterView view) {
         AdapterView.OnItemSelectedListener listener = null;
         try {
@@ -105,6 +107,7 @@ public class ReflectionUtils {
         return activeFragments;
     }
 
+    @SuppressWarnings("rawtypes")
     public static Class getSuperClassOfType(Class clazz, String superClassName) {
         Class tempClass = clazz;
         while (tempClass != null && !tempClass.getName().equals(superClassName))

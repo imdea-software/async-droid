@@ -43,6 +43,7 @@ public class FileReader implements Reader {
             BufferedReader inBuff = new BufferedReader(isr);
 
             while ((inputLine = inBuff.readLine()) != null) {
+                @SuppressWarnings("resource")
                 Scanner in = new Scanner(inputLine);
                 String line = in.nextLine();
 

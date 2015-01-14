@@ -6,8 +6,8 @@ import java.util.List;
 
 import android.content.Context;
 import android.util.Log;
+import ase.AppRunTimeData;
 import ase.AseEvent;
-import ase.AseTestBridge;
 import ase.ExecutionModeType;
 import ase.repeater.InputRepeater;
 import ase.util.IOFactory;
@@ -29,7 +29,7 @@ public class RepeatingMode implements ExecutionMode, Runnable {
     
     // Thread id of the currently scheduled thread
     private static long scheduled = 0L;    
-    private int numCompletedTests = 0;
+    
 
     private final boolean schedulingLogs = true;
     private Logger fileLog;
@@ -41,10 +41,16 @@ public class RepeatingMode implements ExecutionMode, Runnable {
         // event list will be read once and be fed into each inputRepeater
         Reader reader = IOFactory.getReader(context);
         List<AseEvent> eventsToRepeat = reader.read();
-        inputRepeater = new InputRepeater(eventsToRepeat, fileLog);
-
-        scheduler = new RRScheduler(threads, inputRepeater, fileLog);
-        scheduler.initiateScheduler(numDelays, eventsToRepeat.size()); 
+        
+        if(eventsToRepeat.size() == 0) {
+            Log.e("Repeater", "No inputs to repeat");
+            AppRunTimeData.getInstance().finishCurrentActivity();
+            
+        } else {
+            inputRepeater = new InputRepeater(eventsToRepeat, fileLog);
+            scheduler = new RRScheduler(threads, inputRepeater, fileLog);
+            scheduler.initiateScheduler(numDelays, eventsToRepeat.size()); 
+        }
     }
     
     @Override
@@ -120,6 +126,7 @@ public class RepeatingMode implements ExecutionMode, Runnable {
             }
             
             logSchedulingDecision(current);
+            Log.i("RRScheduler", "SCheduled: " + current.getName() );
             notifyThread(current);
             waitForDispatch(ThreadData.SCHEDULER_ID);
         }
@@ -138,7 +145,6 @@ public class RepeatingMode implements ExecutionMode, Runnable {
      */
     public void tearDownTestCase() {
         scheduler.tearDownTestCase();
-        numCompletedTests ++;
         scheduled = 0L;
         inputRepeater.reset();
         threads.clearThreads();
