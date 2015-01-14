@@ -9,6 +9,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import ase.scheduler.RecordingMode;
 import ase.scheduler.NopMode;
 import ase.scheduler.RepeatingMode;
@@ -66,7 +67,7 @@ public class AseTestBridge {
         if (executionMode.getExecutionModeType() == ExecutionModeType.RECORD) {
             //appData.setViewViewerContext(act.getApplicationContext());
             appData.setActivityRootView(v);
-            appData.traverseViewIds(v.getRootView(), null);
+            appData.traverseViewIds(v.getRootView(), null, null);
         } else if (executionMode.getExecutionModeType() == ExecutionModeType.REPEAT) {
             appData.setActivityRootView(v);
         }
@@ -76,12 +77,18 @@ public class AseTestBridge {
      *  This method is called in onViewCreated of a Fragment before returning the rootView
      *  Traverses inflated view hierarchy and sets the currently loaded fragment name
      */
-    public static void setFragmentViewTraverser(View rootView, Object fragmentThisLocal) {
+    public static void setFragmentViewTraverser(View rootView, ViewGroup parent, Object fragmentThisLocal) {
         if (executionMode.getExecutionModeType() == ExecutionModeType.RECORD) {
-            appData.traverseViewIds(rootView, (Fragment)fragmentThisLocal);
+            appData.traverseViewIds(rootView, parent, fragmentThisLocal);
         } else if (executionMode.getExecutionModeType() == ExecutionModeType.REPEAT) {
-            String fragmentClassName = fragmentThisLocal.getClass().getName();
+            String fragmentClassName = fragmentThisLocal.getClass().getName(); // TODO nullcheck
             Log.v("View","Fragment view created: " + fragmentClassName);
+        }
+    }
+    
+    public static void setAdapterViewItemTraverser(View view, ViewGroup parent, int pos) {
+        if (executionMode.getExecutionModeType() == ExecutionModeType.RECORD) {
+            appData.traverseItemView(view, parent, pos);
         }
     }
     

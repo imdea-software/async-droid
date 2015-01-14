@@ -32,6 +32,12 @@ public abstract class AseEvent {
         this.fragmentName = fragmentName;
     }
     
+    protected AseEvent(EventType type, int viewId, int parentId, String fragmentName) {
+        this.type = type;
+        this.viewId = viewId;
+        this.fragmentName = fragmentName;
+    }
+    
     private static Map<EventType, Class> getTypeMap() {
         if (TYPE_MAP == null) {
             TYPE_MAP = new HashMap<EventType, Class>();

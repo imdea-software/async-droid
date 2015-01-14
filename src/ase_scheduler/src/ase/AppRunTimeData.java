@@ -9,8 +9,10 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.CheckBox;
 import android.widget.ListView;
 import android.widget.Spinner;
+import ase.recorder.InstrumentedCheckBoxClickListener;
 import ase.recorder.InstrumentedItemClickListener;
 import ase.recorder.InstrumentedItemSelectedListener;
 import ase.recorder.InstrumentedListener;
@@ -53,24 +55,26 @@ public class AppRunTimeData {
         Log.v("Repeater", "Current activity view: " + view.toString());
     }
     
+    // TODO better structure view traversers
     /*
-     * Traverse view ids to instrument views with recording event handlers
+     * View Traversers instrument views with recording event handlers
      * Takes a given root view and sets proper event listeners for its children views
      * Called from: (1) Activity onCreate (2) Fragment onCreateView (3) AdapterView getView
-     * If called in a fragment, record the fragment name in the event as well
-     *  (moved from a former class ViewTraverser.java)
+     * If (3), i.e. the view is an item in an AdapterView, take its parent as well
+     * If the view or its parent is called in a fragment, record the fragment name in the event
+     * If the containing fragment is not active, the view is not visible
      */
-    public View traverseViewIds(View view, Fragment f) {
+    public View traverseViewIds(View view, ViewGroup parent, Object fragmentRef) {
         Log.v("ViewLogger", "traversing: " + view.getClass().getSimpleName() + ", id: " + view.getId() );
         if (view.getParent() != null && (view.getParent() instanceof ViewGroup)) {
-            return traverseViewIds((View) view.getParent(), f);
+            return traverseViewIds((View) view.getParent(), parent, fragmentRef);
         } else {
-            traverseChildViewIds(view, f);
+            traverseChildViewIds(view, parent, fragmentRef);
             return view;
         }
     }
 
-    private void traverseChildViewIds(View view, Fragment f) {
+    private void traverseChildViewIds(View view, ViewGroup parent, Object fragmentRef) {
 
         if(view.getClass().getSimpleName().equals("ActionBarContainer")) {
             Log.i("ViewLogger", "ActionBarContainer Detail: " + view.toString() + " ID: " + view.getId());
@@ -99,13 +103,43 @@ public class AppRunTimeData {
                         Log.i("ViewLogger", "Cannot record grid view or gallery view");
                     }
 
-                } else if (!child.getClass().getSimpleName().contains("Layout")) {
+                } else if (!child.getClass().getSimpleName().contains("Layout")) {      
                     // add onClickListener to the traversed view
                     OnClickListener listener = new InstrumentedListener(child, appContext);
                     child.setOnClickListener(listener);
                 }
 
-                traverseChildViewIds(child, f);
+                traverseChildViewIds(child, parent, fragmentRef);
+            }
+        }
+    }
+    
+    public void traverseItemView(View view, ViewGroup parent, int pos) {
+        if (view instanceof ViewGroup)
+            traverseItemChildren(view, parent, pos);
+        else
+            return;
+    }
+
+    private void traverseItemChildren(View view, ViewGroup parent, int pos) {
+        if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) view;
+            for (int i = 0; i < group.getChildCount(); i++) {
+                View child = group.getChildAt(i);
+                traverseItemChildren(child, parent, pos);
+            }
+        }
+        // process elements in a viewGroup
+        else {
+            if (view instanceof CheckBox) {
+                //CompoundButton.OnCheckedChangeListener listener = new InstrumentedOnCheckedChangeListener((CheckBox) view, pos, getContext());
+                //((CheckBox) view).setOnCheckedChangeListener(listener);
+                if (AseTestBridge.getExecutionMode() == ExecutionModeType.RECORD) {
+                    view.setOnClickListener(new InstrumentedCheckBoxClickListener((CheckBox) view, parent, pos, appContext));
+                }
+            } else {
+                OnClickListener listener = new InstrumentedListener(view, appContext);
+                view.setOnClickListener(listener);
             }
         }
     }
