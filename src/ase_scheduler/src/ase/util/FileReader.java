@@ -35,6 +35,7 @@ public class FileReader implements Reader {
 
         List<AseEvent> events = new ArrayList<AseEvent>();
         FileInputStream fIn;
+        Scanner in = null;
         String inputLine;
 
         try {
@@ -43,19 +44,21 @@ public class FileReader implements Reader {
             BufferedReader inBuff = new BufferedReader(isr);
 
             while ((inputLine = inBuff.readLine()) != null) {
-                @SuppressWarnings("resource")
-                Scanner in = new Scanner(inputLine);
+                in = new Scanner(inputLine);
                 String line = in.nextLine();
 
                 AseEvent event = createEventFromLine(line);
                 events.add(event);
                 Log.i("FileReader", "Read: " + Integer.toHexString(event.viewId));
             }
-
+            
         } catch (Exception e) {
             Log.e("FileReader", "Could not read event from file: " + file, e);
+        
+        } finally {
+            in.close();
         }
-
+        
         return events;
     }
 

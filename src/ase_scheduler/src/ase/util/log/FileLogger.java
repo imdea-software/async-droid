@@ -5,6 +5,7 @@ import java.io.PrintWriter;
 
 import android.content.Context;
 import android.util.Log;
+import ase.AppRunTimeData;
 import ase.AseTestBridge;
 
 public class FileLogger implements Logger {
@@ -36,7 +37,7 @@ public class FileLogger implements Logger {
     }
 
     private void tryAppendFile(String tag, String message, String level) {
-        Context context = AseTestBridge.getAppData().getAppContext();
+        Context context = AppRunTimeData.getInstance().getAppContext();
         FileOutputStream fOut;
         try {
             fOut = context.openFileOutput(fileName, Context.MODE_APPEND);

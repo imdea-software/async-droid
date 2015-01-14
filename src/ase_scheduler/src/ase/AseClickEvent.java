@@ -3,7 +3,6 @@ package ase;
 import android.app.Fragment;
 import android.util.Log;
 import android.view.View;
-import ase.recorder.ViewTraverser;
 
 /**
  * Created by burcuozkan on 06/12/14.
