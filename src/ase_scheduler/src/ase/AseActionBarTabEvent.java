@@ -12,7 +12,7 @@ public class AseActionBarTabEvent extends AseEvent {
     // menuItemId is the id of the Menu item
     public AseActionBarTabEvent(int actionBarId, int tabItemIndex) {
 
-        super(EventType.ACTIONBARTAB, actionBarId, null);
+        super(EventType.ACTIONBARTAB, actionBarId);
         this.tabItemIndex = tabItemIndex;
         
     }
@@ -23,11 +23,10 @@ public class AseActionBarTabEvent extends AseEvent {
     }
 
     @Override
-    public boolean isFirable() { // check if ActionBArActivity and check tab index
-       
-        ActionBar actionBar = AseTestBridge.getAppData().getCurrentAct().getActionBar();
+    public boolean isFirable() { // check if ActionBarActivity and check tab index    
+        ActionBar actionBar = AppRunTimeData.getInstance().getCurrentAct().getActionBar();
         if (actionBar != null && actionBar.isShowing()) {
-            if(actionBar.getTabAt(tabItemIndex) != null)
+            if(actionBar.getTabCount() > tabItemIndex)
                 return true;
         }
         
@@ -35,26 +34,10 @@ public class AseActionBarTabEvent extends AseEvent {
         return false;
     }
 
-    /*
-     * TODO Not complete - Missing tasks in injecting tab event
-     * When we select new tab programatically,it does not execute onTabUnselected
-     * (prev tab highlighted to be selected and more jobs might remain unhandled) 
-     * We cannot call tab.onTabUnselected, as we cannot read ActionBar.Tab listener, it is in internal code
-     */
+
     @Override
     public void injectEvent() {
-        ActionBar actionBar = AseTestBridge.getAppData().getCurrentAct().getActionBar();
-        
-
-        
-        // bu classi oku, onTabUnselected methodunu cagir 
-//       ((com.android.internal.app.ActionBarImpl.TabImpl)(actionBar.getTabAt(tabItemIndex))).
-        //actionBar.getSelectedTab().
-        //mSelectedTab.getCallback().onTabUnselected(mSelectedTab, trans);
-        
-        
-        // (2) Call tabSelected for the new one
-        //actionBar.selectTab(actionBar.getTabAt(tabItemIndex));
+        ActionBar actionBar = AppRunTimeData.getInstance().getCurrentAct().getActionBar();
         actionBar.setSelectedNavigationItem(tabItemIndex);
         Log.i("Repeater", "Clicked action bar tab at index: " + Integer.toHexString(tabItemIndex));
   

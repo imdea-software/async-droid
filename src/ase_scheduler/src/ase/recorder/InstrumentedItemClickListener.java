@@ -16,6 +16,7 @@ public class InstrumentedItemClickListener implements AdapterView.OnItemClickLis
     private AdapterView.OnItemClickListener ownListener;
     private Recorder recorder;
 
+    @SuppressWarnings("rawtypes")
     public InstrumentedItemClickListener(AdapterView view, Context context) {
         ownListener = ReflectionUtils.getOnItemClickListener(view);
         recorder = IOFactory.getRecorder(context);
@@ -24,7 +25,7 @@ public class InstrumentedItemClickListener implements AdapterView.OnItemClickLis
     @Override
     public void onItemClick(AdapterView adapterView, View view, int i, long l) {
 
-        AseItemClickEvent event = new AseItemClickEvent(adapterView.getId(), i, l, null);
+        AseItemClickEvent event = new AseItemClickEvent(adapterView.getId(), i, l);
         recorder.record(event);
 
         Log.i("Recorder", "Clicked position: " + i + " Long Id: " + l);

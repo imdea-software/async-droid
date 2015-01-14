@@ -13,9 +13,9 @@ public class AseCheckBoxEvent extends AseEvent {
     private int position;
     private int parentId;
 
-    // viewID here is the component's listview id
-    public AseCheckBoxEvent(int viewId, int parentId, int pos, String fragment) {
-        super(EventType.CHECKBOX, viewId, parentId, fragment);
+    // parentId here is the component's listview id
+    public AseCheckBoxEvent(int viewId, int parentId, int pos) {
+        super(EventType.CHECKBOX, viewId, parentId);
         this.parentId = parentId;
         position = pos;
         
@@ -28,18 +28,17 @@ public class AseCheckBoxEvent extends AseEvent {
 
     @Override
     public boolean isFirable() {
-        View view = AseTestBridge.getAppData().getActivityRootView().findViewById(viewId);
+        View view = AppRunTimeData.getInstance().getActivityRootView().findViewById(viewId);
         return super.isFirable() && (view != null);
     }
     
-// Problem here - only clicks and replays the first item's checkbox
+    @SuppressWarnings("rawtypes")
     @Override
     public void injectEvent() {
         //CheckBox view = (CheckBox) AseTestBridge.getAppData().getActivityRootView().findViewById(viewId);
         
-        AdapterView parentView = (AdapterView) AseTestBridge.getAppData().getActivityRootView().findViewById(parentId);
+        AdapterView parentView = (AdapterView) AppRunTimeData.getInstance().getActivityRootView().findViewById(parentId);
         CheckBox view = (CheckBox)parentView.getChildAt(position).findViewById(viewId);
-        
         
         OnClickListener ownListener = ReflectionUtils.getOnClickListener(view);
         ownListener.onClick(view);

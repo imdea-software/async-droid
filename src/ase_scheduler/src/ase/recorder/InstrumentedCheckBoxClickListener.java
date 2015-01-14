@@ -29,7 +29,7 @@ public class InstrumentedCheckBoxClickListener implements View.OnClickListener {
 
     @Override
     public void onClick(View v) {
-        AseEvent event = new AseCheckBoxEvent(id, parentId, pos, null);
+        AseEvent event = new AseCheckBoxEvent(id, parentId, pos);
         recorder.record(event);
 
         if (ownListener != null)

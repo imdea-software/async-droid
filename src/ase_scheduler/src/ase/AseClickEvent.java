@@ -10,8 +10,8 @@ import ase.recorder.ViewTraverser;
  */
 public class AseClickEvent extends AseEvent {
 
-    public AseClickEvent(int viewId, String fragment) {
-        super(EventType.CLICK, viewId, fragment);
+    public AseClickEvent(int viewId) {
+        super(EventType.CLICK, viewId);
     }
 
     @Override
@@ -21,13 +21,13 @@ public class AseClickEvent extends AseEvent {
 
     @Override
     public boolean isFirable() {
-        View view = AseTestBridge.getAppData().getActivityRootView().findViewById(viewId);
+        View view = AppRunTimeData.getInstance().getActivityRootView().findViewById(viewId);
         return super.isFirable() && (view != null);
     }
 
     @Override
     public void injectEvent() {
-        View view = AseTestBridge.getAppData().getActivityRootView().findViewById(viewId);
+        View view = AppRunTimeData.getInstance().getActivityRootView().findViewById(viewId);
         //view.callOnClick();
         view.performClick();
         Log.i("Repeater", "Clicked view: " + Integer.toHexString(view.getId()));

@@ -7,7 +7,6 @@ import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 import ase.*;
-import ase.recorder.ViewTraverser;
 import ase.util.log.Logger;
 
 
@@ -43,7 +42,7 @@ public class InputRepeater implements Runnable {
         // will loop only once
         // more efficient than if check and notify
         // each time root view is set in every onCreate
-        while (AseTestBridge.getAppData().getActivityRootView() == null) {
+        while ( AppRunTimeData.getInstance().getActivityRootView() == null) {
             // do nothing
         }
 
@@ -76,7 +75,7 @@ public class InputRepeater implements Runnable {
             AseTestBridge.waitForDispatch();
 
             // execute asynchronous transactions that load fragments 
-            AseTestBridge.executeFragmentTransactions();
+            AppRunTimeData.getInstance().executeFragmentTransactions();
             
             if(!event.isFirable()) {
                 if (message.arg1 >= MAX_TRIALS) return;

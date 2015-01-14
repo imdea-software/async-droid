@@ -67,10 +67,11 @@ public class RepeatingMode implements ExecutionMode, Runnable {
         waitForDispatch(ThreadData.SCHEDULER_ID);
 
         while (scheduler.hasMoreTestCases()) {
-            AseTestBridge.launchMainActivity();           
+            AppRunTimeData.getInstance().launchMainActivity();           
             setUpTestCase();
             runTestCase();
             tearDownTestCase();
+            fileLog.i("End", "End of test");
         }
 
         Log.i("AseScheduler", "All tests has completed.");

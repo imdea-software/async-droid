@@ -14,8 +14,7 @@ public class AseActionBarEvent extends AseEvent {
     // viewId is the id of the ActionBAr
     // menuItemId is the id of the Menu item
     public AseActionBarEvent(int menuItemId) {
-
-        super(EventType.ACTIONBAR, menuItemId, null);
+        super(EventType.ACTIONBAR, menuItemId);
         //this.menuItemId = menuItemId;
     }
 
@@ -26,12 +25,13 @@ public class AseActionBarEvent extends AseEvent {
 
     @Override
     public boolean isFirable() {
-        if (AseTestBridge.getAppData().getCurrentAct().hasWindowFocus()) {
+        AppRunTimeData appData = AppRunTimeData.getInstance();
+        if (appData.getCurrentAct().hasWindowFocus()) {
             //AseTestBridge.currentAct.openOptionsMenu();
-            Menu menu = AseTestBridge.getAppData().getActionBarMenu();
+            Menu menu = appData.getActionBarMenu();
             if (menu != null) {
                 MenuItem item = menu.findItem(viewId);
-                return (item != null);
+                return super.isFirable() && (item != null);
             }
         }
         return false;
@@ -39,11 +39,10 @@ public class AseActionBarEvent extends AseEvent {
 
     @Override
     public void injectEvent() {
-        //AseTestBridge.currentAct.openOptionsMenu();
-        Menu menu = AseTestBridge.getAppData().getActionBarMenu();
+        AppRunTimeData appData = AppRunTimeData.getInstance();
+        Menu menu = appData.getActionBarMenu();
         MenuItem item = menu.findItem(viewId);
-        AseTestBridge.getAppData().getCurrentAct().onOptionsItemSelected(item);
+        appData.getCurrentAct().onOptionsItemSelected(item);
         Log.i("Repeater", "Clicked action bar view: " + Integer.toHexString(viewId));
-
     }
 }

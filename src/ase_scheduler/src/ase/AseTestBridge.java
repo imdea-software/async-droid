@@ -1,10 +1,7 @@
 package ase;
 
 import android.app.Activity;
-import android.app.Fragment;
-import android.app.FragmentManager;
 import android.content.Context;
-import android.content.Intent;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -22,7 +19,6 @@ import ase.util.IOFactory;
 public class AseTestBridge {
 
     private static ExecutionMode executionMode;
-    private static AppRunTimeData appData;
     private static boolean initiated = false;
 
     /**
@@ -32,11 +28,11 @@ public class AseTestBridge {
     public static void initiateTesting(Context context) {
         if (!initiated) {
             initiated = true;
-            appData = new AppRunTimeData(context);
+            AppRunTimeData.createInstance(context);
             setTestParameters(context);
         }
         if(context instanceof Activity)
-            appData.setCurrentAct((Activity)(context));
+            AppRunTimeData.getInstance().setCurrentAct((Activity)(context));
     }
 
     /**
@@ -62,14 +58,17 @@ public class AseTestBridge {
         Log.i("AsyncDroid", "Scheduler initialized for mode " + parameters.getMode());
     }
 
+    public static ExecutionModeType getExecutionMode() {
+        return executionMode.getExecutionModeType();
+    }
+    
     public static void setActivityViewTraverser(Activity act) {
         View v = act.getWindow().getDecorView().getRootView();
         if (executionMode.getExecutionModeType() == ExecutionModeType.RECORD) {
-            //appData.setViewViewerContext(act.getApplicationContext());
-            appData.setActivityRootView(v);
-            appData.traverseViewIds(v.getRootView(), null, null);
+            AppRunTimeData.getInstance().setActivityRootView(v);
+            AppRunTimeData.getInstance().traverseViewIds(v.getRootView(), null);
         } else if (executionMode.getExecutionModeType() == ExecutionModeType.REPEAT) {
-            appData.setActivityRootView(v);
+            AppRunTimeData.getInstance().setActivityRootView(v);
         }
     }
 
@@ -77,21 +76,50 @@ public class AseTestBridge {
      *  This method is called in onViewCreated of a Fragment before returning the rootView
      *  Traverses inflated view hierarchy and sets the currently loaded fragment name
      */
-    public static void setFragmentViewTraverser(View rootView, ViewGroup parent, Object fragmentThisLocal) {
+    public static void setFragmentViewTraverser(View rootView, ViewGroup parent) {
         if (executionMode.getExecutionModeType() == ExecutionModeType.RECORD) {
-            appData.traverseViewIds(rootView, parent, fragmentThisLocal);
+            AppRunTimeData.getInstance().traverseViewIds(rootView, parent);
         } else if (executionMode.getExecutionModeType() == ExecutionModeType.REPEAT) {
-            String fragmentClassName = fragmentThisLocal.getClass().getName(); // TODO nullcheck
-            Log.v("View","Fragment view created: " + fragmentClassName);
+            Log.v("View","Fragment view created with root: " + Integer.toHexString(rootView.getId()));
         }
     }
     
     public static void setAdapterViewItemTraverser(View view, ViewGroup parent, int pos) {
         if (executionMode.getExecutionModeType() == ExecutionModeType.RECORD) {
-            appData.traverseItemView(view, parent, pos);
+            AppRunTimeData.getInstance().traverseItemView(view, parent, pos);
         }
     }
+        
+    public static void setActionBarMenu(Menu menu) {
+        // Need the menu reference only in replay mode
+        if(!(executionMode instanceof RepeatingMode))
+            return;
+
+        if(menu== null)
+            Log.i("Repeater", "Menu is null");
+        AppRunTimeData.getInstance().setActionBarMenu(menu);
+    }
     
+    public static void setRecorderForActionBar(final MenuItem item) {
+        // Recorder works only in record mode
+        if(!(executionMode instanceof RecordingMode)) {
+            return;
+        }
+
+        if(item == null) {
+            Log.w("Repeater", "ActionBar menu item is null");
+            return;
+        }
+        
+        AseEvent event;
+        if (item.getItemId() != android.R.id.home) {
+             event = new AseActionBarEvent(item.getItemId());
+        } else {
+             event = new AseNavigateUpEvent(item.getItemId(), AppRunTimeData.getInstance().getCurrentAct().getComponentName().flattenToString());
+        }
+        IOFactory.getRecorder(AppRunTimeData.getInstance().getAppContext()).record(event);
+    }
+        
     /*
      * application thread waits for its signal to start/resume
      */
@@ -106,7 +134,6 @@ public class AseTestBridge {
         executionMode.yield();
     }
     
-
     /*
      * application thread notify scheduler when they are completed
      */
@@ -126,62 +153,5 @@ public class AseTestBridge {
      */
     public static void exitMonitor() {
         executionMode.exitMonitor();
-    }
-    
-    public static void launchMainActivity() {
-        
-        Intent i = appData.getAppContext().getPackageManager().getLaunchIntentForPackage(appData.getPackageName());
-        //clear the entire stack, except for the activity being launched
-        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        appData.getAppContext().startActivity(i);
-    }
-
-    public static void finishCurrentActivity() {
-        Log.i("AsyncDroid", "Finishing activity.");
-        appData.getCurrentAct().finish();
-    }
-
-    // to be used for replay
-    public static void setActionBarMenu(Menu menu) {
-        // Need the menu reference only in replay mode
-        if(!(executionMode instanceof RepeatingMode))
-            return;
-
-        if(menu== null)
-            Log.i("Repeater", "Menu is null");
-        appData.setActionBarMenu(menu);
-    }
-
-    public static void setRecorderForActionBar(final MenuItem item) {
-        // Recorder works only in record mode
-        if(!(executionMode instanceof RecordingMode)) {
-            Log.i("Recorder", "Not in record mode");
-            return;
-        }
-
-        if(item == null) {
-            Log.i("Repeater", "Item is null");
-            return;
-        }
-        AseEvent event;
-        if (item.getItemId() != android.R.id.home) {
-             event = new AseActionBarEvent(item.getItemId());
-        } else {
-             event = new AseNavigateUpEvent(item.getItemId(), appData.getCurrentAct().getComponentName().flattenToString());
-        }
-        IOFactory.getRecorder(appData.getAppContext()).record(event);
-    }
-    
-    public static ExecutionModeType getExecutionMode() {
-        return executionMode.getExecutionModeType();
-    }
-    
-    public static AppRunTimeData getAppData() {
-        return appData;
-    }
-    
-    public static void executeFragmentTransactions() {
-        FragmentManager fm = appData.getCurrentAct().getFragmentManager();
-        fm.executePendingTransactions();
     }
 }

@@ -3,8 +3,8 @@ package ase.scheduler;
 import java.util.List;
 
 import android.os.Message;
-import ase.AseTestBridge;
 import ase.repeater.InputRepeater;
+import ase.scheduler.PendingThreads.ThreadType;
 import ase.util.LooperReader;
 import ase.util.log.Logger;
 
@@ -62,6 +62,14 @@ public abstract class Scheduler {
         return false;
     }
 
+    public boolean hasAvailableThreads() {
+        for(int i=0; i<threads.getSize(); i++) {
+            if(okToSchedule(threads.getThreadByIndex(i, ThreadType.ANY)))
+                    return true;
+        }
+        return false;
+    }
+    
     protected boolean hasInputInMainLooper() {
         List<Message> messages = LooperReader.getInstance().getMessages(threads.getThreadById(1).getThread());
         

@@ -14,8 +14,8 @@ public class AseItemClickEvent extends AseEvent {
 
     // viewId is the id of the AdapterView
     // pos is the position of the item in the AdapterView
-    public AseItemClickEvent(int viewId, int itemPos, long id, String fragment) {
-        super(EventType.ITEMCLICK, viewId, fragment);
+    public AseItemClickEvent(int viewId, int itemPos, long id) {
+        super(EventType.ITEMCLICK, viewId);
         this.itemPos = itemPos;
         this.itemId = id;
     }
@@ -27,13 +27,13 @@ public class AseItemClickEvent extends AseEvent {
 
     @Override
     public boolean isFirable() {
-        View view = AseTestBridge.getAppData().getActivityRootView().findViewById(viewId);
+        View view = AppRunTimeData.getInstance().getActivityRootView().findViewById(viewId);
         return super.isFirable() && (view != null); 
     }
 
     @Override
     public void injectEvent() {
-        View view = AseTestBridge.getAppData().getActivityRootView().findViewById(viewId);
+        View view = AppRunTimeData.getInstance().getActivityRootView().findViewById(viewId);
         
         Log.i("Repeater", "LOG: INjecting: " + toString());
         if(view instanceof ListView) {
