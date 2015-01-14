@@ -36,7 +36,7 @@ public class FileLogger implements Logger {
     }
 
     private void tryAppendFile(String tag, String message, String level) {
-        Context context = AseTestBridge.getApplicationContext();
+        Context context = AseTestBridge.getAppData().getAppContext();
         FileOutputStream fOut;
         try {
             fOut = context.openFileOutput(fileName, Context.MODE_APPEND);

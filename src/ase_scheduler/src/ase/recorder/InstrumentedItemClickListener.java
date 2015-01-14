@@ -24,7 +24,7 @@ public class InstrumentedItemClickListener implements AdapterView.OnItemClickLis
     @Override
     public void onItemClick(AdapterView adapterView, View view, int i, long l) {
 
-        AseItemClickEvent event = new AseItemClickEvent(adapterView.getId(), i, l);
+        AseItemClickEvent event = new AseItemClickEvent(adapterView.getId(), i, l, null);
         recorder.record(event);
 
         Log.i("Recorder", "Clicked position: " + i + " Long Id: " + l);

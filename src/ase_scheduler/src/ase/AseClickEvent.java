@@ -1,5 +1,6 @@
 package ase;
 
+import android.app.Fragment;
 import android.util.Log;
 import android.view.View;
 import ase.recorder.ViewTraverser;
@@ -9,24 +10,24 @@ import ase.recorder.ViewTraverser;
  */
 public class AseClickEvent extends AseEvent {
 
-    public AseClickEvent(int viewId) {
-        super(EventType.CLICK, viewId);
+    public AseClickEvent(int viewId, String fragment) {
+        super(EventType.CLICK, viewId, fragment);
     }
 
     @Override
     public String toString() {
-        return String.format("%s %d", type.name(), viewId);
+        return String.format("%s %d In fragment: %s", type.name(), viewId, fragmentName);
     }
 
     @Override
     public boolean isFirable() {
-        View view = ViewTraverser.CURRENT_ROOT_VIEW.findViewById(viewId);
-        return view != null;
+        View view = AseTestBridge.getAppData().getActivityRootView().findViewById(viewId);
+        return super.isFirable() && (view != null);
     }
 
     @Override
     public void injectEvent() {
-        View view = ViewTraverser.CURRENT_ROOT_VIEW.findViewById(viewId);
+        View view = AseTestBridge.getAppData().getActivityRootView().findViewById(viewId);
         //view.callOnClick();
         view.performClick();
         Log.i("Repeater", "Clicked view: " + Integer.toHexString(view.getId()));

@@ -1,6 +1,7 @@
 package ase;
 
 import android.app.Activity;
+import android.app.Fragment;
 import android.app.FragmentManager;
 import android.content.Context;
 import android.content.Intent;
@@ -8,7 +9,6 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import ase.recorder.ViewTraverser;
 import ase.scheduler.RecordingMode;
 import ase.scheduler.NopMode;
 import ase.scheduler.RepeatingMode;
@@ -21,13 +21,8 @@ import ase.util.IOFactory;
 public class AseTestBridge {
 
     private static ExecutionMode executionMode;
+    private static AppRunTimeData appData;
     private static boolean initiated = false;
-    
-    private static AppRuntimeData appData;
-    // application appContext to be used in utils and the scheduler
-    private static Context appContext;
-    private static Activity currentAct;
-    private static Menu actionBarMenu;
 
     /**
      * called by UI thread in onCreate method of Activity or Application
@@ -36,10 +31,11 @@ public class AseTestBridge {
     public static void initiateTesting(Context context) {
         if (!initiated) {
             initiated = true;
+            appData = new AppRunTimeData(context);
             setTestParameters(context);
         }
         if(context instanceof Activity)
-            currentAct = (Activity) context;
+            appData.setCurrentAct((Activity)(context));
     }
 
     /**
@@ -48,9 +44,7 @@ public class AseTestBridge {
      * to be used to relaunch mainActivity after each test case
      */
     private static void setTestParameters(Context context) {
-        appContext = context.getApplicationContext();
-        Parameters parameters = IOFactory.getParameters(appContext);
-
+        Parameters parameters = IOFactory.getParameters(context);
         Log.i("AsyncDroid", "Running in " + parameters.getMode() + " mode...");
         switch (parameters.getSchedulerMode()) {
             case RECORD:
@@ -58,7 +52,7 @@ public class AseTestBridge {
                 break;
             case REPEAT:
                 Log.i("AsyncDroid", "Number of delays: " + parameters.getNumDelays());
-                executionMode = new RepeatingMode(parameters.getNumDelays(), appContext);
+                executionMode = new RepeatingMode(parameters.getNumDelays(), context);
                 executionMode.runScheduler();  
                 break;
             case NOP:
@@ -70,17 +64,24 @@ public class AseTestBridge {
     public static void setActivityViewTraverser(Activity act) {
         View v = act.getWindow().getDecorView().getRootView();
         if (executionMode.getExecutionModeType() == ExecutionModeType.RECORD) {
-            ViewTraverser.setViewViewerContext(act.getApplicationContext());
-            ViewTraverser.setRootView(v);
-            ViewTraverser.traverseViewIds(v.getRootView());
+            //appData.setViewViewerContext(act.getApplicationContext());
+            appData.setActivityRootView(v);
+            appData.traverseViewIds(v.getRootView(), null);
         } else if (executionMode.getExecutionModeType() == ExecutionModeType.REPEAT) {
-            ViewTraverser.setRootView(v);
+            appData.setActivityRootView(v);
         }
     }
 
-    public static void setFragmentViewTraverser(View rootView) {
+    /*
+     *  This method is called in onViewCreated of a Fragment before returning the rootView
+     *  Traverses inflated view hierarchy and sets the currently loaded fragment name
+     */
+    public static void setFragmentViewTraverser(View rootView, Object fragmentThisLocal) {
         if (executionMode.getExecutionModeType() == ExecutionModeType.RECORD) {
-            ViewTraverser.traverseViewIds(rootView);
+            appData.traverseViewIds(rootView, (Fragment)fragmentThisLocal);
+        } else if (executionMode.getExecutionModeType() == ExecutionModeType.REPEAT) {
+            String fragmentClassName = fragmentThisLocal.getClass().getName();
+            Log.v("View","Fragment view created: " + fragmentClassName);
         }
     }
     
@@ -121,16 +122,16 @@ public class AseTestBridge {
     }
     
     public static void launchMainActivity() {
-        String packageName = appContext.getPackageName();
-        Intent i = appContext.getPackageManager().getLaunchIntentForPackage(packageName);
+        
+        Intent i = appData.getAppContext().getPackageManager().getLaunchIntentForPackage(appData.getPackageName());
         //clear the entire stack, except for the activity being launched
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        appContext.startActivity(i);
+        appData.getAppContext().startActivity(i);
     }
 
     public static void finishCurrentActivity() {
         Log.i("AsyncDroid", "Finishing activity.");
-        currentAct.finish();
+        appData.getCurrentAct().finish();
     }
 
     // to be used for replay
@@ -141,7 +142,7 @@ public class AseTestBridge {
 
         if(menu== null)
             Log.i("Repeater", "Menu is null");
-        actionBarMenu = menu;
+        appData.setActionBarMenu(menu);
     }
 
     public static void setRecorderForActionBar(final MenuItem item) {
@@ -159,29 +160,21 @@ public class AseTestBridge {
         if (item.getItemId() != android.R.id.home) {
              event = new AseActionBarEvent(item.getItemId());
         } else {
-             event = new AseNavigateUpEvent(item.getItemId(), AseTestBridge.currentAct.getComponentName().flattenToString());
+             event = new AseNavigateUpEvent(item.getItemId(), appData.getCurrentAct().getComponentName().flattenToString());
         }
-        IOFactory.getRecorder(appContext).record(event);
+        IOFactory.getRecorder(appData.getAppContext()).record(event);
     }
     
     public static ExecutionModeType getExecutionMode() {
         return executionMode.getExecutionModeType();
     }
-
-    public static Context getApplicationContext() {
-        return appContext;
-    }
     
-    public static Activity getCurrentActivity() {
-        return currentAct;
-    }
-    
-    public static Menu getActionBarMenu() {
-        return actionBarMenu;
+    public static AppRunTimeData getAppData() {
+        return appData;
     }
     
     public static void executeFragmentTransactions() {
-        FragmentManager fm = currentAct.getFragmentManager();
+        FragmentManager fm = appData.getCurrentAct().getFragmentManager();
         fm.executePendingTransactions();
     }
 }

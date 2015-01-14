@@ -29,7 +29,7 @@ public class InstrumentedListener implements OnClickListener {
             return;
         }
 
-        AseEvent event = new AseClickEvent(id);
+        AseEvent event = new AseClickEvent(id, null);
         recorder.record(event);
 
         if (ownListener != null)

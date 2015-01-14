@@ -3,7 +3,6 @@ package ase;
 import android.util.Log;
 import android.view.View;
 import android.widget.ListView;
-import ase.recorder.ViewTraverser;
 
 /**
  * Created by burcuozkan on 05/12/14.
@@ -15,26 +14,28 @@ public class AseItemClickEvent extends AseEvent {
 
     // viewId is the id of the AdapterView
     // pos is the position of the item in the AdapterView
-    public AseItemClickEvent(int viewId, int itemPos, long id) {
-        super(EventType.ITEMCLICK, viewId);
+    public AseItemClickEvent(int viewId, int itemPos, long id, String fragment) {
+        super(EventType.ITEMCLICK, viewId, fragment);
         this.itemPos = itemPos;
         this.itemId = id;
     }
 
     @Override
     public String toString() {
-        return String.format("%s %d %d %d", type.name(), viewId, itemPos, itemId);
+        return String.format("%s %d %d %d In fragment: %s", type.name(), viewId, itemPos, itemId, fragmentName);
     }
 
     @Override
     public boolean isFirable() {
-        View view = ViewTraverser.CURRENT_ROOT_VIEW.findViewById(viewId);
-        return view != null;
+        View view = AseTestBridge.getAppData().getActivityRootView().findViewById(viewId);
+        return super.isFirable() && (view != null); 
     }
 
     @Override
     public void injectEvent() {
-        View view = ViewTraverser.CURRENT_ROOT_VIEW.findViewById(viewId);
+        View view = AseTestBridge.getAppData().getActivityRootView().findViewById(viewId);
+        
+        Log.i("Repeater", "LOG: INjecting: " + toString());
         if(view instanceof ListView) {
             ((ListView) view).smoothScrollToPosition(itemPos);
             ((ListView) view).performItemClick(view, itemPos, itemId);

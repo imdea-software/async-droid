@@ -15,7 +15,7 @@ public class AseNavigateUpEvent extends AseEvent {
     // viewId is the id of the AdapterView
     // pos is the position of the item in the AdapterView
     public AseNavigateUpEvent(int viewId, String actName) {
-        super(EventType.NAVIGATEUP, viewId);
+        super(EventType.NAVIGATEUP, viewId, null);
         currentActivityName = actName;
     }
 
@@ -26,7 +26,7 @@ public class AseNavigateUpEvent extends AseEvent {
 
     @Override
     public boolean isFirable() {
-        return AseTestBridge.currentAct.getComponentName().flattenToString().equals(currentActivityName);
+        return AseTestBridge.getAppData().getCurrentAct().getComponentName().flattenToString().equals(currentActivityName);
     }
 
     @Override
@@ -34,7 +34,7 @@ public class AseNavigateUpEvent extends AseEvent {
         //AseTestBridge.currentAct.onNavigateUp();
         MenuItem item = new HomeMenuItem();
         ((HomeMenuItem)item).setItemId(android.R.id.home);
-        AseTestBridge.currentAct.onOptionsItemSelected(item);
+        AseTestBridge.getAppData().getCurrentAct().onOptionsItemSelected(item);
         Log.i("Repeater", "Navigated to up: " + Integer.toHexString(viewId));
 
     }

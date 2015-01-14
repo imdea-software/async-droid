@@ -1,11 +1,15 @@
 package ase.util;
 
 import java.lang.reflect.Field;
+import java.util.List;
 
+import android.app.Activity;
+import android.app.Fragment;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
+import android.widget.CompoundButton.OnCheckedChangeListener;
 
 public class ReflectionUtils {
 
@@ -33,6 +37,32 @@ public class ReflectionUtils {
         return listener;
     }
 
+   
+    public static OnCheckedChangeListener  getOnCheckedChangeListener(View view) {
+        OnCheckedChangeListener listener = null;
+        try {
+            Field listenerInfoField = null;
+            listenerInfoField = View.class.getDeclaredField("mListenerInfo");
+            if (listenerInfoField != null) {
+                listenerInfoField.setAccessible(true);
+            }
+            Object myLiObject = null;
+            myLiObject = listenerInfoField.get(view);
+
+            // get the field mOnClickListener
+            Field listenerField = null;
+            listenerField = Class.forName("android.view.View$ListenerInfo")
+                    .getDeclaredField("mOnClickListener");
+            if (listenerField != null && myLiObject != null) {
+                listener = (OnCheckedChangeListener) listenerField.get(myLiObject);
+                Log.i("Recorder", "Checkbox listener cannot be read");
+            }
+        } catch (Exception ex) {
+            listener = null;
+        }
+        return listener;
+    }
+    
     public static AdapterView.OnItemClickListener getOnItemClickListener(AdapterView view) {
         AdapterView.OnItemClickListener listener = null;
         try {
@@ -57,6 +87,22 @@ public class ReflectionUtils {
             listener = null;
         }
         return listener;
+    }
+    
+    @SuppressWarnings("unchecked")
+    public static List<Fragment> getFragments(Activity act) {
+        List<Fragment> activeFragments = null;
+        try {
+            Field mActiveField = null;
+            mActiveField = getSuperClassOfType(act.getClass(), Activity.class.getName()).getDeclaredField("mActive");
+            mActiveField.setAccessible(true);       
+            activeFragments = (List<Fragment>) mActiveField.get(act);
+        } catch (Exception ex) {
+            activeFragments = null;
+        }
+
+        Log.e("Reflection", activeFragments.toString());
+        return activeFragments;
     }
 
     public static Class getSuperClassOfType(Class clazz, String superClassName) {

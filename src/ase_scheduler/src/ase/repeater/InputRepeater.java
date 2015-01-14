@@ -43,7 +43,7 @@ public class InputRepeater implements Runnable {
         // will loop only once
         // more efficient than if check and notify
         // each time root view is set in every onCreate
-        while (ViewTraverser.CURRENT_ROOT_VIEW == null) {
+        while (AseTestBridge.getAppData().getActivityRootView() == null) {
             // do nothing
         }
 

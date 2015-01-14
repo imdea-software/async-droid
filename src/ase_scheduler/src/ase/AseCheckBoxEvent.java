@@ -5,7 +5,6 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.CheckBox;
 import ase.AseEvent;
-import ase.recorder.ViewTraverser;
 import ase.util.ReflectionUtils;
 
 public class AseCheckBoxEvent extends AseEvent {
@@ -13,26 +12,26 @@ public class AseCheckBoxEvent extends AseEvent {
     private int position;
 
     // viewID here is the component's listview id
-    public AseCheckBoxEvent(int viewId, int pos) {
-        super(EventType.CHECKBOX, viewId);
+    public AseCheckBoxEvent(int viewId, int pos, String fragment) {
+        super(EventType.CHECKBOX, viewId, fragment);
         position = pos;
     }
 
     @Override
     public String toString() {
-        return String.format("%s %d Position: %d", type.name(), viewId, position);
+        return String.format("%s %d Position: %d In fragment: %s", type.name(), viewId, position, fragmentName);
     }
 
     @Override
     public boolean isFirable() {
-        View view = ViewTraverser.CURRENT_ROOT_VIEW.findViewById(viewId);
-        return view != null;
+        View view = AseTestBridge.getAppData().getActivityRootView().findViewById(viewId);
+        return super.isFirable() && (view != null);
     }
     
 // Problem here - only clicks and replays the first item's checkbox
     @Override
     public void injectEvent() {
-        CheckBox view = (CheckBox) ViewTraverser.CURRENT_ROOT_VIEW.findViewById(viewId);
+        CheckBox view = (CheckBox) AseTestBridge.getAppData().getActivityRootView().findViewById(viewId);
         
         OnClickListener ownListener = ReflectionUtils.getOnClickListener(view);
         ownListener.onClick(view);

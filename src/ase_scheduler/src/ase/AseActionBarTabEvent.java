@@ -1,24 +1,18 @@
 package ase;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-
-//import com.android.internal.*;
-
 import android.util.Log;
 import android.app.ActionBar;
+
 
 public class AseActionBarTabEvent extends AseEvent {
 
     public final int tabItemIndex;
-    private static int prevSelectedTabIndex = 0;
 
     // viewId is the id of the ActionBar
     // menuItemId is the id of the Menu item
     public AseActionBarTabEvent(int actionBarId, int tabItemIndex) {
 
-        super(EventType.ACTIONBARTAB, actionBarId);
+        super(EventType.ACTIONBARTAB, actionBarId, null);
         this.tabItemIndex = tabItemIndex;
         
     }
@@ -31,7 +25,7 @@ public class AseActionBarTabEvent extends AseEvent {
     @Override
     public boolean isFirable() { // check if ActionBArActivity and check tab index
        
-        ActionBar actionBar = AseTestBridge.getCurrentActivity().getActionBar();
+        ActionBar actionBar = AseTestBridge.getAppData().getCurrentAct().getActionBar();
         if (actionBar != null && actionBar.isShowing()) {
             if(actionBar.getTabAt(tabItemIndex) != null)
                 return true;
@@ -49,7 +43,7 @@ public class AseActionBarTabEvent extends AseEvent {
      */
     @Override
     public void injectEvent() {
-        ActionBar actionBar = AseTestBridge.getCurrentActivity().getActionBar();
+        ActionBar actionBar = AseTestBridge.getAppData().getCurrentAct().getActionBar();
         
 
         
