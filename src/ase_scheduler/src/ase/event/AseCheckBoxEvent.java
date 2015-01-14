@@ -1,11 +1,12 @@
-package ase;
+package ase.event;
 
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.CheckBox;
-import ase.AseEvent;
+
+import ase.AppRunTimeData;
 import ase.util.ReflectionUtils;
 
 public class AseCheckBoxEvent extends AseEvent {

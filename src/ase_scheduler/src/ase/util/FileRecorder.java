@@ -8,7 +8,7 @@ import com.google.gson.Gson;
 
 import android.content.Context;
 import android.util.Log;
-import ase.AseEvent;
+import ase.event.AseEvent;
 
 public class FileRecorder implements Recorder {
 

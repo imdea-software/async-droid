@@ -1,8 +1,8 @@
-package ase;
+package ase.event;
 
-import android.app.Fragment;
 import android.util.Log;
 import android.view.View;
+import ase.AppRunTimeData;
 
 /**
  * Created by burcuozkan on 06/12/14.

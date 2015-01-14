@@ -6,7 +6,10 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
-import ase.*;
+
+import ase.AppRunTimeData;
+import ase.AseTestBridge;
+import ase.event.AseEvent;
 import ase.util.log.Logger;
 
 

@@ -1,8 +1,9 @@
-package ase;
+package ase.event;
 
 import android.util.Log;
 import android.view.View;
 import android.widget.ListView;
+import ase.AppRunTimeData;
 
 /**
  * Created by burcuozkan on 05/12/14.

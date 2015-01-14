@@ -1,9 +1,10 @@
-package ase;
+package ase.event;
 
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.util.Log;
 import android.view.*;
+import ase.AppRunTimeData;
 
 /**
  * Created by burcuozkan on 11/12/14.

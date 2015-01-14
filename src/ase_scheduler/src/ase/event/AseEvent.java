@@ -1,9 +1,10 @@
-package ase;
+package ase.event;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import android.app.Fragment;
+import ase.AppRunTimeData;
 
 public abstract class AseEvent {
 

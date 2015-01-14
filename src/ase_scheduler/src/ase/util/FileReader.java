@@ -13,7 +13,7 @@ import com.google.gson.JsonParser;
 
 import android.content.Context;
 import android.util.Log;
-import ase.*;
+import ase.event.AseEvent;
 
 public class FileReader implements Reader {
 

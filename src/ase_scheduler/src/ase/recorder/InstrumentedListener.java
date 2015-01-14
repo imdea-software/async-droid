@@ -4,8 +4,9 @@ import android.content.Context;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
-import ase.AseClickEvent;
-import ase.AseEvent;
+
+import ase.event.AseClickEvent;
+import ase.event.AseEvent;
 import ase.util.IOFactory;
 import ase.util.Recorder;
 import ase.util.ReflectionUtils;
