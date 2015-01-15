@@ -18,7 +18,6 @@ public class InputRepeater implements Runnable {
     private int numDispatchedEvents = 0;
     private int numAllEvents = 0;
     private static Logger fileLog;    
-    private boolean postpone = false;
     
     private Handler handler = new InputInjectionHandler(Looper.getMainLooper());
     
@@ -40,26 +39,13 @@ public class InputRepeater implements Runnable {
         
         while (numDispatchedEvents < numAllEvents) {
             AseEvent event = eventList.get(numDispatchedEvents);
+            AseTestBridge.waitForDispatch();
             if(event.isFirable()) {
-                AseTestBridge.waitForDispatch();
-                
-                //// To reproduce the bug (to be removed)
-                if(event.type.equals(AseEvent.EventType.CHECKBOX) && postpone) {
-                    postpone = false;
-                    AseTestBridge.notifyDispatcher();
-                    continue;
-                }
-                if(event.type.equals(AseEvent.EventType.CHECKBOX)) {
-                    postpone = true;
-                }
-                ////////
-                
                 sendEventToApp(event);
-                numDispatchedEvents ++;
-                
-                Log.i("Repeater", "Posted a click.. InputsToGo:" + (numAllEvents - numDispatchedEvents));
-                AseTestBridge.notifyDispatcher();
-            }   
+                numDispatchedEvents ++;              
+                Log.i("Repeater", "InputsToGo: " + (numAllEvents - numDispatchedEvents) + "Posted: " + event.toString());
+            }  
+            AseTestBridge.notifyDispatcher();
         }
         Log.i("Repeater", "Completed posting inputs.");
     }
@@ -92,14 +78,15 @@ public class InputRepeater implements Runnable {
 
         @Override
         public void handleMessage(Message message) {
-            AseTestBridge.waitForDispatch();
-            
-            // execute asynchronous transactions that load fragments 
-            AppRunTimeData.getInstance().executeFragmentTransactions();
-            
+            AseTestBridge.waitForDispatch();  
+
             AseEvent event = (AseEvent) message.obj;
             event.injectEvent();
+            Log.i("Repeated", "" + event.toString());
             fileLog.i("Repeated", "" + event.toString());
+            
+            //execute asynchronous transactions that load fragments 
+            AppRunTimeData.getInstance().executeFragmentTransactions();         
             AseTestBridge.notifyDispatcher();
         }
         
