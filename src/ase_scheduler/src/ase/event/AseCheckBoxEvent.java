@@ -44,7 +44,7 @@ public class AseCheckBoxEvent extends AseEvent {
         OnClickListener ownListener = ReflectionUtils.getOnClickListener(view);
         ownListener.onClick(view);
         
-        Log.i("Repeater", "In viewgroup: " + parentId + " clicked checkbox: " + Integer.toHexString(view.getId()) + " Position: " + position);
+        Log.i("Repeater", "In viewgroup: " + parentId + " clicked checkbox: " + Integer.toHexString(view.getId()) + " Position: " + position + " Fragment: " + fragmentName);
     }
 
 }

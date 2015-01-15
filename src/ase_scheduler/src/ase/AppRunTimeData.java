@@ -1,9 +1,9 @@
 package ase;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import android.app.Activity;
-import android.app.Fragment;
 import android.app.FragmentManager;
 import android.content.Context;
 import android.content.Intent;
@@ -80,21 +80,18 @@ public class AppRunTimeData {
         Log.v("ViewLogger", "Current activity view: " + view.toString());
     }
     
-    public List<Fragment> getFragments() {
-        return ReflectionUtils.getFragments(currentActivity);
+    public List<Object> getFragments() {
+        List<Object> fragments = ReflectionUtils.getFragments(currentActivity);
+        if(fragments == null)
+            return new ArrayList<Object>();
+        return fragments;
     }
     
     /*
      * Returns the name of the fragment in which the view with viewID is inflated
      */
     public String getFragmentNameByViewId(int viewId) {
-        List<Fragment> fragments = getFragments();
-        for(Fragment f: fragments) { 
-            if(f.isVisible() && (f.getView().findViewById(viewId) != null)) {
-                return f.getClass().getName();
-            }
-        }
-        return null;
+        return ReflectionUtils.getFragmentByViewID(currentActivity, viewId);
     }
     
     public void launchMainActivity() {
@@ -109,6 +106,7 @@ public class AppRunTimeData {
         currentActivity.finish();
     }
 
+    
     public void executeFragmentTransactions() {
         FragmentManager fm = currentActivity.getFragmentManager();
         fm.executePendingTransactions();

@@ -1,9 +1,7 @@
 package ase.event;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import android.app.Fragment;
 import ase.AppRunTimeData;
 
 public abstract class AseEvent {
@@ -60,19 +58,12 @@ public abstract class AseEvent {
         AppRunTimeData appData = AppRunTimeData.getInstance();
         if(appData.getActivityRootView() == null)
             return false;
+
+        String s = appData.getFragmentNameByViewId(viewId);
+        //if(s != null) Log.i("Firable", "Current: " + s);
+        //Log.i("Firable", fragmentName);
         
-        boolean fragmentOk = false;
-        if(fragmentName != null) {
-            fragmentOk = false;
-            List<Fragment> fragments = appData.getFragments();
-            for(Fragment f: fragments) { 
-                // If the fragment is active and is visible: This means it: (1) has been added, (2) has its view attached to the window, and (3) is not hidden.
-                if(f.getClass().getName().equalsIgnoreCase(fragmentName) && f.isVisible())
-                    fragmentOk = true;
-                    break;
-            }      
-        }
-        return (fragmentName == null) || fragmentOk;
+        return (fragmentName == null) || fragmentName.equals(s);
     }
 
     abstract public void injectEvent();

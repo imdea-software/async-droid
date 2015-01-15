@@ -1,10 +1,10 @@
 package ase.util;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.List;
 
 import android.app.Activity;
-import android.app.Fragment;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -13,6 +13,8 @@ import android.widget.CompoundButton.OnCheckedChangeListener;
 
 public class ReflectionUtils {
 
+    static final int LIBRARY_TYPE = getLibraryType();
+    
     public static OnClickListener getOnClickListener(View view) {
         OnClickListener listener = null;
         try {
@@ -91,29 +93,143 @@ public class ReflectionUtils {
         return listener;
     }
     
-    @SuppressWarnings("unchecked")
-    public static List<Fragment> getFragments(Activity act) {
-        List<Fragment> activeFragments = null;
+    // TODO revise, improve and enum support libraries
+    private static int getLibraryType() {
+        try
+        {
+            Class supFrag = Class.forName ("android.support.v4.app.FragmentActivity");
+            Log.v("Reflection", "Get fragments from: android.support.v4.app.FragmentActivity");
+            return 1; // uses support library v4 
+        }
+        catch (ClassNotFoundException e)
+        {
+            try {
+                Class frag = Class.forName ("android.app.Fragment");
+                Log.v("Reflection", "Get fragments from: android.app.Fragment");
+                return 0; // uses a higher version of Android 
+            } catch (ClassNotFoundException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+            }  
+        }
+        return -1;
+    }
+
+    @SuppressWarnings({ "unchecked", "unused" })
+    public static List<Object> getFragments(Activity act) {
+      //TODO merge these two "getFragments" methods
+        if(LIBRARY_TYPE == 1) {
+            return getFragmentsUsingSupportFragmentManager(act);
+        } else if (LIBRARY_TYPE == 0) {
+            getFragmentsUsingFragmentManager(act);  
+        }     
+        
+        return null;
+    }
+     
+    // reads fragments from android.app.FragmentManager
+    // parameter is of type android.app.Activity 
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private static List<Object> getFragmentsUsingFragmentManager(Activity act) {
+        List<Object> activeFragments = null;
         try {
+            // get fragment manager by activity.getFragmentManager() in android.app.Activity
+            Method getFragmentManagerMethod = null;
+            Class fragmentActivity = getSuperClassOfType(act.getClass(), "android.app.Activity");
+            getFragmentManagerMethod = fragmentActivity.getDeclaredMethod("getFragmentManager");
+            Object fragmentManager = getFragmentManagerMethod.invoke(act);
+            
             Field mActiveField = null;
-            mActiveField = getSuperClassOfType(act.getClass(), Activity.class.getName()).getDeclaredField("mActive");
+            Class<?> innerClass = Class.forName("android.app.FragmentManagerImpl");
+            mActiveField = innerClass.getDeclaredField("mActive");
             mActiveField.setAccessible(true);       
-            activeFragments = (List<Fragment>) mActiveField.get(act);
+            activeFragments = (List<Object>) mActiveField.get(fragmentManager);
         } catch (Exception ex) {
             activeFragments = null;
+            Log.e("Reflection", "Can not read active fragments");
         }
 
-        Log.e("Reflection", activeFragments.toString());
         return activeFragments;
     }
 
+    
+    // reads fragments from android.support.v4.app.FragmentManager in android.support.v4.app.FragmentActivity
+    // parameter is of type android.support.v4.app.FragmentActivity or android.app.Activity (if it does not have fragments)
+    @SuppressWarnings("unchecked")
+    private static List<Object> getFragmentsUsingSupportFragmentManager(Activity act) {
+        List<Object> activeFragments = null;
+        try {
+            // get fragment manager by activity.getSupportFragmentManager()
+            Method getFragmentManagerMethod = null;
+            Class fragmentActivity = getSuperClassOfType(act.getClass(), "android.support.v4.app.FragmentActivity");
+            getFragmentManagerMethod = fragmentActivity.getDeclaredMethod("getSupportFragmentManager");
+            Object fragmentManager = getFragmentManagerMethod.invoke(act);
+
+            Field mActiveField = null;
+            Class<?> innerClass = Class.forName("android.support.v4.app.FragmentManagerImpl");
+            mActiveField = innerClass.getDeclaredField("mActive");
+            mActiveField.setAccessible(true);
+
+            activeFragments = (List<Object>) mActiveField.get(fragmentManager);
+        } catch (Exception ex) {
+            activeFragments = null;
+            Log.e("Reflection", "Can not read active fragments");
+        }
+
+        return activeFragments;
+    } 
+    
+    /*
+     * Returns the name of the fragment in which the view with viewID is inflated
+     */
+    @SuppressWarnings({ "unchecked", "unused" })
+    public static String getFragmentByViewID(Activity act, int viewId) {
+        //TODO merge these two "getFragments" methods
+        if(LIBRARY_TYPE == 1) {
+            return getFragmentByViewIdUsingSupportFragmentManager(act, viewId);
+        } else if (LIBRARY_TYPE == 0) {
+            // TODO
+            //getFragmentByViewIdUsingFragmentManager(act, viewId);  
+        }     
+        return null;
+    }
+    
+    @SuppressWarnings("unchecked")
+    private static String getFragmentByViewIdUsingSupportFragmentManager(Activity act, int viewId) {
+        try {
+            Method isVisibleMethod = null, getViewMethod = null, findViewByIdMethod = null;
+            Class fragmentClass = Class.forName("android.support.v4.app.Fragment");
+            Class viewClass = Class.forName("android.view.View");
+
+            isVisibleMethod = fragmentClass.getDeclaredMethod("isVisible");
+            getViewMethod = fragmentClass.getDeclaredMethod("getView");
+            findViewByIdMethod = viewClass.getDeclaredMethod("findViewById", Integer.TYPE);
+
+            for(Object f: getFragmentsUsingSupportFragmentManager(act)) {
+                Object rootView = getViewMethod.invoke(f);
+
+                View v = (View) findViewByIdMethod.invoke(rootView, viewId);
+                Boolean b = (Boolean) isVisibleMethod.invoke(f);
+                if( (v != null) && (b.booleanValue())) {
+                    return f.getClass().getName();
+                }
+            }
+
+        } catch (Exception ex) {
+            Log.e("Reflection", "Can not read active fragments");
+        }
+
+        return null;
+    }
+    
+      
     @SuppressWarnings("rawtypes")
     public static Class getSuperClassOfType(Class clazz, String superClassName) {
         Class tempClass = clazz;
         while (tempClass != null && !tempClass.getName().equals(superClassName))
             tempClass = tempClass.getSuperclass();
 
-        Log.i("Recorder", tempClass == null ? "null" : tempClass.getName());
+        //Log.i("Recorder", tempClass == null ? "null" : tempClass.getName());
 
         return tempClass;
     }
