@@ -2,9 +2,12 @@ package ase.util;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.ArrayDeque;
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
 
 import android.app.Activity;
+import android.os.AsyncTask;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -93,6 +96,41 @@ public class ReflectionUtils {
         return listener;
     }
     
+    public static ArrayDeque<Runnable> getAsyncTaskSerialExecutorTasks() {
+        try {
+            // get the serial executor instance
+            Field serialExecutorField = Class.forName("android.os.AsyncTask").getDeclaredField("SERIAL_EXECUTOR");
+            Object serialExecutor = serialExecutorField.get(null);
+
+            // get mTasks field
+            Class serialExecutorClass = Class.forName("android.os.AsyncTask$SerialExecutor");
+            Field mTasksField = serialExecutorClass.getDeclaredField("mTasks");
+            mTasksField.setAccessible(true);
+            Object mTasks = mTasksField.get(serialExecutor);
+
+            return (ArrayDeque<Runnable>) mTasks;
+
+        } catch (Exception ex) {
+            Log.e("Reflectionnn", "Can not read AsyncTask serial executor work queue");
+        }
+        return null;
+    }
+
+    public static BlockingQueue<Runnable> getAsyncTaskPoolExecutorTasks() {
+
+        try {
+            Field workQueueField = AsyncTask.class.getDeclaredField("sPoolWorkQueue");
+            workQueueField.setAccessible(true);
+            Object workQueue = workQueueField.get(null);
+
+            return (BlockingQueue<Runnable>) workQueue;
+
+        } catch (Exception ex) {
+            Log.e("Reflection", "Can not read AsyncTask pool executor work queue");
+        }
+
+        return null;
+    }
     // TODO revise, improve and enum support libraries
     private static int getLibraryType() {
         try
