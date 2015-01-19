@@ -69,7 +69,7 @@ public class AseTestBridge {
         View v = act.getWindow().getDecorView().getRootView();
         if (executionMode.getExecutionModeType() == ExecutionModeType.RECORD) {
             AppRunTimeData.getInstance().setActivityRootView(v);
-            AppRunTimeData.getInstance().traverseViewIds(v.getRootView(), null);
+            AppRunTimeData.getInstance().traverseViewIds(v.getRootView());
         } else if (executionMode.getExecutionModeType() == ExecutionModeType.REPEAT) {
             AppRunTimeData.getInstance().setActivityRootView(v);
         }
@@ -79,9 +79,9 @@ public class AseTestBridge {
      *  This method is called in onViewCreated of a Fragment before returning the rootView
      *  Traverses inflated view hierarchy and sets the currently loaded fragment name
      */
-    public static void setFragmentViewTraverser(View rootView, ViewGroup parent) {
+    public static void setFragmentViewTraverser(View rootView) {
         if (executionMode.getExecutionModeType() == ExecutionModeType.RECORD) {
-            AppRunTimeData.getInstance().traverseViewIds(rootView, parent);
+            AppRunTimeData.getInstance().traverseViewIds(rootView);
         } else if (executionMode.getExecutionModeType() == ExecutionModeType.REPEAT) {
             Log.v("View","Fragment view created with root: " + Integer.toHexString(rootView.getId()));
         }

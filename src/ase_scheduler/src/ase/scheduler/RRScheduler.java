@@ -1,7 +1,6 @@
 package ase.scheduler;
 
 import android.util.Log;
-import ase.AseTestBridge;
 import ase.repeater.InputRepeater;
 import ase.scheduler.PendingThreads.ThreadType;
 import ase.util.LooperReader;

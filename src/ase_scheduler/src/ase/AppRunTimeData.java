@@ -120,18 +120,18 @@ public class AppRunTimeData {
      * Called from: (1) Activity onCreate (2) Fragment onCreateView (3) AdapterView getView
      * If (3), i.e. the view is an item in an AdapterView, take its parent as well
      */
-    public View traverseViewIds(View view, ViewGroup parent) {
+    public View traverseViewIds(View view) {
         Log.v("ViewLogger", "traversing: " + view.getClass().getSimpleName() + ", id: " + view.getId() );
         if (view.getParent() != null && (view.getParent() instanceof ViewGroup)) {
-            return traverseViewIds((View) view.getParent(), parent);
+            return traverseViewIds((View) view.getParent());
         } else {
-            traverseChildViewIds(view, parent);
+            traverseChildViewIds(view);
             return view;
         }
     }
 
     @SuppressWarnings("rawtypes")
-    private void traverseChildViewIds(View view, ViewGroup parent) {
+    private void traverseChildViewIds(View view) {
 
         if(view.getClass().getSimpleName().equals("ActionBarContainer")) {
             Log.i("ViewLogger", "ActionBarContainer Detail: " + view.toString() + " ID: " + view.getId());
@@ -166,7 +166,7 @@ public class AppRunTimeData {
                     child.setOnClickListener(listener);
                 }
 
-                traverseChildViewIds(child, parent);
+                traverseChildViewIds(child);
             }
         }
     }
