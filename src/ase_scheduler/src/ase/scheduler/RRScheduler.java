@@ -17,8 +17,7 @@ public class RRScheduler extends Scheduler {
     int numCompletedTests = 0;
     
     private int idleTypes = 0;
-    // default schedule:
-    // InputRepeater MainThread AsyncTaskThreads HandlerThreads
+    // default schedule: InputRepeater MainThread AsyncTaskSerialThread AsyncTaskPoolThreads HandlerThreads
     private int typeToSchedule = 0;
     private ThreadType[] types = {ThreadType.INPUTREPEATER, ThreadType.MAIN, ThreadType.ASYNCTASK_SERIAL, ThreadType.ASYNCTASK_POOL, ThreadType.HANDLERTHREAD};
     boolean onPool= false;
@@ -60,8 +59,7 @@ public class RRScheduler extends Scheduler {
         if(numCompletedTests == 0) return true;
         if(isDelaying && numDelays > 0) {
             if(numCompletedTests == 1) { // first test without any delays
-                //delaySeq = new DelaySequence(numDelays, taskToProcess-1 );
-                delaySeq = new DelaySequence(0, 5 );
+                delaySeq = new DelaySequence(numDelays, taskToProcess-1 );
                 return true;
             }else {
                 return delaySeq.hasNext();
