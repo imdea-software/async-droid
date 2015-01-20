@@ -11,7 +11,7 @@ import java.util.*;
 public class PendingThreads {
     
     public enum ThreadType {
-        MAIN, INPUTREPEATER, ASYNCTASK, HANDLERTHREAD, ANY
+        MAIN, INPUTREPEATER, ASYNCTASK, ASYNCTASK_SERIAL, ASYNCTASK_POOL, HANDLERTHREAD, ANY
     }
     
     // allThreads include the main, InputRepeater, AsyncTask and HandlerThreads
@@ -122,6 +122,28 @@ public class PendingThreads {
         return null;
     }
     
+    /* 
+     * Returns an array of the ThreadData of the given type
+     * TODO add main and the input repeater
+     */
+    public Object[] getThreads(ThreadType type) {
+        switch(type) {
+        case ASYNCTASK:
+            return asyncTaskThreads.getThreads();
+        case HANDLERTHREAD:
+            return handlerThreads.getThreads();
+        case ANY:
+            break;
+        case INPUTREPEATER:
+            break;
+        case MAIN:
+            break;
+        default:
+            break;
+        }
+        return null;
+    }
+    
     public ThreadData getThreadByName(String name) {
         return allThreads.getThreadByName(name);
     }
@@ -225,6 +247,10 @@ public class PendingThreads {
                 }
             }
             return null;
+        }
+        
+        public Object[] getThreads() {
+            return threads.toArray();
         }
         
         public String toString() {
