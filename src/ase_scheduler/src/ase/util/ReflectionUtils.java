@@ -5,6 +5,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayDeque;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import android.app.Activity;
 import android.os.AsyncTask;
@@ -115,9 +116,28 @@ public class ReflectionUtils {
         }
         return null;
     }
+    
+    public static boolean isAsyncTaskSerialThreadActive() {
+        try {
+            // get the serial executor instance
+            Field serialExecutorField = Class.forName("android.os.AsyncTask").getDeclaredField("SERIAL_EXECUTOR");
+            Object serialExecutor = serialExecutorField.get(null);
+
+            // get mTasks field
+            Class serialExecutorClass = Class.forName("android.os.AsyncTask$SerialExecutor");
+            Field mActiveField = serialExecutorClass.getDeclaredField("mActive");
+            mActiveField.setAccessible(true);
+            Object mActive = mActiveField.get(serialExecutor);
+
+        } catch (Exception ex) {
+            Log.e("Reflectionnn", "Can not read AsyncTask serial executor active field");
+        }
+        return false;
+    }
 
     public static BlockingQueue<Runnable> getAsyncTaskPoolExecutorTasks() {
 
+        // executor.getQueue??
         try {
             Field workQueueField = AsyncTask.class.getDeclaredField("sPoolWorkQueue");
             workQueueField.setAccessible(true);
@@ -131,6 +151,29 @@ public class ReflectionUtils {
 
         return null;
     }
+    
+    // AsyncTask.THREAD_POOL_EXECUTOR ////// ????
+    // active asyncTask threads (on serial executor and on thread pool executor)
+    @SuppressWarnings("unchecked")
+    public static int numActiveAsyncTaskThreads() {
+        try {
+            Field executorField = AsyncTask.class.getDeclaredField("THREAD_POOL_EXECUTOR");
+            executorField.setAccessible(true);
+            ThreadPoolExecutor executor = (ThreadPoolExecutor)executorField.get(null);
+
+            Class threadPoolExecutor = getSuperClassOfType(executor.getClass(), "java.util.concurrent.ThreadPoolExecutor");
+            Method getActiveCountMethod = threadPoolExecutor.getDeclaredMethod("getActiveCount");
+            getActiveCountMethod.setAccessible(true);
+            Integer activeCount = (Integer) getActiveCountMethod.invoke(executor);
+         
+            return activeCount.intValue();
+
+        } catch (Exception ex) {
+            Log.e("Reflectionnn", "Can not read AsyncTask serial executor active field");
+        }
+        return 0;
+    }
+    
     // TODO revise, improve and enum support libraries
     private static int getLibraryType() {
         try
@@ -152,7 +195,7 @@ public class ReflectionUtils {
         }
         return -1;
     }
-
+    
     @SuppressWarnings({ "unchecked", "unused" })
     public static List<Object> getFragments(Activity act) {
       //TODO merge these two "getFragments" methods

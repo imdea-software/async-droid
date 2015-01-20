@@ -83,7 +83,7 @@ public class LooperReader {
         return new ArrayList<Message>();
     }
 
-    private List<Message> getMessages(MessageQueue messageQueue) { 
+    public List<Message> getMessages(MessageQueue messageQueue) { 
         List<Message> messages = new ArrayList<Message>(); 
         try {
             Message nextMessage = (Message) messagesField.get(messageQueue);          

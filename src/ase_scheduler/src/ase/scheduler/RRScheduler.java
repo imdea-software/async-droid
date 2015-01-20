@@ -1,5 +1,8 @@
 package ase.scheduler;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import android.util.Log;
 import ase.repeater.InputRepeater;
 import ase.scheduler.PendingThreads.ThreadType;
@@ -77,16 +80,18 @@ public class RRScheduler extends Scheduler {
         idleTypes = 0;
         refreshThreadList();
         
+        // current is the next thread of type to schedule
         ThreadData current = getNextThread(types[typeToSchedule]);
         logThreads(current);
         
+        // if current thread is not okToSchedule, get the first available one
         while(!okToSchedule(current) && idleTypes < types.length) {        
             idleTypes ++;
             current = getNextThread(types[typeToSchedule]);
             logThreads(current);
         }
         
-        // check if the task will be delayed
+        // check if current will be delayed, if so delay
         if(current != null && taskToProcess == getNextTaskIndexToDelay()) { 
             Log.i("AseScheduler", "Delayed Thread Id: " + current.getId() + " Last Processed: " + taskToProcess);
             Log.i("DelayInfo", "Consumed delay: " + taskToProcess);
@@ -95,6 +100,32 @@ public class RRScheduler extends Scheduler {
             return selectNextThread(); // terminates since delaySeq is not infinite
         } 
         
+        // current is the task to be dispatched
+        // get the stats: How many tasks do each thread have?
+        int numMainTasks = numInputsInMainLooper() + numAsyncTasksInMainLooper();
+        if(threads.getThreadById(1).isWaiting()) numMainTasks++;
+        
+        int numInputTasks = inputRepeater.numInputsLeft();
+        if(threads.getThreadByName("InputRepeater").isWaiting()) numInputTasks++;
+        
+        int numAsyncSerialTasks = ReflectionUtils.getAsyncTaskSerialExecutorTasks().size();
+        boolean isSerialActive = ReflectionUtils.isAsyncTaskSerialThreadActive();
+        if(isSerialActive) numAsyncSerialTasks ++;
+        
+        int numAsyncPoolTasks = ReflectionUtils.numActiveAsyncTaskThreads();
+        if(isSerialActive) numAsyncPoolTasks --;
+        
+        Map<Long, Integer> numHandlerThreadTasks = new HashMap<Long, Integer>();
+        Object[] handlerThreads = threads.getThreads(ThreadType.HANDLERTHREAD);
+        for(int i=0; i<handlerThreads.length; i++) {
+            ThreadData td = (ThreadData) handlerThreads[i];
+            // if isActive, increment
+            numHandlerThreadTasks.put(td.getId(), LooperReader.getInstance().getMessages(td.getThread()).size());
+        }
+        
+        Log.v("Stat", " " + numMainTasks + " " + numInputTasks + " " + numAsyncSerialTasks + " " + numAsyncPoolTasks);
+        logger.i("Stat", " " + numMainTasks + " " + numInputTasks + " " + numAsyncSerialTasks + " " + numAsyncPoolTasks);
+     
         taskToProcess ++;  
         return current;
     }
@@ -140,7 +171,6 @@ public class RRScheduler extends Scheduler {
     private ThreadData getSerialAsyncTaskThread() {
         ThreadData selected = null;
         do {
-            Log.e("Here", "Here");
             refreshThreadList();
             Object[] asyncTaskThreads = threads.getThreads(ThreadType.ASYNCTASK);
             for(Object o: asyncTaskThreads) {
@@ -182,7 +212,7 @@ public class RRScheduler extends Scheduler {
     private boolean onSerialExecutor(Thread t) {
         StackTraceElement[] calls = t.getStackTrace();
         for(StackTraceElement call: calls) {
-            Log.i("Here", call.toString());
+            //Log.i("Here", call.toString());
             if(call.toString().contains("android.os.AsyncTask$SerialExecutor")){
                 return true;
             }
