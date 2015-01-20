@@ -17,8 +17,6 @@ import android.widget.CompoundButton.OnCheckedChangeListener;
 
 public class ReflectionUtils {
 
-    static final int LIBRARY_TYPE = getLibraryType();
-    
     public static OnClickListener getOnClickListener(View view) {
         OnClickListener listener = null;
         try {
@@ -136,7 +134,6 @@ public class ReflectionUtils {
     }
 
     public static BlockingQueue<Runnable> getAsyncTaskPoolExecutorTasks() {
-
         // executor.getQueue??
         try {
             Field workQueueField = AsyncTask.class.getDeclaredField("sPoolWorkQueue");
@@ -173,84 +170,45 @@ public class ReflectionUtils {
         }
         return 0;
     }
-    
-    // TODO revise, improve and enum support libraries
-    private static int getLibraryType() {
+       
+    public static List<Object> getFragments(Activity act) {
         try
         {
             Class supFrag = Class.forName ("android.support.v4.app.FragmentActivity");
             Log.v("Reflection", "Get fragments from: android.support.v4.app.FragmentActivity");
-            return 1; // uses support library v4 
+            // reads fragments from android.support.v4.app.FragmentManager in android.support.v4.app.FragmentActivity
+            // parameter is of type android.support.v4.app.FragmentActivity or android.app.Activity (if it does not have fragments)     
+            return getFragmentsFromClass(act, "android.support.v4.app.FragmentActivity", "android.support.v4.app.FragmentManagerImpl");
         }
         catch (ClassNotFoundException e)
         {
             try {
                 Class frag = Class.forName ("android.app.Fragment");
                 Log.v("Reflection", "Get fragments from: android.app.Fragment");
-                return 0; // uses a higher version of Android 
+                // reads fragments from android.app.FragmentManager
+                // parameter is of type android.app.Activity                
+                return getFragmentsFromClass(act, "android.app.Activity", "android.app.FragmentManagerImpl");                  
             } catch (ClassNotFoundException e1) {
-                // TODO Auto-generated catch block
-                e1.printStackTrace();
+                Log.e("Reflection", "Can not read fragment info");
             }  
         }
-        return -1;
-    }
-    
-    @SuppressWarnings({ "unchecked", "unused" })
-    public static List<Object> getFragments(Activity act) {
-      //TODO merge these two "getFragments" methods
-        if(LIBRARY_TYPE == 1) {
-            return getFragmentsUsingSupportFragmentManager(act);
-        } else if (LIBRARY_TYPE == 0) {
-            getFragmentsUsingFragmentManager(act);  
-        }     
-        
         return null;
     }
-     
-    // reads fragments from android.app.FragmentManager
-    // parameter is of type android.app.Activity 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    private static List<Object> getFragmentsUsingFragmentManager(Activity act) {
-        List<Object> activeFragments = null;
-        try {
-            // get fragment manager by activity.getFragmentManager() in android.app.Activity
-            Method getFragmentManagerMethod = null;
-            Class fragmentActivity = getSuperClassOfType(act.getClass(), "android.app.Activity");
-            getFragmentManagerMethod = fragmentActivity.getDeclaredMethod("getFragmentManager");
-            Object fragmentManager = getFragmentManagerMethod.invoke(act);
-            
-            Field mActiveField = null;
-            Class<?> innerClass = Class.forName("android.app.FragmentManagerImpl");
-            mActiveField = innerClass.getDeclaredField("mActive");
-            mActiveField.setAccessible(true);       
-            activeFragments = (List<Object>) mActiveField.get(fragmentManager);
-        } catch (Exception ex) {
-            activeFragments = null;
-            Log.e("Reflection", "Can not read active fragments");
-        }
 
-        return activeFragments;
-    }
-
-    
-    // reads fragments from android.support.v4.app.FragmentManager in android.support.v4.app.FragmentActivity
-    // parameter is of type android.support.v4.app.FragmentActivity or android.app.Activity (if it does not have fragments)
     @SuppressWarnings("unchecked")
-    private static List<Object> getFragmentsUsingSupportFragmentManager(Activity act) {
+    private static List<Object> getFragmentsFromClass(Activity act, String actClass, String fragManClass) {
         List<Object> activeFragments = null;
         try {
             // get fragment manager by activity.getSupportFragmentManager()
             Method getFragmentManagerMethod = null;
-            Class fragmentActivity = getSuperClassOfType(act.getClass(), "android.support.v4.app.FragmentActivity");
+            Class fragmentActivity = getSuperClassOfType(act.getClass(), actClass);
             getFragmentManagerMethod = fragmentActivity.getDeclaredMethod("getSupportFragmentManager");
             Object fragmentManager = getFragmentManagerMethod.invoke(act);
 
             Field mActiveField = null;
-            Class<?> innerClass = Class.forName("android.support.v4.app.FragmentManagerImpl");
+            Class<?> innerClass = Class.forName(fragManClass);
             mActiveField = innerClass.getDeclaredField("mActive");
             mActiveField.setAccessible(true);
-
             activeFragments = (List<Object>) mActiveField.get(fragmentManager);
         } catch (Exception ex) {
             activeFragments = null;
@@ -260,33 +218,80 @@ public class ReflectionUtils {
         return activeFragments;
     } 
     
+    public static int getActionBarTabPosition(Object tab) {
+        String actionBarTabClassName;
+        try
+        {
+            Class supTabClass = Class.forName("android.support.v7.app.ActionBar$Tab");
+            actionBarTabClassName = "android.support.v7.app.ActionBar$Tab";
+        }
+        catch (ClassNotFoundException e)
+        {
+            try {
+                Class tabClass = Class.forName("android.app.ActionBar$Tab");      
+                actionBarTabClassName = "android.app.ActionBar$Tab";
+            } catch (ClassNotFoundException e1) {
+                Log.e("Reflection", "Can not read tab position");
+                return -1;
+            }  
+        }
+        Log.v("Reflection", "Get fragments from: " + actionBarTabClassName);
+        return getActionBarTabPositionFromClass(tab, actionBarTabClassName);
+    }
+    
+    private static int getActionBarTabPositionFromClass(Object tab, String className) {
+        try {
+            Class actionBarTab = Class.forName(className);
+            Method getPositionMethod = actionBarTab.getDeclaredMethod("getPosition");
+            Integer position = (Integer) getPositionMethod.invoke(tab);
+            return position.intValue();
+            
+        } catch (Exception ex) {
+            Log.e("Reflection", "Can not read tab position using " + className);
+        }      
+        return -1;
+    }
+    
     /*
      * Returns the name of the fragment in which the view with viewID is inflated
      */
     @SuppressWarnings({ "unchecked", "unused" })
     public static String getFragmentByViewID(Activity act, int viewId) {
-        //TODO merge these two "getFragments" methods
-        if(LIBRARY_TYPE == 1) {
-            return getFragmentByViewIdUsingSupportFragmentManager(act, viewId);
-        } else if (LIBRARY_TYPE == 0) {
-            // TODO
-            //getFragmentByViewIdUsingFragmentManager(act, viewId);  
-        }     
+        try
+        {
+            Class supFrag = Class.forName ("android.support.v4.app.FragmentActivity");
+            Log.v("Reflection", "Get fragments from: android.support.v4.app.FragmentActivity");
+            // reads fragments from android.support.v4.app.FragmentManager in android.support.v4.app.FragmentActivity
+            // parameter is of type android.support.v4.app.FragmentActivity or android.app.Activity (if it does not have fragments)     
+            return getFragmentByViewIdFromClass(act, viewId, "android.support.v4.app.Fragment");
+        }
+        catch (ClassNotFoundException e)
+        {
+            try {
+                Class frag = Class.forName ("android.app.Fragment");
+                Log.v("Reflection", "Get fragments from: android.app.Fragment");
+                // reads fragments from android.app.FragmentManager
+                // parameter is of type android.app.Activity                
+                return getFragmentByViewIdFromClass(act, viewId, "android.app.Fragment");                  
+            } catch (ClassNotFoundException e1) {
+                Log.e("Reflection", "Can not read fragment info");
+            }  
+        }
         return null;
     }
     
     @SuppressWarnings("unchecked")
-    private static String getFragmentByViewIdUsingSupportFragmentManager(Activity act, int viewId) {
+    private static String getFragmentByViewIdFromClass(Activity act, int viewId, String fragClassName) {
         try {
             Method isVisibleMethod = null, getViewMethod = null, findViewByIdMethod = null;
-            Class fragmentClass = Class.forName("android.support.v4.app.Fragment");
+            Class fragmentClass = Class.forName(fragClassName);
             Class viewClass = Class.forName("android.view.View");
 
             isVisibleMethod = fragmentClass.getDeclaredMethod("isVisible");
             getViewMethod = fragmentClass.getDeclaredMethod("getView");
             findViewByIdMethod = viewClass.getDeclaredMethod("findViewById", Integer.TYPE);
 
-            for(Object f: getFragmentsUsingSupportFragmentManager(act)) {
+            for(Object f: getFragments(act)) {
                 Object rootView = getViewMethod.invoke(f);
 
                 View v = (View) findViewByIdMethod.invoke(rootView, viewId);
@@ -309,8 +314,6 @@ public class ReflectionUtils {
         Class tempClass = clazz;
         while (tempClass != null && !tempClass.getName().equals(superClassName))
             tempClass = tempClass.getSuperclass();
-
-        //Log.i("Recorder", tempClass == null ? "null" : tempClass.getName());
 
         return tempClass;
     }
