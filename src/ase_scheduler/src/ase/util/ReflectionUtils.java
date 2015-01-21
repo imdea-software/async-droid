@@ -4,16 +4,12 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayDeque;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
 
 import android.app.Activity;
-import android.os.AsyncTask;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
-import android.widget.CompoundButton.OnCheckedChangeListener;
 
 public class ReflectionUtils {
 
@@ -34,32 +30,6 @@ public class ReflectionUtils {
                     .getDeclaredField("mOnClickListener");
             if (listenerField != null && myLiObject != null) {
                 listener = (View.OnClickListener) listenerField.get(myLiObject);
-            }
-        } catch (Exception ex) {
-            listener = null;
-        }
-        return listener;
-    }
-
-   
-    public static OnCheckedChangeListener  getOnCheckedChangeListener(View view) {
-        OnCheckedChangeListener listener = null;
-        try {
-            Field listenerInfoField = null;
-            listenerInfoField = View.class.getDeclaredField("mListenerInfo");
-            if (listenerInfoField != null) {
-                listenerInfoField.setAccessible(true);
-            }
-            Object myLiObject = null;
-            myLiObject = listenerInfoField.get(view);
-
-            // get the field mOnClickListener
-            Field listenerField = null;
-            listenerField = Class.forName("android.view.View$ListenerInfo")
-                    .getDeclaredField("mOnClickListener");
-            if (listenerField != null && myLiObject != null) {
-                listener = (OnCheckedChangeListener) listenerField.get(myLiObject);
-                Log.i("Recorder", "Checkbox listener cannot be read");
             }
         } catch (Exception ex) {
             listener = null;
@@ -133,44 +103,6 @@ public class ReflectionUtils {
         return false;
     }
 
-    public static BlockingQueue<Runnable> getAsyncTaskPoolExecutorTasks() {
-        // executor.getQueue??
-        try {
-            Field workQueueField = AsyncTask.class.getDeclaredField("sPoolWorkQueue");
-            workQueueField.setAccessible(true);
-            Object workQueue = workQueueField.get(null);
-
-            return (BlockingQueue<Runnable>) workQueue;
-
-        } catch (Exception ex) {
-            Log.e("Reflection", "Can not read AsyncTask pool executor work queue");
-        }
-
-        return null;
-    }
-    
-    // AsyncTask.THREAD_POOL_EXECUTOR ////// ????
-    // active asyncTask threads (on serial executor and on thread pool executor)
-    @SuppressWarnings("unchecked")
-    public static int numActiveAsyncTaskThreads() {
-        try {
-            Field executorField = AsyncTask.class.getDeclaredField("THREAD_POOL_EXECUTOR");
-            executorField.setAccessible(true);
-            ThreadPoolExecutor executor = (ThreadPoolExecutor)executorField.get(null);
-
-            Class threadPoolExecutor = getSuperClassOfType(executor.getClass(), "java.util.concurrent.ThreadPoolExecutor");
-            Method getActiveCountMethod = threadPoolExecutor.getDeclaredMethod("getActiveCount");
-            getActiveCountMethod.setAccessible(true);
-            Integer activeCount = (Integer) getActiveCountMethod.invoke(executor);
-         
-            return activeCount.intValue();
-
-        } catch (Exception ex) {
-            Log.e("Reflectionnn", "Can not read AsyncTask serial executor active field");
-        }
-        return 0;
-    }
-       
     public static List<Object> getFragments(Activity act) {
         try
         {
@@ -218,41 +150,7 @@ public class ReflectionUtils {
         return activeFragments;
     } 
     
-    public static int getActionBarTabPosition(Object tab) {
-        String actionBarTabClassName;
-        try
-        {
-            Class supTabClass = Class.forName("android.support.v7.app.ActionBar$Tab");
-            actionBarTabClassName = "android.support.v7.app.ActionBar$Tab";
-        }
-        catch (ClassNotFoundException e)
-        {
-            try {
-                Class tabClass = Class.forName("android.app.ActionBar$Tab");      
-                actionBarTabClassName = "android.app.ActionBar$Tab";
-            } catch (ClassNotFoundException e1) {
-                Log.e("Reflection", "Can not read tab position");
-                return -1;
-            }  
-        }
-        Log.v("Reflection", "Get fragments from: " + actionBarTabClassName);
-        return getActionBarTabPositionFromClass(tab, actionBarTabClassName);
-    }
-    
-    private static int getActionBarTabPositionFromClass(Object tab, String className) {
-        try {
-            Class actionBarTab = Class.forName(className);
-            Method getPositionMethod = actionBarTab.getDeclaredMethod("getPosition");
-            Integer position = (Integer) getPositionMethod.invoke(tab);
-            return position.intValue();
-            
-        } catch (Exception ex) {
-            Log.e("Reflection", "Can not read tab position using " + className);
-        }      
-        return -1;
-    }
-    
-    /*
+    /**
      * Returns the name of the fragment in which the view with viewID is inflated
      */
     @SuppressWarnings({ "unchecked", "unused" })
@@ -308,7 +206,40 @@ public class ReflectionUtils {
         return null;
     }
     
-      
+    public static int getActionBarTabPosition(Object tab) {
+        String actionBarTabClassName;
+        try
+        {
+            Class supTabClass = Class.forName("android.support.v7.app.ActionBar$Tab");
+            actionBarTabClassName = "android.support.v7.app.ActionBar$Tab";
+        }
+        catch (ClassNotFoundException e)
+        {
+            try {
+                Class tabClass = Class.forName("android.app.ActionBar$Tab");      
+                actionBarTabClassName = "android.app.ActionBar$Tab";
+            } catch (ClassNotFoundException e1) {
+                Log.e("Reflection", "Can not read tab position");
+                return -1;
+            }  
+        }
+        Log.v("Reflection", "Get fragments from: " + actionBarTabClassName);
+        return getActionBarTabPositionFromClass(tab, actionBarTabClassName);
+    }
+    
+    private static int getActionBarTabPositionFromClass(Object tab, String className) {
+        try {
+            Class actionBarTab = Class.forName(className);
+            Method getPositionMethod = actionBarTab.getDeclaredMethod("getPosition");
+            Integer position = (Integer) getPositionMethod.invoke(tab);
+            return position.intValue();
+            
+        } catch (Exception ex) {
+            Log.e("Reflection", "Can not read tab position using " + className);
+        }      
+        return -1;
+    }
+          
     @SuppressWarnings("rawtypes")
     public static Class getSuperClassOfType(Class clazz, String superClassName) {
         Class tempClass = clazz;
