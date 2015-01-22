@@ -96,6 +96,8 @@ public class RRScheduler extends Scheduler {
         } 
         
         // current is the task to be dispatched
+        // current is null if no task is selected, i.e. it is the end of the test
+        
         // get the stats: How many tasks do each thread have?
         int numMainTasks = numInputsInMainLooper() + numAsyncTasksInMainLooper();
         if(threads.getThreadById(1).isWaiting()) numMainTasks++;
@@ -196,14 +198,18 @@ public class RRScheduler extends Scheduler {
         int size = threads.getThreads(ThreadType.ASYNCTASK).length;
         ThreadData current = null;
 
-        while(!okToSchedule(current) && !isOnSerialExecutor(current.getThread()) && poolThreadIndex < size) {
-            poolThreadIndex = (poolThreadIndex + 1) % size;
+        while(!okToSchedule(current) && poolThreadIndex < size) {
             current = threads.getThreadByIndex(poolThreadIndex, ThreadType.ASYNCTASK);
+            poolThreadIndex ++;
+            
+            // skip if the current AsyncTask thread runs on the serial executor
+            if((current != null) && isOnSerialExecutor(current.getThread())) 
+                continue;
         } 
-        // Updating thread type to schedule is moved to the caller method
-        //if(poolThreadIndex == size) {
-        //    typeToSchedule = (typeToSchedule + 1) % types.length;
-        //}
+        if(poolThreadIndex == size) {
+            poolThreadIndex = 0;
+            return null; // no available threads are found
+        }
         return current;
     }
     
@@ -215,13 +221,13 @@ public class RRScheduler extends Scheduler {
         ThreadData current = null;
         
         while(!okToSchedule(current) && handlerThreadIndex < size) {
-            handlerThreadIndex = (handlerThreadIndex + 1) % size;
             current = threads.getThreadByIndex(handlerThreadIndex, ThreadType.HANDLERTHREAD);
+            handlerThreadIndex ++;
         } 
-        // Updating thread type to schedule is moved to the caller method
-        // if(handlerThreadIndex == size) {
-        //    typeToSchedule = (typeToSchedule + 1) % types.length;
-        //}
+        if(handlerThreadIndex == size) {
+            handlerThreadIndex = 0;
+            return null; // no available threads are found
+        }
         return current;
     }
     
@@ -245,6 +251,8 @@ public class RRScheduler extends Scheduler {
     }
         
     private boolean isOnSerialExecutor(Thread t) {
+        if(t == null) return false;
+        
         StackTraceElement[] calls = t.getStackTrace();
         for(StackTraceElement call: calls) {
             if(call.toString().contains("android.os.AsyncTask$SerialExecutor")){
