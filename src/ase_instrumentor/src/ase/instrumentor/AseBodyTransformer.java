@@ -23,7 +23,8 @@ public class AseBodyTransformer extends BodyTransformer {
 
     private static SootClass aseTestBridgeClass;
     private static SootMethod initiateTesting, waitForDispatch, notifyDispatcher, enterMonitor, exitMonitor;
-    private static SootMethod setActivityViewTraverser, setFragmentViewTraverser, setActionBarMenu, setRecorderForActionBar;
+    private static SootMethod setActivityViewTraverser, setFragmentViewTraverser, setAdapterItemViewTraverser; 
+    private static SootMethod setActionBarMenu, setRecorderForActionBar, setRecorderForActionBarTab;
 
     public static void main(String[] args) {
         // args[0]: directory from which to process classes
@@ -43,7 +44,6 @@ public class AseBodyTransformer extends BodyTransformer {
         });
     }
 
-
     private void init() {
         if (aseTestBridgeClass != null)
             return;
@@ -58,7 +58,8 @@ public class AseBodyTransformer extends BodyTransformer {
         setFragmentViewTraverser = aseTestBridgeClass.getMethod("void setFragmentViewTraverser(android.view.View)");
         setActionBarMenu = aseTestBridgeClass.getMethod("void setActionBarMenu(android.view.Menu)");
         setRecorderForActionBar = aseTestBridgeClass.getMethod("void setRecorderForActionBar(android.view.MenuItem)");
-
+        setAdapterItemViewTraverser = aseTestBridgeClass.getMethod("void setAdapterItemViewTraverser(android.view.View,android.view.ViewGroup,int)");
+        setRecorderForActionBarTab = aseTestBridgeClass.getMethod("void setRecorderForActionBarTab(java.lang.Object)");
     }
 
     @Override
@@ -73,7 +74,10 @@ public class AseBodyTransformer extends BodyTransformer {
         SootClass clazz = b.getMethod().getDeclaringClass();
         SootClass activityClass = Scene.v().getSootClass("android.app.Activity");
         SootClass applicationClass = Scene.v().getSootClass("android.app.Application");
-
+        SootClass adapterClass = Scene.v().getSootClass("android.widget.BaseAdapter");
+        
+        // TODO take the library package names and do not instrument these packages
+        
         if (className.startsWith("ase.")) {
             // skip
         } else if (className.startsWith("android.support")) {
@@ -81,6 +85,12 @@ public class AseBodyTransformer extends BodyTransformer {
         } else if (className.startsWith("org.apache")) {
             // skip
         } else if (className.startsWith("org.droidparts")) {
+            // skip
+        } else if (className.startsWith("org.osmdroid")) {
+            // skip
+        } else if (className.startsWith("uk.co.senab")) {
+            // skip
+        } else if (className.startsWith("com.viewpageindicator")) {
             // skip
         } else if (className.startsWith("com.google")) {
             // skip
@@ -100,13 +110,22 @@ public class AseBodyTransformer extends BodyTransformer {
 
         } else if (methodName.equals("onCreateView")) {
             instrumentOnCreateViewMethod(b);
+            
+        } else if (methodName.equals("onViewCreated")) {
+            instrumentOnViewCreatedMethod(b);
 
-        } else if (methodName.equals("onCreateOptionsMenu")) {  //////////////////////////
-            instrumentonCreateOptionsMenu(b);
+        } else if (methodName.equals("onCreateOptionsMenu")) {  
+            instrumentOnCreateOptionsMenu(b);
 
-        } else if (methodName.equals("onOptionsItemSelected")) {  //////////////////////////
+        } else if (methodName.equals("onOptionsItemSelected")) { 
             instrumentOnOptionsItemSelected(b);
-
+            
+        } else if (methodName.equals("onTabSelected")) { 
+            instrumentOnTabSelected(b);
+            
+        } else if (methodName.equals("getView") && hasParentClass(clazz, adapterClass)) { 
+            instrumentGetViewMethod(b);
+            
         } else if (methodName.equals("doInBackground") ||
                    methodName.equals("onPostExecute") ||
                    methodName.equals("onProgressUpdate") ||
@@ -119,19 +138,6 @@ public class AseBodyTransformer extends BodyTransformer {
             instrumentMethod(b);
 
         }
-
-        // No need to instrument input event handlers any more!
-        // The execution order of input event handlers are controlled in blocks
-        // that call callOnClick methods for events (posted to UI thread by InputRepeater)
-        /*else if (b.getMethod().getDeclaringClass().getSuperclass().toString().equals("android.app.Activity") &&
-                !activityClass.declaresMethod(b.getMethod().getNumberedSubSignature()) ){
-
-            // if a method in an Activity class is defined by user, synchronize 
-            // it with the scheduler: (so that UI gives change to other threads 
-            // when a UI event is received)
-            System.out.println("===========Instrumenting a user defined method: " + b.getMethod());
-            instrumentMethod(b);
-        }*/
     }
 
     private boolean hasParentClass(SootClass clazz, SootClass ancestor) {
@@ -141,6 +147,7 @@ public class AseBodyTransformer extends BodyTransformer {
             return false;
         return hasParentClass(clazz.getSuperclass(), ancestor);
     }
+    
     /**
      * Adds a statement to initiate ase scheduler
      * If instrumentUI is true, adds a call to setActivityViewTraverser
@@ -184,21 +191,75 @@ public class AseBodyTransformer extends BodyTransformer {
 
             iter.next().apply(new AbstractStmtSwitch() {
 
-                public void caseReturnStmt(ReturnStmt stmt) {
-                    
+                public void caseReturnStmt(ReturnStmt stmt) {                   
                     //read to-be-returned value
                     Value returnedView = stmt.getOpBox().getValue();
                     // stmt.getReturnExpr().getArg(0);
                     // insert call to setFragmentViewTraverser
                     units.insertBefore(staticInvocation(setFragmentViewTraverser, returnedView), stmt);
-
                     System.out.println("===========FragmentViewTraversal stmt added..");
 
                 }
             });
         }
     }
+    
+    /**
+     * Adds call to setFragmentViewTraverser to traverse the views in fragment view
+     * to enable record/replay
+     */
+    private void instrumentOnViewCreatedMethod(final Body b) {
+        final PatchingChain<Unit> units = b.getUnits();
+        Iterator<Unit> iter = units.snapshotIterator();
 
+        iter.next(); // the identity statement for the method
+        JIdentityStmt stmt = (JIdentityStmt) iter.next(); // the identity statement for the parameter
+        final Value paramView = stmt.getLeftOp();
+
+        while (iter.hasNext()) {
+
+            iter.next().apply(new AbstractStmtSwitch() {
+                
+                public void caseReturnStmt(ReturnStmt stmt) {                                     
+                    units.insertBefore(staticInvocation(setFragmentViewTraverser, paramView), stmt);
+                    System.out.println("===========FragmentViewTraversal stmt added..");
+                }
+            });
+        }
+    }
+
+    /**
+     * Adds call to getView of an AdapterView to traverse the views in a list item
+     * to enable record/replay
+     */
+    private void instrumentGetViewMethod(final Body b) {
+        final PatchingChain<Unit> units = b.getUnits();
+        Iterator<Unit> iter = units.snapshotIterator();
+        // method: public View getView(final int position, View view, final ViewGroup parent)
+        
+        iter.next(); // the identity statement for the method
+        // the identity statement for the first parameter - position
+        JIdentityStmt stmt = (JIdentityStmt) iter.next(); 
+        final Value posParam = stmt.getLeftOp();    
+        // the identity statement for the second parameter - view
+        stmt = (JIdentityStmt) iter.next(); 
+        final Value viewParam = stmt.getLeftOp();     
+        // the identity statement for the third parameter - parent
+        stmt = (JIdentityStmt) iter.next(); 
+        final Value parentParam = stmt.getLeftOp();
+        
+        while (iter.hasNext()) {
+
+            iter.next().apply(new AbstractStmtSwitch() {
+
+                public void caseReturnStmt(ReturnStmt stmt) {               
+                    units.insertBefore(staticInvocation(setAdapterItemViewTraverser, viewParam, parentParam, posParam), stmt);
+                    System.out.println("===========ItemViewTraversal stmt added..");
+                }
+            });
+        }
+    }
+    
     /**
      * Execution of that method is controlled by ase.scheduler
      * (its code is executed in between waitMyTurn() and notifyScheduler())
@@ -245,8 +306,8 @@ public class AseBodyTransformer extends BodyTransformer {
             });
         }
     }
-
-    private void instrumentonCreateOptionsMenu(final Body b) {
+    
+    private void instrumentOnCreateOptionsMenu(final Body b) {
         final PatchingChain<Unit> units = b.getUnits();
         Iterator<Unit> iter = units.snapshotIterator();
 
@@ -258,6 +319,7 @@ public class AseBodyTransformer extends BodyTransformer {
         System.out.println("===========Action bar menu is set..");
 
     }
+    
     private void instrumentOnOptionsItemSelected(final Body b) {
         final PatchingChain<Unit> units = b.getUnits();
         Iterator<Unit> iter = units.snapshotIterator();
@@ -271,6 +333,21 @@ public class AseBodyTransformer extends BodyTransformer {
 
     }
 
+    private void instrumentOnTabSelected(final Body b) {
+        final PatchingChain<Unit> units = b.getUnits();
+        Iterator<Unit> iter = units.snapshotIterator();
+
+        iter.next(); // the identity statement for the method
+        JIdentityStmt stmt = (JIdentityStmt) iter.next(); // the identity statement for the parameter
+        Value tabParam = stmt.getLeftOp();
+        
+        units.insertAfter(staticInvocation(setRecorderForActionBarTab, tabParam), stmt);
+        System.out.println("===========Action bar tab selection recorder is added..");
+
+    }
+    
+    // TODO organize variable/statement methods
+    
     private Local createLocal(Body body, String name, String type) {
         Local l = Jimple.v().newLocal(name, RefType.v(type));
         body.getLocals().add(l);
@@ -283,6 +360,14 @@ public class AseBodyTransformer extends BodyTransformer {
         return l;
     } 
 
+    private InvokeStmt staticInvocation(SootMethod m, Value arg1, Value arg2, Value arg3) {
+        return Jimple.v().newInvokeStmt(Jimple.v().newStaticInvokeExpr(m.makeRef(), arg1, arg2, arg3));
+    }
+    
+    private InvokeStmt staticInvocation(SootMethod m, Value arg1, Value arg2) {
+        return Jimple.v().newInvokeStmt(Jimple.v().newStaticInvokeExpr(m.makeRef(), arg1, arg2));
+    }
+    
     private InvokeStmt staticInvocation(SootMethod m) {
         return Jimple.v().newInvokeStmt(Jimple.v().newStaticInvokeExpr(m.makeRef()));
     }
