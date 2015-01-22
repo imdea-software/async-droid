@@ -100,7 +100,7 @@
       <arg value="${build}/${app-name}-extracted/classes.dex"/>
       <arg value="${build}/scheduler.dex"/>
     </java>
-    <exec executable="aapt" dir="${build}/${app-name}-merged">
+    <exec executable="aapt" dir="${build}/${app-name}-merged" failonerror="true">
       <arg value="package"/>
       <arg value="-f"/>
       <arg value="-M"/>
@@ -116,7 +116,7 @@
       <arg value="-F"/>
       <arg value="${build}/${app-name}.apk"/>
     </exec>
-    <exec executable="aapt" dir="${build}/${app-name}-merged">
+    <exec executable="aapt" dir="${build}/${app-name}-merged" failonerror="true">
       <arg value="add"/>
       <arg value="-f"/>
       <arg value="${build}/${app-name}.apk"/>
