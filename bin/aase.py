@@ -111,9 +111,10 @@ def create_json_file(mode, delays):
   out_file.close()
   app_name = package_name(options.apkfile)
 
+  user = adb("shell ls -dl /data/data/%s" % app_name).split()[1]
   adb("push parameters.json /data/data/%s/files/parameters.json" % app_name)
-  adb("push perms.sh /data/data/%s/perms.sh" % app_name)
-  adb("shell ""cd /data/data/%s;chmod 755 perms.sh;sh perms.sh""" % app_name)
+  adb("shell chown %s:%s /data/data/%s/files" % (user, user, app_name))
+  adb("shell chown %s:%s /data/data/%s/files/parameters.json" % (user, user, app_name))
 
 def do_record():
   create_json_file(options.mode, 0)
