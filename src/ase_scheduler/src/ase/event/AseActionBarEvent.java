@@ -26,6 +26,9 @@ public class AseActionBarEvent extends AseEvent {
 
     @Override
     public boolean isFirable() {
+        if(!super.isFirable())
+            return false; 
+        
         AppRunTimeData appData = AppRunTimeData.getInstance();
         if (appData.getCurrentAct().hasWindowFocus()) {
             //AseTestBridge.currentAct.openOptionsMenu();

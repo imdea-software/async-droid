@@ -2,7 +2,6 @@ package ase.scheduler;
 
 import java.util.List;
 
-import android.os.AsyncTask;
 import android.os.Message;
 import ase.repeater.InputRepeater;
 import ase.scheduler.PendingThreads.ThreadType;
@@ -35,7 +34,7 @@ public abstract class Scheduler {
     
     public abstract ThreadData selectNextThread();
 
-    /*
+    /**
      * Check if the currently visited thread will be scheduled:
      *  - isWaiting:  (executed waitMyTurn() and will notify (was not in monitor))
      *  - is InputRepeater and has inputs to post
@@ -60,6 +59,7 @@ public abstract class Scheduler {
         if(current.getId() != 1 && current.hasMsgToHandle())
             return true;
 
+        // add stmt to AsyncTasks - if executor has tasks or thread is active
         return false;
     }
 
@@ -84,7 +84,7 @@ public abstract class Scheduler {
     protected int numAsyncTasksInMainLooper() {
         List<Message> messages = LooperReader.getInstance().getMessages(threads.getThreadById(1).getThread());
         int count = 0;
-        // Main looper has an asynctask message - onPostExecute or onPublishResult 
+        // Main looper has an asynctask message - PostResult(onPostExecute or onCancalled) or PostProgress(onPublishProgress) 
         for(Message m: messages) {
             if(m.getTarget() != null && m.getTarget().getClass().getName().startsWith("android.os.AsyncTask") && (m.what == 1 || m.what == 2))
                 count ++;

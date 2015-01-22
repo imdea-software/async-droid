@@ -32,7 +32,7 @@ public class PendingThreads {
         }
     }
 
-    /*
+    /**
     * Send current thread info to the scheduler This method is called by the
     * scheduler to register existing threads
     */
@@ -66,7 +66,7 @@ public class PendingThreads {
         return defaultThreadNames;
     }
 
-    /*
+    /**
      * False for default application threads (except for the main thread)
      */
     public boolean isUserThread(Thread t) {
@@ -74,7 +74,7 @@ public class PendingThreads {
         return !(getDefaultThreadNames().contains(name) || name.startsWith("Binder"));
     }
     
-    /*
+    /**
      * The scheduler manages the execution of:
      * Main thread, AsyncTask threads and HandlerThreads
      * together with the InputRepeater thread
@@ -122,7 +122,7 @@ public class PendingThreads {
         return null;
     }
     
-    /* 
+    /** 
      * Returns an array of the ThreadData of the given type
      * TODO add main and the input repeater
      */

@@ -24,6 +24,9 @@ public class AseActionBarTabEvent extends AseEvent {
 
     @Override
     public boolean isFirable() { // check if ActionBarActivity and check tab index    
+        if(!super.isFirable())
+            return false;  // Problematic to execute the rest if the activity view is not loaded
+        
         ActionBar actionBar = AppRunTimeData.getInstance().getCurrentAct().getActionBar();
         if (actionBar != null && actionBar.isShowing()) {
             if(actionBar.getTabCount() > tabItemIndex)

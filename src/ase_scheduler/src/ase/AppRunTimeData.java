@@ -87,7 +87,7 @@ public class AppRunTimeData {
         return fragments;
     }
     
-    /*
+    /**
      * Returns the name of the fragment in which the view with viewID is inflated
      */
     public String getFragmentNameByViewId(int viewId) {
@@ -99,6 +99,7 @@ public class AppRunTimeData {
         //clear the entire stack, except for the activity being launched
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         appContext.startActivity(i);
+        //executeFragmentTransactions(); ?
     }
 
     public void finishCurrentActivity() {
@@ -106,7 +107,6 @@ public class AppRunTimeData {
         currentActivity.finish();
     }
 
-    
     public void executeFragmentTransactions() {
         FragmentManager fm = currentActivity.getFragmentManager();
         fm.executePendingTransactions();
@@ -114,7 +114,7 @@ public class AppRunTimeData {
  
     // TODO better structure view traversers
     
-    /*
+    /**
      * View Traversers instrument views with recording event handlers
      * Takes a given root view and sets proper event listeners for its children views
      * Called from: (1) Activity onCreate (2) Fragment onCreateView (3) AdapterView getView
@@ -132,7 +132,6 @@ public class AppRunTimeData {
 
     @SuppressWarnings("rawtypes")
     private void traverseChildViewIds(View view) {
-
         if(view.getClass().getSimpleName().equals("ActionBarContainer")) {
             Log.i("ViewLogger", "ActionBarContainer Detail: " + view.toString() + " ID: " + view.getId());
             return;
@@ -189,11 +188,7 @@ public class AppRunTimeData {
         // process elements in a viewGroup
         else {
             if (view instanceof CheckBox) {
-                //CompoundButton.OnCheckedChangeListener listener = new InstrumentedOnCheckedChangeListener((CheckBox) view, pos, getContext());
-                //((CheckBox) view).setOnCheckedChangeListener(listener);
-                if (AseTestBridge.getExecutionMode() == ExecutionModeType.RECORD) {
-                    view.setOnClickListener(new InstrumentedCheckBoxClickListener((CheckBox) view, parent, pos, appContext));
-                }
+                view.setOnClickListener(new InstrumentedCheckBoxClickListener((CheckBox) view, parent, pos, appContext));
             } else {
                 OnClickListener listener = new InstrumentedListener(view, appContext);
                 view.setOnClickListener(listener);

@@ -70,6 +70,10 @@ public class InputRepeater implements Runnable {
         return numAllEvents > numDispatchedEvents;
     }
     
+    public int numInputsLeft() {
+        return (numAllEvents - numDispatchedEvents);
+    }
+    
     private static class InputInjectionHandler extends Handler {
         
         public InputInjectionHandler(Looper mainLooper) {

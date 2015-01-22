@@ -2,12 +2,14 @@ package ase;
 
 import android.app.Activity;
 import android.content.Context;
+import android.os.HandlerThread;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import ase.event.AseActionBarEvent;
+import ase.event.AseActionBarTabEvent;
 import ase.event.AseEvent;
 import ase.event.AseNavigateUpEvent;
 import ase.scheduler.RecordingMode;
@@ -15,9 +17,10 @@ import ase.scheduler.NopMode;
 import ase.scheduler.RepeatingMode;
 import ase.scheduler.ExecutionMode;
 import ase.util.IOFactory;
+import ase.util.ReflectionUtils;
 
-/*
- *  static interface class between the scheduler and the app under test
+/**
+ *  This class acts as an interface between Ase scheduler and the application under test
  */
 public class AseTestBridge {
 
@@ -58,13 +61,21 @@ public class AseTestBridge {
             case NOP:
                 executionMode = new NopMode();
         }
-        Log.i("AsyncDroid", "Scheduler initialized for mode " + parameters.getMode());
+        Log.i("AsyncDroid", "Scheduler initialized in mode: " + parameters.getMode());
     }
 
+    /**
+     * @return current execution mode: RECORD, REPEAT or NOP
+     */
     public static ExecutionModeType getExecutionMode() {
         return executionMode.getExecutionModeType();
     }
     
+    /**
+     *  This method is called in onCreate of an Activity before returning the rootView
+     *  Traverses inflated view hierarchy and sets the current activity reference in AppRunTimeData
+     *  Instruments view handlers with recorders if in RECORD mode
+     */
     public static void setActivityViewTraverser(Activity act) {
         View v = act.getWindow().getDecorView().getRootView();
         if (executionMode.getExecutionModeType() == ExecutionModeType.RECORD) {
@@ -75,9 +86,10 @@ public class AseTestBridge {
         }
     }
 
-    /*
+    /**
      *  This method is called in onViewCreated of a Fragment before returning the rootView
-     *  Traverses inflated view hierarchy and sets the currently loaded fragment name
+     *  Traverses inflated view hierarchy
+     *  Instruments view handlers with recorders if in RECORD mode
      */
     public static void setFragmentViewTraverser(View rootView) {
         if (executionMode.getExecutionModeType() == ExecutionModeType.RECORD) {
@@ -87,28 +99,42 @@ public class AseTestBridge {
         }
     }
     
-    public static void setAdapterViewItemTraverser(View view, ViewGroup parent, int pos) {
+    /**
+     *  This method is called in getView of an Adapter of an AdapterView 
+     *  Traverses inflated view hierarchy for the view item 
+     *  Instruments view handlers with recorders if in RECORD mode
+     */
+    public static void setAdapterItemViewTraverser(View view, ViewGroup parent, int pos) {
         if (executionMode.getExecutionModeType() == ExecutionModeType.RECORD) {
             AppRunTimeData.getInstance().traverseItemView(view, parent, pos);
         }
+        
     }
         
+    /**
+     * Set the reference for the action bar menu
+     * To be used in the REPEAT mode
+     * @param menu
+     */
     public static void setActionBarMenu(Menu menu) {
         // Need the menu reference only in replay mode
         if(!(executionMode instanceof RepeatingMode))
             return;
 
         if(menu== null)
-            Log.i("Repeater", "Menu is null");
+            Log.w("Repeater", "Menu is null");
         AppRunTimeData.getInstance().setActionBarMenu(menu);
     }
     
+    /**
+     * Set the event recorder for the action bar menu
+     * To be used in the RECORD mode
+     * @param item
+     */
     public static void setRecorderForActionBar(final MenuItem item) {
-        // Recorder works only in record mode
         if(!(executionMode instanceof RecordingMode)) {
             return;
         }
-
         if(item == null) {
             Log.w("Repeater", "ActionBar menu item is null");
             return;
@@ -122,39 +148,75 @@ public class AseTestBridge {
         }
         IOFactory.getRecorder(AppRunTimeData.getInstance().getAppContext()).record(event);
     }
-        
-    /*
-     * application thread waits for its signal to start/resume
+    
+    /**
+     * Set the event recorder for the action bar tabs
+     * To be used in the RECORD mode
+     * @param tab
      */
-    public static void waitForDispatch() {
-        executionMode.waitForDispatch();
+    public static void setRecorderForActionBarTab(Object tab) {
+        if(AseTestBridge.getExecutionMode() == ExecutionModeType.RECORD) {
+            // Call android.support.v7.app.ActionBar.Tab.getPosition() or android.app.ActionBar.Tab.getPosition()
+            // Depending on the library app uses
+            int pos = ReflectionUtils.getActionBarTabPosition(tab);
+            if(pos == -1) {
+                Log.e("Recorder", "Cannot set recorder for ActionBar.Tab");
+                return;
+            }
+            
+            AseEvent event = new AseActionBarTabEvent(0, pos); 
+            ase.util.IOFactory.getRecorder(AppRunTimeData.getInstance().getAppContext()).record(event);
+            Log.v("Recorder", "Recorder is set for tab position: " + pos);
+        }
     }
-
-    /*
-     * application thread yields
+        
+    /**
+     * @return true if a thread will be managed by the dispatcher
+     * If so, it will be instrumented for wait/notify synchronization with the dispatcher
      */
-    public static void yield() {
-        executionMode.yield();
+    private static boolean threadToAnalyze() {
+        Thread current = Thread.currentThread();
+        return (current.getId() == 1) || (current.getName().startsWith("AsyncTask")) 
+                || (current instanceof HandlerThread) || (current.getName().equals("InputRepeater"));
     }
     
-    /*
-     * application thread notify scheduler when they are completed
+    /**
+     * Called when an application thread waits for dispatching
+     */
+    public static void waitForDispatch() {
+        if(threadToAnalyze())
+            executionMode.waitForDispatch();
+    }
+
+    /**
+     * Called when an application thread yields
+     */
+    public static void yield() {
+        if(threadToAnalyze())
+            executionMode.yield();
+    }
+    
+    /**
+     * Called when an application thread notifies the dispatcher 
      */
     public static void notifyDispatcher() {
-        executionMode.notifyDispatcher();
+        if(threadToAnalyze())
+            executionMode.notifyDispatcher();
     }
 
-    /*
-     * application thread enters in a monitor
+    /**
+     * Called when an application thread enters in a monitor
      */
     public static void enterMonitor() {
-        executionMode.enterMonitor();
+        if(threadToAnalyze())
+            executionMode.enterMonitor();
     }
 
-    /*
-     * application thread exits a monitor
+    /**
+     * Called when an application thread exits a monitor
      */
     public static void exitMonitor() {
-        executionMode.exitMonitor();
+        if(threadToAnalyze())
+            executionMode.exitMonitor();
     }
 }
