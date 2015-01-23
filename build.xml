@@ -107,6 +107,8 @@
       <arg value="-f"/>
       <arg value="-M"/>
       <arg value="${build}/${app-name}-decoded/AndroidManifest.xml"/>
+      <arg value="-A"/>
+      <arg value="${build}/${app-name}-decoded/assets/"/>
       <arg value="-S"/>
       <arg value="${build}/${app-name}-decoded/res/"/>
       <arg value="-I"/>
