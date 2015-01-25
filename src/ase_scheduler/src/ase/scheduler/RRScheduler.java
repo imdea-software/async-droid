@@ -206,7 +206,7 @@ public class RRScheduler extends Scheduler {
             if((current != null) && isOnSerialExecutor(current.getThread())) 
                 continue;
         } 
-        if(poolThreadIndex == size) {
+        if(!okToSchedule(current) && poolThreadIndex == size) {
             poolThreadIndex = 0;
             return null; // no available threads are found
         }
@@ -224,7 +224,7 @@ public class RRScheduler extends Scheduler {
             current = threads.getThreadByIndex(handlerThreadIndex, ThreadType.HANDLERTHREAD);
             handlerThreadIndex ++;
         } 
-        if(handlerThreadIndex == size) {
+        if(!okToSchedule(current) && handlerThreadIndex == size) {
             handlerThreadIndex = 0;
             return null; // no available threads are found
         }
