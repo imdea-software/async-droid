@@ -86,6 +86,9 @@ public class RRScheduler extends Scheduler {
             logThreads(current);
         }
         
+        // added
+        if(!okToSchedule(current) && (idleTypes == types.length)) return null;
+        
         // check if current will be delayed, if so delay
         if(current != null && taskToProcess == getNextTaskIndexToDelay()) { 
             Log.i("AseScheduler", "Delayed Thread Id: " + current.getId() + " Last Processed: " + taskToProcess);
