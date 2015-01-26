@@ -3,6 +3,7 @@ package ase.event;
 import android.util.Log;
 import android.app.ActionBar;
 import ase.AppRunTimeData;
+import ase.util.ReflectionUtils;
 
 public class AseActionBarTabEvent extends AseEvent {
 
@@ -23,20 +24,22 @@ public class AseActionBarTabEvent extends AseEvent {
     }
 
     @Override
-    public boolean isFirable() { // check if ActionBarActivity and check tab index    
-        if(!super.isFirable())
-            return false;  // Problematic to execute the rest if the activity view is not loaded
+    public boolean isFirable() {  
+        // Check if action bar isinitiated 
+        // Avoid calling Activity.getActionBar() since it initiates it if it is null)
+        Object actionBar = ReflectionUtils.getActionBarInstance(AppRunTimeData.getInstance().getCurrentAct());
+        if(actionBar == null) return false;
         
-        ActionBar actionBar = AppRunTimeData.getInstance().getCurrentAct().getActionBar();
-        if (actionBar != null && actionBar.isShowing()) {
-            if(actionBar.getTabCount() > tabItemIndex)
+        // ActionBar is an instance of android.app.ActionBar or android.support.v7.app.ActionBar
+        // Check if it is showing and get tabCound using reflection
+        if (actionBar != null && ReflectionUtils.isActionBarShowing(actionBar)) {
+            if(ReflectionUtils.getActionBarTabCount(actionBar) > tabItemIndex)
                 return true;
         }
         
         Log.i("Repeater", "Cannot find ActionBar tab at index: " + Integer.toHexString(tabItemIndex) );
         return false;
     }
-
 
     @Override
     public void injectEvent() {

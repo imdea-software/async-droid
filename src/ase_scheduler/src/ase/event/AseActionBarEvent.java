@@ -4,6 +4,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import ase.AppRunTimeData;
+import ase.util.ReflectionUtils;
 
 /**
  * Created by burcuozkan on 10/12/14.
@@ -26,19 +27,11 @@ public class AseActionBarEvent extends AseEvent {
 
     @Override
     public boolean isFirable() {
-        if(!super.isFirable())
-            return false; 
+        // Do not use Activity.getActionBar as it initializes if the action bar is null
+        Object actionBar = ReflectionUtils.getActionBarInstance(AppRunTimeData.getInstance().getCurrentAct());       
+        if(actionBar == null) return false;
+        else return true;
         
-        AppRunTimeData appData = AppRunTimeData.getInstance();
-        if (appData.getCurrentAct().hasWindowFocus()) {
-            //AseTestBridge.currentAct.openOptionsMenu();
-            Menu menu = appData.getActionBarMenu();
-            if (menu != null) {
-                MenuItem item = menu.findItem(viewId);
-                return super.isFirable() && (item != null);
-            }
-        }
-        return false;
     }
 
     @Override

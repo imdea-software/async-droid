@@ -14,6 +14,10 @@ import android.widget.AdapterView;
 public class ReflectionUtils {
 
     private static final String CN_ACTIVITY = "android.app.Activity"; 
+    private static final String CN_ACTIVITY_ACTIONBAR_SUPPORT = "android.support.v7.app.ActionBarActivity";
+    private static final String CN_ACTION_BAR = "android.app.ActionBar";
+    private static final String CN_ACTION_BAR_SUPPORT = "android.support.v7.app.ActionBar";
+    private static final String CN_ACT_ACTION_BAR_SUPPORT_DEL = "android.support.v7.app.ActionBarActivityDelegate";
     private static final String CN_ACTIVITY_SUPPORT = "android.support.v4.app.FragmentActivity"; 
     private static final String CN_FRAGMENT_MANAGER = "android.app.FragmentManagerImpl";
     private static final String CN_FRAGMENT_MANAGER_SUPPORT = "android.support.v4.app.FragmentManagerImpl";
@@ -90,7 +94,7 @@ public class ReflectionUtils {
             mTasksField.setAccessible(true);
             Object mTasks = mTasksField.get(serialExecutor);
 
-            return (ArrayDeque<Runnable>) mTasks;
+            return ((ArrayDeque<Runnable>) mTasks).clone();
 
         } catch (Exception ex) {
             Log.e("Reflectionnn", "Can not read AsyncTask serial executor work queue");
@@ -118,6 +122,7 @@ public class ReflectionUtils {
 
     /**
      * Returns the list of active fragments in the activity
+     * Returns null if no fragments
      * If the act is of type android.app.Activity 
      *   - Gets the fragments from: android.app.FragmentManagerImpl 
      * If the act is of type android.support.v4.app.FragmentActivity
@@ -146,6 +151,8 @@ public class ReflectionUtils {
             getFragmentManagerMethod = activity.getDeclaredMethod(getFMMethodName);
             Object fragmentManager = getFragmentManagerMethod.invoke(act);
 
+            if(fragmentManager == null) return null;
+            
             Field mActiveField = null;
             Class<?> fragmentManClass = Class.forName(fragmentManagerClassName);
             mActiveField = fragmentManClass.getDeclaredField("mActive");
@@ -201,7 +208,83 @@ public class ReflectionUtils {
     }
     
     /**
-     * Checks whether the tab is android.app.ActionBar.Tab or android.support.v7.app.ActionBar.Tab
+     * Returns the mActionBar of the Activity class
+     * (This method is used by the InputRepeater to check if it is initialized or not)
+     */
+    public static Object getActionBarInstance(Object act) {
+        String activityClassName = null;
+        if(getSuperClassOfType(act.getClass(), CN_ACTIVITY_ACTIONBAR_SUPPORT) != null) {
+            activityClassName = CN_ACTIVITY_ACTIONBAR_SUPPORT;
+        } else if(getSuperClassOfType(act.getClass(), CN_ACTIVITY) != null) {
+            activityClassName = CN_ACTIVITY;
+        }
+
+        try {
+            Class activityClass = Class.forName(activityClassName);
+            Field mActionBarActDelegateField = activityClass.getDeclaredField("mImpl");
+            mActionBarActDelegateField.setAccessible(true);            
+            Object mActionBarActDelegate = mActionBarActDelegateField.get(act);
+            Class delegateClass = Class.forName(CN_ACT_ACTION_BAR_SUPPORT_DEL);
+            Field mActionBarField = delegateClass.getDeclaredField("mActionBar");
+            mActionBarField.setAccessible(true);
+            Object mActionBar = mActionBarField.get(mActionBarActDelegate);
+            return mActionBar;
+            
+        } catch (Exception ex) {
+            Log.e("Reflection", "Can not read mActionBar of activity " + activityClassName);
+        }      
+        return null;
+    }
+    
+    /**
+     * Returns the position of the tab in ActionBar
+     * (ActionBar is defined in Android API level 11)
+     */
+    public static boolean isActionBarShowing(Object bar) {
+        String actionBarClassName = null;
+        if(getSuperClassOfType(bar.getClass(), CN_ACTION_BAR_SUPPORT) != null) {
+            actionBarClassName = CN_ACTION_BAR_SUPPORT;
+        } else if(getSuperClassOfType(bar.getClass(), CN_ACTION_BAR) != null) {
+            actionBarClassName = CN_ACTION_BAR;
+        }
+
+        try {
+            Class actionBar = Class.forName(actionBarClassName);
+            Method isShowingMethod = actionBar.getDeclaredMethod("isShowing");
+            Boolean isShowing = (Boolean) isShowingMethod.invoke(bar);
+            return isShowing.booleanValue();
+            
+        } catch (Exception ex) {
+            Log.e("Reflection", "Can not check whether action bar is visible using " + actionBarClassName);
+        }      
+        return false;
+    }
+    
+    /**
+     * Returns the position of the tab in ActionBar
+     * (ActionBar is defined in Android API level 11)
+     */
+    public static int getActionBarTabCount(Object bar) {
+        String actionBarClassName = null;
+        if(getSuperClassOfType(bar.getClass(), CN_ACTION_BAR_SUPPORT) != null) {
+            actionBarClassName = CN_ACTION_BAR_SUPPORT;
+        } else if(getSuperClassOfType(bar.getClass(), CN_ACTION_BAR) != null) {
+            actionBarClassName = CN_ACTION_BAR;
+        }
+
+        try {
+            Class actionBar = Class.forName(actionBarClassName);
+            Method getTabCountMethod = actionBar.getDeclaredMethod("getTabCount");
+            Integer tabCount = (Integer) getTabCountMethod.invoke(bar);
+            return tabCount.intValue();
+            
+        } catch (Exception ex) {
+            Log.e("Reflection", "Can not get action bar tab count using " + actionBarClassName);
+        }      
+        return 0;
+    }
+    
+    /**
      * Returns the position of the tab in ActionBar
      * (ActionBar is defined in Android API level 11)
      */
