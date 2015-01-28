@@ -25,7 +25,11 @@ public abstract class AseEvent {
     protected AseEvent(EventType type, int viewId) {
         this.type = type;
         this.viewId = viewId;
-        fragmentName = AppRunTimeData.getInstance().getFragmentNameByViewId(viewId);
+        
+        if(type == EventType.ACTIONBAR || type == EventType.ACTIONBARTAB)
+            fragmentName = null;
+        else
+            fragmentName = AppRunTimeData.getInstance().getFragmentNameByViewId(viewId);
     }
    
     protected AseEvent(EventType type, int viewId, int parentId) {

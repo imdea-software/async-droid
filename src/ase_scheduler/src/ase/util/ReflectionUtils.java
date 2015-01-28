@@ -192,12 +192,18 @@ public class ReflectionUtils {
             getViewMethod = fragmentClass.getDeclaredMethod("getView");
             findViewByIdMethod = viewClass.getDeclaredMethod("findViewById", Integer.TYPE);
 
-            for(Object f: getFragments(act)) {
-                Object rootView = getViewMethod.invoke(f);
-                View v = (View) findViewByIdMethod.invoke(rootView, viewId);
-                Boolean b = (Boolean) isVisibleMethod.invoke(f);
-                if( (v != null) && (b.booleanValue())) {
-                    return f.getClass().getName();
+            List<Object> fragments = getFragments(act);
+            if(fragments != null) {
+                for(Object f: fragments) {
+                    Object rootView = getViewMethod.invoke(f);
+                    if(rootView == null) return null;
+                    View v = (View) findViewByIdMethod.invoke(rootView, viewId);
+                    if(v == null) return null; // view is not inside that fragment
+                    
+                    Boolean b = (Boolean) isVisibleMethod.invoke(f);
+                    if(b.booleanValue()) {
+                        return f.getClass().getName();
+                    }
                 }
             }
         } catch (Exception ex) {

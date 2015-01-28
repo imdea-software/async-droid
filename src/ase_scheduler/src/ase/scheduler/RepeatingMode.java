@@ -103,6 +103,7 @@ public class RepeatingMode implements ExecutionMode, Runnable {
      */
     public void setUpTestCase() {       
         scheduler.setUpTestCase();
+        inputRepeater.reset();
         Thread inputThread = new Thread(inputRepeater);
         inputThread.setName("InputRepeater");
         inputThread.start();
@@ -146,7 +147,6 @@ public class RepeatingMode implements ExecutionMode, Runnable {
     public void tearDownTestCase() {
         scheduler.tearDownTestCase();
         scheduled = 0L;
-        inputRepeater.reset();
         threads.clearThreads();
     }
     

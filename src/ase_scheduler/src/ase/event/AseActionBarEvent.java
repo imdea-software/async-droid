@@ -31,7 +31,6 @@ public class AseActionBarEvent extends AseEvent {
         Object actionBar = ReflectionUtils.getActionBarInstance(AppRunTimeData.getInstance().getCurrentAct());       
         if(actionBar == null) return false;
         else return true;
-        
     }
 
     @Override

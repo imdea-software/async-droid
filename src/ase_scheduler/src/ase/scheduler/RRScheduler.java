@@ -44,6 +44,7 @@ public class RRScheduler extends Scheduler {
         if(delaySeq != null) { // null for the first test
             delaySeq.next();
             Log.i("DelayInfo", "Current delay indices:" + delaySeq.toString());
+            logger.i("DelayInfo", "Current delay indices:" + delaySeq.toString());  /////
         }     
     }
         
@@ -92,8 +93,9 @@ public class RRScheduler extends Scheduler {
         // check if current will be delayed, if so delay
         if(current != null && taskToProcess == getNextTaskIndexToDelay()) { 
             Log.i("AseScheduler", "Delayed Thread Id: " + current.getId() + " Last Processed: " + taskToProcess);
+            logger.i("RRScheduler", "Delayed " + current.getName() + " Consumed Task to process: " + taskToProcess);
             Log.i("DelayInfo", "Consumed delay: " + taskToProcess);
-            delaySeq.spendCurrentDelayIndex();
+            delaySeq.spendCurrentDelayIndex();       
             taskToProcess ++;
             return selectNextThread(); // terminates since delaySeq is not infinite
         } 
@@ -106,7 +108,7 @@ public class RRScheduler extends Scheduler {
         if(threads.getThreadById(1).isWaiting()) numMainTasks++;
         
         int numInputTasks = inputRepeater.numInputsLeft();
-        if(threads.getThreadByName("InputRepeater").isWaiting()) numInputTasks++;
+        //if(threads.getThreadByName("InputRepeater").isWaiting()) numInputTasks++;
         
         int numAsyncSerialTasks = ReflectionUtils.getAsyncTaskSerialExecutorTasks().size();
         boolean isSerialActive = ReflectionUtils.isAsyncTaskSerialThreadActive();

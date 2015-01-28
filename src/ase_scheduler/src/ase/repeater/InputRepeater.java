@@ -64,6 +64,7 @@ public class InputRepeater implements Runnable {
 
     public void reset() {
         numDispatchedEvents = 0;
+        Log.i("Repeater", "Is reset");
     }
 
     public boolean hasMoreInputs() {
