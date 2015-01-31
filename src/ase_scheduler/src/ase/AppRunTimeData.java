@@ -144,20 +144,21 @@ public class AppRunTimeData {
                 Log.v("ViewLogger", "traversed: " + child.getClass().getSimpleName() + " "
                                 + Integer.toHexString(child.getId()));
 
+                // remove inside -> move to onItemClickListener in the app code
                 if(child instanceof AdapterView) {
                     if(child instanceof ListView) {
                         Log.i("ViewLogger", "List view: Id: " + child.getId() + " " + ((AdapterView) child).getCount());
                         // add onItemClickListener to the adapter
                         AdapterView.OnItemClickListener listener = new InstrumentedItemClickListener((AdapterView) child, appContext);
                         ((AdapterView) child).setOnItemClickListener(listener);
-                    } else if (child instanceof Spinner) {
+                    }/* else if (child instanceof Spinner) {
                         Log.i("ViewLogger", "Spinner view: Id: " + child.getId() + " " + ((AdapterView) child).getCount());
                         // add onItemClickListener to the adapter
                         AdapterView.OnItemSelectedListener listener = new InstrumentedItemSelectedListener((AdapterView) child, appContext);
                         ((AdapterView) child).setOnItemSelectedListener(listener);
                     } else {
                         Log.i("ViewLogger", "Cannot record grid view or gallery view");
-                    }
+                    }*/
 
                 } else if (!child.getClass().getSimpleName().contains("Layout")) {      
                     // add onClickListener to the traversed view

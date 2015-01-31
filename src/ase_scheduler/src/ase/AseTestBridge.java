@@ -8,9 +8,11 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import ase.event.AseActionBarEvent;
 import ase.event.AseActionBarTabEvent;
 import ase.event.AseEvent;
+import ase.event.AseItemClickEvent;
 import ase.event.AseNavigateUpEvent;
 import ase.scheduler.RecordingMode;
 import ase.scheduler.NopMode;
@@ -110,7 +112,19 @@ public class AseTestBridge {
         }
         
     }
-        
+    
+    /**
+     *  This method is called in OnItemClick listener of an item of an AdapterView 
+     *  Instruments item click listeners with recorder if in RECORD mode
+     */
+    public static void setRecorderForItemClick(AdapterView adapter, int pos, long index) {
+        if (executionMode.getExecutionModeType() == ExecutionModeType.RECORD) {
+            AseEvent event = new AseItemClickEvent(adapter.getId(), pos, index); /// update event type
+            IOFactory.getRecorder(AppRunTimeData.getInstance().getAppContext()).record(event);
+            Log.e("Hereeee", "Hereee");
+        }     
+    }
+           
     /**
      * Set the reference for the action bar menu
      * To be used in the REPEAT mode

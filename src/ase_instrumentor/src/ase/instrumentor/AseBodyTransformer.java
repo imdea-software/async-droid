@@ -25,6 +25,7 @@ public class AseBodyTransformer extends BodyTransformer {
     private static SootMethod initiateTesting, waitForDispatch, notifyDispatcher, enterMonitor, exitMonitor;
     private static SootMethod setActivityViewTraverser, setFragmentViewTraverser, setAdapterItemViewTraverser; 
     private static SootMethod setActionBarMenu, setRecorderForActionBar, setRecorderForActionBarTab;
+    private static SootMethod setRecorderForItemClick;
 
     public static void main(String[] args) {
         // args[0]: directory from which to process classes
@@ -60,6 +61,7 @@ public class AseBodyTransformer extends BodyTransformer {
         setRecorderForActionBar = aseTestBridgeClass.getMethod("void setRecorderForActionBar(android.view.MenuItem)");
         setAdapterItemViewTraverser = aseTestBridgeClass.getMethod("void setAdapterItemViewTraverser(android.view.View,android.view.ViewGroup,int)");
         setRecorderForActionBarTab = aseTestBridgeClass.getMethod("void setRecorderForActionBarTab(java.lang.Object)");
+        setRecorderForItemClick = aseTestBridgeClass.getMethod("void setRecorderForItemClick(android.widget.AdapterView,int,long)");   
     }
 
     @Override
@@ -120,8 +122,11 @@ public class AseBodyTransformer extends BodyTransformer {
         } else if (methodName.equals("onOptionsItemSelected")) { 
             instrumentOnOptionsItemSelected(b);
             
-        } else if (methodName.equals("onTabSelected")) { 
+        } else if (methodName.equals("onTabSelected")) {
             instrumentOnTabSelected(b);
+        
+        } else if (methodName.equals("onItemClick")) {  
+            instrumentOnItemClickMethod(b);
             
         } else if (methodName.equals("getView") && hasParentClass(clazz, adapterClass)) { 
             instrumentGetViewMethod(b);
@@ -255,6 +260,38 @@ public class AseBodyTransformer extends BodyTransformer {
                 public void caseReturnStmt(ReturnStmt stmt) {               
                     units.insertBefore(staticInvocation(setAdapterItemViewTraverser, viewParam, parentParam, posParam), stmt);
                     System.out.println("===========ItemViewTraversal stmt added..");
+                }
+            });
+        }
+    }
+    
+    /**
+     * Adds call to getView of an AdapterView to traverse the views in a list item
+     * to enable record/replay
+     */
+    private void instrumentOnItemClickMethod(final Body b) {
+        final PatchingChain<Unit> units = b.getUnits();
+        Iterator<Unit> iter = units.snapshotIterator();
+        // method: public void onItemClick(AdapterView adapter, View view, int position, long index)
+        
+        iter.next(); // the identity statement for the method
+        // the identity statement for the first parameter - adapter
+        JIdentityStmt stmt = (JIdentityStmt) iter.next(); 
+        final Value adapterParam = stmt.getLeftOp();    
+        // the identity statement for the second parameter - view
+        stmt = (JIdentityStmt) iter.next(); 
+        // the identity statement for the third parameter - position
+        stmt = (JIdentityStmt) iter.next(); 
+        final Value posParam = stmt.getLeftOp();
+        // the identity statement for the fourth parameter - index
+        stmt = (JIdentityStmt) iter.next(); 
+        final Value indexParam = stmt.getLeftOp();
+        
+        while (iter.hasNext()) {
+            iter.next().apply(new AbstractStmtSwitch() {
+                public void caseReturnVoidStmt(ReturnVoidStmt stmt) {               
+                    units.insertBefore(staticInvocation(setRecorderForItemClick, adapterParam, posParam, indexParam), stmt);
+                    System.out.println("===========Recorder for OnItemClick is added..");
                 }
             });
         }
