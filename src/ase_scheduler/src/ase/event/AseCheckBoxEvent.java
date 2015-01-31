@@ -2,12 +2,11 @@ package ase.event;
 
 import android.util.Log;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.CheckBox;
+import android.widget.ListView;
 
 import ase.AppRunTimeData;
-import ase.util.ReflectionUtils;
 
 public class AseCheckBoxEvent extends AseEvent {
     
@@ -18,8 +17,7 @@ public class AseCheckBoxEvent extends AseEvent {
     public AseCheckBoxEvent(int viewId, int parentId, int pos) {
         super(EventType.CHECKBOX, viewId, parentId);
         this.parentId = parentId;
-        position = pos;
-        
+        this.position = pos;      
     }
 
     @Override
@@ -30,7 +28,16 @@ public class AseCheckBoxEvent extends AseEvent {
     @Override
     public boolean isFirable() {
         View view = AppRunTimeData.getInstance().getActivityRootView().findViewById(viewId);
-        return super.isFirable() && (view != null);
+        if(view == null) return false;
+
+        View parent = AppRunTimeData.getInstance().getActivityRootView().findViewById(parentId);
+        if(parent != null) {
+            if(parent instanceof AdapterView)
+                //Log.i("Repeater", "an adapter view with child count: " + ((AdapterView) parent).getChildCount());
+            if (((AdapterView) parent).getChildCount() <= position)
+                return false;
+        }
+        return super.isFirable();
     }
     
     @SuppressWarnings("rawtypes")
@@ -38,13 +45,20 @@ public class AseCheckBoxEvent extends AseEvent {
     public void injectEvent() {
         //CheckBox view = (CheckBox) AseTestBridge.getAppData().getActivityRootView().findViewById(viewId);
         
-        AdapterView parentView = (AdapterView) AppRunTimeData.getInstance().getActivityRootView().findViewById(parentId);
-        CheckBox view = (CheckBox)parentView.getChildAt(position).findViewById(viewId);
+        ListView parentView = (ListView) AppRunTimeData.getInstance().getActivityRootView().findViewById(parentId);
+        // only works for Checkboxes in ListViews
+        if(parentView == null) {
+            Log.e("Repeater", "Checkbox not in listviews are not supported.");
+        }
+            
+        int totalPos = position + parentView.getHeaderViewsCount();
+        CheckBox view = (CheckBox)parentView.getChildAt(totalPos).findViewById(viewId);
         
-        OnClickListener ownListener = ReflectionUtils.getOnClickListener(view);
-        ownListener.onClick(view);
+        //OnClickListener ownListener = ReflectionUtils.getOnClickListener(view);
+        //ownListener.onClick(view);
+        view.performClick();
         
-        Log.i("Repeater", "In viewgroup: " + parentId + " clicked checkbox: " + Integer.toHexString(view.getId()) + " Position: " + position + " Fragment: " + fragmentName);
+        Log.i("Repeater", "In viewgroup: " + parentId + " clicked checkbox: " + Integer.toHexString(view.getId()) + " Position: " + totalPos + " Fragment: " + fragmentName);
     }
 
 }
