@@ -32,6 +32,8 @@ public abstract class Scheduler {
     
     public abstract boolean hasMoreTestCases();
     
+    public abstract void doOnPreScheduling();
+    
     public abstract ThreadData selectNextThread();
 
     /**
@@ -50,10 +52,11 @@ public abstract class Scheduler {
         if(current.isWaiting())
             return true;
         // if an event is sent to main thread (user input, publishProgress or postExecute)
-        if(current.getId() == 1 && ((numInputsInMainLooper() > 0) || ( numAsyncTasksInMainLooper() > 0)))
+        //if(current.getId() == 1 && ((numInputsInMainLooper() > 0) || ( numAsyncTasksInMainLooper() > 0)))
+        if(current.getId() == 1 && inputRepeater.hasEventsToHandle())
             return true;
         // if the InputRepeater has input to post to main
-       if(current.getName().equalsIgnoreCase("InputRepeater") && inputRepeater.hasMoreInputs()) 
+       if(current.getName().equalsIgnoreCase("InputRepeater") && /*inputRepeater.hasMoreInputs() */ inputRepeater.readyToInjectInput()) 
             return true;
         // if a looper thread has a non-empty message queue (may not yet executed waitMyTurn())
         if(current.getId() != 1 && current.hasMsgToHandle())
@@ -71,6 +74,7 @@ public abstract class Scheduler {
         return false;
     }
     
+ // removed reading messages of the main looper
     protected int numInputsInMainLooper() {
         List<Message> messages = LooperReader.getInstance().getMessages(threads.getThreadById(1).getThread());
         int count = 0;
@@ -78,9 +82,12 @@ public abstract class Scheduler {
             if(m.getTarget() != null && m.getTarget().getClass().getName().startsWith("ase.repeater.InputRepeater"))
                 count ++;
         }
-        return count;
+        return count; 
     }
 
+    //TODO take asyncTask type as parameter (e.g. do not count onPublishProgress's ..)
+    //TODO I assume all tasks to examine are instrumented
+    // removed reading messages of the main looper
     protected int numAsyncTasksInMainLooper() {
         List<Message> messages = LooperReader.getInstance().getMessages(threads.getThreadById(1).getThread());
         int count = 0;

@@ -73,7 +73,7 @@ public class RepeatingMode implements ExecutionMode, Runnable {
         waitForDispatch(ThreadData.SCHEDULER_ID);
 
         while (scheduler.hasMoreTestCases()) {
-            AppRunTimeData.getInstance().launchMainActivity();           
+            AppRunTimeData.getInstance().launchMainActivity(); 
             setUpTestCase();
             runTestCase();
             tearDownTestCase();
@@ -119,6 +119,7 @@ public class RepeatingMode implements ExecutionMode, Runnable {
 
         while (!scheduler.isEndOfTestCase()) {
             //threads.captureAllThreads();
+            scheduler.doOnPreScheduling();
             current = scheduler.selectNextThread();
 
             if (current == null) {
