@@ -181,6 +181,9 @@ public class AseTestBridge {
             AseEvent event = new AseActionBarTabEvent(0, pos); 
             ase.util.IOFactory.getRecorder(AppRunTimeData.getInstance().getAppContext()).record(event);
             Log.v("Recorder", "Recorder is set for tab position: " + pos);
+        } else {
+            // execute transactions in the initial tab as well
+            AppRunTimeData.getInstance().executeFragmentTransactions();
         }
     }
         

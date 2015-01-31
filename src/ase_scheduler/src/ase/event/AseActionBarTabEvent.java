@@ -25,13 +25,11 @@ public class AseActionBarTabEvent extends AseEvent {
 
     @Override
     public boolean isFirable() {  
-        // Check if action bar isinitiated 
-        // Avoid calling Activity.getActionBar() since it initiates it if it is null)
         Object actionBar = ReflectionUtils.getActionBarInstance(AppRunTimeData.getInstance().getCurrentAct());
         if(actionBar == null) return false;
         
         // ActionBar is an instance of android.app.ActionBar or android.support.v7.app.ActionBar
-        // Check if it is showing and get tabCound using reflection
+        // Check if it is showing and get tabCound using reflection    
         if (actionBar != null && ReflectionUtils.isActionBarShowing(actionBar)) {
             if(ReflectionUtils.getActionBarTabCount(actionBar) > tabItemIndex)
                 return true;
@@ -46,7 +44,6 @@ public class AseActionBarTabEvent extends AseEvent {
         ActionBar actionBar = AppRunTimeData.getInstance().getCurrentAct().getActionBar();
         actionBar.setSelectedNavigationItem(tabItemIndex);
         Log.i("Repeater", "Clicked action bar tab at index: " + Integer.toHexString(tabItemIndex));
-  
     }
 
 }

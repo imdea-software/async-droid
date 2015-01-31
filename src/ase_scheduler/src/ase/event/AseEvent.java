@@ -2,6 +2,7 @@ package ase.event;
 
 import java.util.HashMap;
 import java.util.Map;
+import android.util.Log;
 import ase.AppRunTimeData;
 
 public abstract class AseEvent {
@@ -65,8 +66,10 @@ public abstract class AseEvent {
 
         String s = appData.getFragmentNameByViewId(viewId);
         //if(s != null) Log.i("Firable", "Current: " + s);
-        //Log.i("Firable", fragmentName);
-        
+        if(fragmentName != null)
+            Log.i("Event's", fragmentName);
+        if(s != null)
+            Log.i("Current", s);
         return (fragmentName == null) || fragmentName.equals(s);
     }
 

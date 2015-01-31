@@ -6,7 +6,6 @@ import java.io.PrintWriter;
 import android.content.Context;
 import android.util.Log;
 import ase.AppRunTimeData;
-import ase.AseTestBridge;
 
 public class FileLogger implements Logger {
 

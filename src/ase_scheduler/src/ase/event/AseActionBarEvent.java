@@ -11,13 +11,9 @@ import ase.util.ReflectionUtils;
  */
 public class AseActionBarEvent extends AseEvent {
 
-    //public final int menuItemId;
-
-    // viewId is the id of the ActionBAr
-    // menuItemId is the id of the Menu item
+    // viewId is the menu item id
     public AseActionBarEvent(int menuItemId) {
         super(EventType.ACTIONBAR, menuItemId);
-        //this.menuItemId = menuItemId;
     }
 
     @Override
@@ -27,10 +23,8 @@ public class AseActionBarEvent extends AseEvent {
 
     @Override
     public boolean isFirable() {
-        // Do not use Activity.getActionBar as it initializes if the action bar is null
         Object actionBar = ReflectionUtils.getActionBarInstance(AppRunTimeData.getInstance().getCurrentAct());       
-        if(actionBar == null) return false;
-        else return true;
+        return actionBar != null; 
     }
 
     @Override

@@ -43,10 +43,8 @@ public class AseCheckBoxEvent extends AseEvent {
     @SuppressWarnings("rawtypes")
     @Override
     public void injectEvent() {
-        //CheckBox view = (CheckBox) AseTestBridge.getAppData().getActivityRootView().findViewById(viewId);
-        
         ListView parentView = (ListView) AppRunTimeData.getInstance().getActivityRootView().findViewById(parentId);
-        // only works for Checkboxes in ListViews
+        // In current version, only for Checkboxes in ListViews
         if(parentView == null) {
             Log.e("Repeater", "Checkbox not in listviews are not supported.");
         }
@@ -54,8 +52,6 @@ public class AseCheckBoxEvent extends AseEvent {
         int totalPos = position + parentView.getHeaderViewsCount();
         CheckBox view = (CheckBox)parentView.getChildAt(totalPos).findViewById(viewId);
         
-        //OnClickListener ownListener = ReflectionUtils.getOnClickListener(view);
-        //ownListener.onClick(view);
         view.performClick();
         
         Log.i("Repeater", "In viewgroup: " + parentId + " clicked checkbox: " + Integer.toHexString(view.getId()) + " Position: " + totalPos + " Fragment: " + fragmentName);

@@ -160,7 +160,7 @@ public class ReflectionUtils {
             activeFragments = (List<Object>) mActiveField.get(fragmentManager);
         } catch (Exception ex) {
             activeFragments = null;
-            Log.w("Reflection", "Can not read active fragments: fmMethod" + getFMMethodName, ex);
+            Log.e("Reflection", "Can not read active fragments: fmMethod" + getFMMethodName, ex);
         }
 
         return activeFragments;
@@ -242,6 +242,7 @@ public class ReflectionUtils {
         return null;
     }
     
+    /////Cannot call this as isShowing is not included in the instrumented app (lost during translation)
     /**
      * Returns the position of the tab in ActionBar
      * (ActionBar is defined in Android API level 11)
