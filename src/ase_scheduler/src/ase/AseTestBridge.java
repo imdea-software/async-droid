@@ -2,203 +2,238 @@ package ase;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
-import android.os.Bundle;
+import android.os.HandlerThread;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import ase.recorder.ViewTraverser;
-import ase.scheduler.RecordingScheduler;
-import ase.scheduler.NopScheduler;
-import ase.scheduler.RepeatingScheduler;
-import ase.scheduler.Scheduler;
-import ase.scheduler.SchedulerData;
+import android.view.ViewGroup;
+import android.widget.AdapterView;
+import ase.event.AseActionBarEvent;
+import ase.event.AseActionBarTabEvent;
+import ase.event.AseEvent;
+import ase.event.AseItemClickEvent;
+import ase.event.AseNavigateUpEvent;
+import ase.scheduler.RecordingMode;
+import ase.scheduler.NopMode;
+import ase.scheduler.RepeatingMode;
+import ase.scheduler.ExecutionMode;
 import ase.util.IOFactory;
+import ase.util.ReflectionUtils;
 
-
-/*
- *  static interface class between the scheduler and the app under test
+/**
+ *  This class acts as an interface between Ase scheduler and the application under test
  */
 public class AseTestBridge {
 
-    public enum SchedulerMode {
-        NOP, RECORD, REPEAT
-    };
-
-    private static Scheduler scheduler;
-    private static SchedulerData schedulerData;
-    private static SchedulerMode mode;
+    private static ExecutionMode executionMode;
     private static boolean initiated = false;
-    
-    // application appContext to be used in utils and the scheduler
-    private static Context appContext;
-    public static Activity currentAct;  /////////////////
-    public static Menu actionBarMenu;
-   
 
-    /*
-     * called by UI thread with the application context
+    /**
+     * called by UI thread in onCreate method of Activity or Application
+     * with the application/activity instance as parameter
      */
-    public static void initiateScheduler(Activity act) {
+    public static void initiateTesting(Context context) {
         if (!initiated) {
             initiated = true;
-            schedulerData = new SchedulerData();
-            setTestParameters(act);
-            scheduler.runScheduler();  
+            AppRunTimeData.createInstance(context);
+            setTestParameters(context);
         }
-        currentAct = act;
+        if(context instanceof Activity)
+            AppRunTimeData.getInstance().setCurrentAct((Activity)(context));
     }
 
     /**
-     * Sets the scheduler mode and number of delays
+     * Sets the execution mode and bound parameter (number of delays)
      * Also sets the application context 
      * to be used to relaunch mainActivity after each test case
      */
-    private static void setTestParameters(Activity act) {
-        appContext = act.getApplicationContext();
-
-        Intent intent = act.getIntent();
-        Bundle bundle = intent.getExtras();
-        
-        if (intent.hasExtra("mode")) {
-            String smode = bundle.getString("mode");
-            
-            if (smode.equalsIgnoreCase("record")) {
-                mode = SchedulerMode.RECORD;
-                Log.i("MyScheduler", "Running in record mode");
-                scheduler = new RecordingScheduler(act);
-                return;
-            }
-            if ((smode.equalsIgnoreCase("repeat") || smode.equalsIgnoreCase("replay"))) {
-                mode = SchedulerMode.REPEAT;
-                int numDelays = 0;
-                if (intent.hasExtra("numDelays")) {
-                    numDelays = Integer.parseInt(bundle.getString("numDelays"));
-                    Log.i("MyScheduler", "Running in repeat mode with delay bound " + numDelays);
-                } else {
-                    Log.i("MyScheduler", "Running in repeat mode with delay bound 0 (default setting)");
-                }
-                scheduler = new RepeatingScheduler(numDelays, act.getApplicationContext());
-                return;
-            }
-            Log.i("MyScheduler", "Scheduler mode cannot be identified.");
+    private static void setTestParameters(Context context) {
+        Parameters parameters = IOFactory.getParameters(context);
+        Log.i("AsyncDroid", "Running in " + parameters.getMode() + " mode...");
+        switch (parameters.getSchedulerMode()) {
+            case RECORD:
+                executionMode = new RecordingMode(context);
+                break;
+            case REPEAT:
+                Log.i("AsyncDroid", "Number of delays: " + parameters.getNumDelays());
+                executionMode = new RepeatingMode(parameters.getNumDelays(), context);
+                executionMode.runScheduler();  
+                break;
+            case NOP:
+                executionMode = new NopMode();
         }
-         
-        mode = SchedulerMode.NOP;
-        Log.i("MyScheduler", "No Scheduler is used");
-        scheduler = new NopScheduler();   
+        Log.i("AsyncDroid", "Scheduler initialized in mode: " + parameters.getMode());
     }
 
+    /**
+     * @return current execution mode: RECORD, REPEAT or NOP
+     */
+    public static ExecutionModeType getExecutionMode() {
+        return executionMode.getExecutionModeType();
+    }
+    
+    /**
+     *  This method is called in onCreate of an Activity before returning the rootView
+     *  Traverses inflated view hierarchy and sets the current activity reference in AppRunTimeData
+     *  Instruments view handlers with recorders if in RECORD mode
+     */
     public static void setActivityViewTraverser(Activity act) {
         View v = act.getWindow().getDecorView().getRootView();
-        if (mode == SchedulerMode.RECORD) {
-            ViewTraverser.setViewViewerContext(act.getApplicationContext());
-            ViewTraverser.setRootView(v);
-            ViewTraverser.traverseViewIds(v.getRootView());
-        } else if (mode == SchedulerMode.REPEAT) {
-            ViewTraverser.setRootView(v);
+        if (executionMode.getExecutionModeType() == ExecutionModeType.RECORD) {
+            AppRunTimeData.getInstance().setActivityRootView(v);
+            AppRunTimeData.getInstance().traverseViewIds(v.getRootView());
+        } else if (executionMode.getExecutionModeType() == ExecutionModeType.REPEAT) {
+            AppRunTimeData.getInstance().setActivityRootView(v);
         }
     }
 
+    /**
+     *  This method is called in onViewCreated of a Fragment before returning the rootView
+     *  Traverses inflated view hierarchy
+     *  Instruments view handlers with recorders if in RECORD mode
+     */
     public static void setFragmentViewTraverser(View rootView) {
-        if (mode == SchedulerMode.RECORD) {
-            ViewTraverser.traverseViewIds(rootView);
+        if (executionMode.getExecutionModeType() == ExecutionModeType.RECORD) {
+            AppRunTimeData.getInstance().traverseViewIds(rootView);
+        } else if (executionMode.getExecutionModeType() == ExecutionModeType.REPEAT) {
+            Log.v("View","Fragment view created with root: " + Integer.toHexString(rootView.getId()));
         }
     }
     
-    /*
-     * application thread waits for its signal to start/resume
+    /**
+     *  This method is called in getView of an Adapter of an AdapterView 
+     *  Traverses inflated view hierarchy for the view item 
+     *  Instruments view handlers with recorders if in RECORD mode
      */
-    public static void waitMyTurn() {
-        scheduler.waitMyTurn();
-    }
-
-    /*
-     * application thread yields
-     */
-    public static void yield() {
-        scheduler.yield();
+    public static void setAdapterItemViewTraverser(View view, ViewGroup parent, int pos) {
+        if (executionMode.getExecutionModeType() == ExecutionModeType.RECORD) {
+            AppRunTimeData.getInstance().traverseItemView(view, parent, pos);
+        }
+        
     }
     
-
-    /*
-     * application thread notify scheduler when they are completed
+    /**
+     *  This method is called in OnItemClick listener of an item of an AdapterView 
+     *  Instruments item click listeners with recorder if in RECORD mode
      */
-    public static void notifyScheduler() {
-        scheduler.notifyScheduler();
+    public static void setRecorderForItemClick(AdapterView adapter, int pos, long index) {
+        if (executionMode.getExecutionModeType() == ExecutionModeType.RECORD) {
+            AseEvent event = new AseItemClickEvent(adapter.getId(), pos, index); /// update event type
+            IOFactory.getRecorder(AppRunTimeData.getInstance().getAppContext()).record(event);
+            Log.e("Hereeee", "Hereee");
+        }     
     }
-
-    /*
-     * application thread enters in a monitor
+           
+    /**
+     * Set the reference for the action bar menu
+     * To be used in the REPEAT mode
+     * @param menu
      */
-    public static void enterMonitor() {
-        scheduler.enterMonitor();
-    }
-
-    /*
-     * application thread exits a monitor
-     */
-    public static void exitMonitor() {
-        scheduler.exitMonitor();
-    }
-    
-    public static void incNumUIBlocks() {
-        Log.v("MyScheduler", "Incremented numUIBlocks by: " + Thread.currentThread().getName());
-        schedulerData.incNumUIBlocks();
-    }
-    
-    public static void decNumUIBlocks() {
-        Log.v("MyScheduler", "Decremented numUIBlocks by: " + Thread.currentThread().getName());
-        schedulerData.decNumUIBlocks();
-    }
-    
-    public static int getNumUIBlocks() {
-        return schedulerData.getNumUIBlocks();
-    }
-    
-    public static void launchMainActivity() {
-        String packageName = appContext.getPackageName();
-        Intent i = appContext.getPackageManager().getLaunchIntentForPackage(packageName);
-        //clear the entire stack, except for the activity being launched
-        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        appContext.startActivity(i);
-    }
-
-    public static void finishCurrentActivity() {
-        Log.i("MyScheduler", "Finishing activity.");
-        currentAct.finish();
-    }
-
-    // to be used for replay
     public static void setActionBarMenu(Menu menu) {
         // Need the menu reference only in replay mode
-        if(!(scheduler instanceof RepeatingScheduler))
+        if(!(executionMode instanceof RepeatingMode))
             return;
 
         if(menu== null)
-            Log.i("Repeater", "Menu is null");
-        actionBarMenu = menu;
+            Log.w("Repeater", "Menu is null");
+        AppRunTimeData.getInstance().setActionBarMenu(menu);
     }
-
+    
+    /**
+     * Set the event recorder for the action bar menu
+     * To be used in the RECORD mode
+     * @param item
+     */
     public static void setRecorderForActionBar(final MenuItem item) {
-        // Recorder works only in record mode
-        if(!(scheduler instanceof RecordingScheduler)) {
-            Log.i("Recorder", "Not in record mode");
+        if(!(executionMode instanceof RecordingMode)) {
             return;
         }
-
         if(item == null) {
-            Log.i("Repeater", "Item is null");
+            Log.w("Repeater", "ActionBar menu item is null");
             return;
         }
+        
         AseEvent event;
         if (item.getItemId() != android.R.id.home) {
              event = new AseActionBarEvent(item.getItemId());
         } else {
-             event = new AseNavigateUpEvent(item.getItemId(), AseTestBridge.currentAct.getComponentName().flattenToString());
+             event = new AseNavigateUpEvent(item.getItemId(), AppRunTimeData.getInstance().getCurrentAct().getComponentName().flattenToString());
         }
-        IOFactory.getRecorder(appContext).record(event);
+        IOFactory.getRecorder(AppRunTimeData.getInstance().getAppContext()).record(event);
+    }
+    
+    /**
+     * Set the event recorder for the action bar tabs
+     * To be used in the RECORD mode
+     * @param tab
+     */
+    public static void setRecorderForActionBarTab(Object tab) {
+        if(AseTestBridge.getExecutionMode() == ExecutionModeType.RECORD) {
+            // Call android.support.v7.app.ActionBar.Tab.getPosition() or android.app.ActionBar.Tab.getPosition()
+            // Depending on the library app uses
+            int pos = ReflectionUtils.getActionBarTabPosition(tab);
+            if(pos == -1) {
+                Log.e("Recorder", "Cannot set recorder for ActionBar.Tab");
+                return;
+            }
+            
+            AseEvent event = new AseActionBarTabEvent(0, pos); 
+            ase.util.IOFactory.getRecorder(AppRunTimeData.getInstance().getAppContext()).record(event);
+            Log.v("Recorder", "Recorder is set for tab position: " + pos);
+        } else {
+            // execute transactions in the initial tab as well
+            AppRunTimeData.getInstance().executeFragmentTransactions();
+        }
+    }
+        
+    /**
+     * @return true if a thread will be managed by the dispatcher
+     * If so, it will be instrumented for wait/notify synchronization with the dispatcher
+     */
+    private static boolean threadToAnalyze() {
+        Thread current = Thread.currentThread();
+        return (current.getId() == 1) || (current.getName().startsWith("AsyncTask")) 
+                || (current instanceof HandlerThread) || (current.getName().equals("InputRepeater"));
+    }
+    
+    /**
+     * Called when an application thread waits for dispatching
+     */
+    public static void waitForDispatch() {
+        if(threadToAnalyze())
+            executionMode.waitForDispatch();
     }
 
+    /**
+     * Called when an application thread yields
+     */
+    public static void yield() {
+        if(threadToAnalyze())
+            executionMode.yield();
+    }
+    
+    /**
+     * Called when an application thread notifies the dispatcher 
+     */
+    public static void notifyDispatcher() {
+        if(threadToAnalyze())
+            executionMode.notifyDispatcher();
+    }
+
+    /**
+     * Called when an application thread enters in a monitor
+     */
+    public static void enterMonitor() {
+        if(threadToAnalyze())
+            executionMode.enterMonitor();
+    }
+
+    /**
+     * Called when an application thread exits a monitor
+     */
+    public static void exitMonitor() {
+        if(threadToAnalyze())
+            executionMode.exitMonitor();
+    }
 }

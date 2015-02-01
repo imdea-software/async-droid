@@ -1,12 +1,13 @@
 package ase.util;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
 
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 import android.os.MessageQueue;
-import android.util.Log;
 
 public class LooperReader {
     
@@ -24,6 +25,7 @@ public class LooperReader {
             messagesField.setAccessible(true);
             nextField = Message.class.getDeclaredField("next");
             nextField.setAccessible(true);
+
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -43,7 +45,6 @@ public class LooperReader {
         if (t.getId() == 1) {
             return Looper.getMainLooper();
         }
-        //Log.v("LooperReader", "No looper: " + t.getName());
         return null;
     }
 
@@ -52,52 +53,49 @@ public class LooperReader {
         if (looper == null)
             return true;
 
-        Message message = null;
-        try {
-            MessageQueue messageQueue = (MessageQueue) queueField.get(looper);
-            dumpQueue(messageQueue);
-            message = (Message) messagesField.get(messageQueue);
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+       return getMessages(t).isEmpty();
+        
+    }
+    
+    public String dumpQueue(Thread t) { 
+        StringBuilder sb = new StringBuilder();
+        List<Message> messages = getMessages(t);
+        
+        for(Message m: messages) {
+            sb.append("\n\t" + m.toString());
         }
-        if (message == null)
-            return true;
-        //Log.v("LooperReader", "Looper of Thread " + t.getId());
-        //dumpQueue(t);
-        return false;
+        
+        return sb.toString();
     }
 
-    public void dumpQueue(Thread t) {
-        Looper looper = getLooper(t);
-        if (looper == null)
-            return;
-
-        try {
-            MessageQueue messageQueue = (MessageQueue) queueField.get(looper);
-            dumpQueue(messageQueue);
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+    public List<Message> getMessages(Thread t) {     
+        Looper looper = getLooper(t);      
+        if(looper != null) {
+            try {
+                MessageQueue messageQueue = (MessageQueue) queueField.get(looper);
+                return getMessages(messageQueue);
+            } catch (Exception e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
         }
+        
+        return new ArrayList<Message>();
     }
 
-    public void dumpQueue(MessageQueue messageQueue) {
+    public List<Message> getMessages(MessageQueue messageQueue) { 
+        List<Message> messages = new ArrayList<Message>(); 
         try {
-            Message nextMessage = (Message) messagesField.get(messageQueue);
-            // Log.d("LooperReader", "Begin dumping queue");
-            dumpMessages(nextMessage);
-            // Log.d("LooperReader", "End dumping queue");
+            Message nextMessage = (Message) messagesField.get(messageQueue);          
+            while(nextMessage != null) {
+                messages.add(nextMessage);
+                nextMessage = (Message) nextField.get(nextMessage);
+            }
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         }
+        
+        return messages;
     }
 
-    public void dumpMessages(Message message) throws IllegalAccessException {
-        if (message != null) {
-            Log.d("LooperReader", message.toString());
-            Message next = (Message) nextField.get(message);
-            dumpMessages(next);
-        }
-    }
 }

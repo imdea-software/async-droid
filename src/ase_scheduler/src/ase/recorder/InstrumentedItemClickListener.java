@@ -4,7 +4,8 @@ import android.content.Context;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
-import ase.AseItemClickEvent;
+
+import ase.event.AseItemClickEvent;
 import ase.util.IOFactory;
 import ase.util.Recorder;
 import ase.util.ReflectionUtils;
@@ -16,6 +17,7 @@ public class InstrumentedItemClickListener implements AdapterView.OnItemClickLis
     private AdapterView.OnItemClickListener ownListener;
     private Recorder recorder;
 
+    @SuppressWarnings("rawtypes")
     public InstrumentedItemClickListener(AdapterView view, Context context) {
         ownListener = ReflectionUtils.getOnItemClickListener(view);
         recorder = IOFactory.getRecorder(context);

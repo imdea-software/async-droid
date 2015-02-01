@@ -6,6 +6,7 @@ import re
 import subprocess
 import sys
 import time
+import json
 
 NAME = 'Android App Schedule Enumerator'
 VERSION = '0.1'
@@ -67,7 +68,7 @@ def uninstall(app_name):
 
 def start(app_name, activity, *args):
   print "Starting", app_name
-  adb("shell am start %s %s/%s" % (" ".join(map(lambda x: "-e " + x, args)), app_name, activity))
+  adb("shell am start %s" % app_name+"/"+activity)
 
 def stop(app_name):
   print "Stopping", app_name
@@ -79,9 +80,6 @@ def start_up(app_path, *args):
 
   app_name = package_name(app_path)
   activity = launchable_activity(app_path)
-
-  if not app_is_installed(app_name):
-    install(app_name, app_path)
 
   if not app_is_running(app_name):
     start(app_name, activity, *args)
@@ -99,8 +97,32 @@ def tear_down(app_name, do_uninstall=False):
   if app_is_installed(app_name) and do_uninstall:
     uninstall(app_name)
 
+def create_json_file(mode, delays):
+  modeStr = mode.upper();
+  if modeStr == "REPLAY":
+    modeStr = "REPEAT"
+
+  test_params = {
+    "mode": modeStr,
+    "numDelays": delays
+  }
+  out_file = open("parameters.json","w")
+  json.dump(test_params, out_file, indent=4)                                    
+  out_file.close()
+  app_name = package_name(options.apkfile)
+
+  user = adb("shell ls -dl /data/data/%s" % app_name).split()[1]
+  adb("push parameters.json /data/data/%s/files/parameters.json" % app_name)
+  adb("shell chown %s:%s /data/data/%s/files" % (user, user, app_name))
+  adb("shell chown %s:%s /data/data/%s/files/parameters.json" % (user, user, app_name))
+  
+  if options.events:
+    adb("push %s /data/data/%s/files/events.trc" % (options.events, app_name))
+    adb("shell chown %s:%s /data/data/%s/files/events.trc" % (user, user, app_name))
+
 def do_record():
-  app_name = start_up(options.apkfile, "mode record")
+  create_json_file(options.mode, 0)
+  app_name = start_up(options.apkfile)
   print "Running %s in record mode." % app_name
   wait_for_close(app_name)
   print "Recording completed."
@@ -108,9 +130,11 @@ def do_record():
 
 def do_replay():
   if options.delays: 
-    app_name = start_up(options.apkfile, "mode replay", "numDelays %d" % options.delays)
+    create_json_file(options.mode, options.delays)
+    app_name = start_up(options.apkfile)
   else:
-    app_name = start_up(options.apkfile, "mode replay")
+    create_json_file(options.mode, 0)
+    app_name = start_up(options.apkfile)
   print "Running %s in replay mode." % app_name
   if recording_exists(app_name):
     wait_for_close(app_name)
@@ -154,9 +178,21 @@ def parser():
     dest='uninstall', action='store_true', default=False,
     help='uninstall the app after running')
 
+  p.add_argument('--events',
+    dest='events', default=None,
+    help='events file to replay')
+
   return p
 
 if __name__ == '__main__':
   options = parser().parse_args()
+
+  # install the app
+  app_name = package_name(options.apkfile)
+  activity = launchable_activity(options.apkfile)
+  if not app_is_installed(app_name):
+    install(app_name, options.apkfile)
+
+  # push the parameters file and start the app 
   if options.mode != 'replay': do_record()
   if options.mode != 'record': do_replay()

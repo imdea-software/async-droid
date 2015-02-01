@@ -2,7 +2,7 @@ package ase.util;
 
 import java.util.List;
 
-import ase.AseEvent;
+import ase.event.AseEvent;
 
 public interface Reader {
     List<AseEvent> read();

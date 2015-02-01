@@ -4,104 +4,149 @@ import java.util.List;
 
 import android.os.Handler;
 import android.os.Looper;
+import android.os.Message;
 import android.util.Log;
-import ase.*;
-import ase.recorder.ViewTraverser;
+
+import ase.AppRunTimeData;
+import ase.AseTestBridge;
+import ase.event.AseEvent;
+import ase.util.log.Logger;
 
 
 public class InputRepeater implements Runnable {
-
-    // its thread data is created and added into scheduler list when it
-    // registers (sends its info) and waits for its turn
     private List<AseEvent> eventList;
-    private Handler handlerToUI;
+    private int numDispatchedEvents = 0;
+    private static int numHandledEvents = 0;
+    private int numAllEvents = 0;
+    private static Logger fileLog;    
     
-    // to keep track of the status of InputRepeater thread's job
-    // counts the number of posted event invoker runnables to UI
-    // when >0, scheduler will schedule it (in its turn) even when it has not executed waitMyTurn()
-    private int inputsToGo;
+    private final int MAX_RETRIALS = 50;
+    private boolean terminationFlag = false;
     
-    // incremented when posted task to UI could invoke (view exists in current layout) the event
-    // ensures the correct order of invocations when view is not in the layout
-    private int inputsDispatched = 0;
-    private int trials = 0;
+    private Handler handler = new InputInjectionHandler(Looper.getMainLooper());
     
-    public InputRepeater(List<AseEvent> events) {
+    public InputRepeater(List<AseEvent> events, Logger file) {
         eventList = events;
-        handlerToUI = new Handler(Looper.getMainLooper());
-        inputsToGo=eventList.size();
+        numAllEvents = eventList.size();
+        fileLog = file;
     }
-
+    
     @Override
     public void run() {
         Log.i("Repeater", "In thread: " + Thread.currentThread().getName()
                 + " " + Thread.currentThread().getId());
 
-        // will loop only once
-        // more efficient than if check and notify
-        // each time root view is set in every onCreate
-        while (ViewTraverser.CURRENT_ROOT_VIEW == null) {
-            // do nothing
-        }
-
         Log.i("Repeater", "Repeating inputs.");
         if (eventList.isEmpty()) {
             Log.i("Repeater", "No events to repeat.");
         }
+        int retrials = 0;
         
-        for (int i=0; i<eventList.size(); i++) {
-            AseTestBridge.waitMyTurn();
-            sendEventToApp();
-            inputsToGo --;
-            Log.i("Repeater", "Posted a click.. InputsToGo:" + inputsToGo);
-            AseTestBridge.notifyScheduler();
-        }
+        while (numDispatchedEvents < numAllEvents) {
+            AseEvent event = eventList.get(numDispatchedEvents);
+            AseTestBridge.waitForDispatch();
+            if(retrials > MAX_RETRIALS) {
+                Log.e("InputRepeater", "MAX_RETRIALS exceeded");
+                terminationFlag = true;
+                AseTestBridge.notifyDispatcher();
+                return;
+            }
 
+            // Problem with ActionBar tabs loading list fragments 
+            // If the prev event is ActionBar tab, allow it to run
+            if(numDispatchedEvents > 0 && eventList.get(numDispatchedEvents-1).type.equals(AseEvent.EventType.ACTIONBARTAB)) {
+                try{
+                    Thread.sleep(500);
+                } catch (Exception e){
+                    //
+                }        
+            }
+            
+            if(event.isFirable()) {
+                sendEventToApp(event);
+                numDispatchedEvents ++;              
+                Log.i("Repeater", "InputsToGo: " + (numAllEvents - numDispatchedEvents) + "Posted: " + event.toString()); 
+                Log.i("Repeater", "InputsToHandle: " + (numAllEvents - numHandledEvents)); 
+                retrials = 0;
+            }  else {
+                retrials ++; 
+            }
+            Log.i("InputRep", "Notifies the scheduler");
+            AseTestBridge.notifyDispatcher();
+        }
         Log.i("Repeater", "Completed posting inputs.");
     }
     
-    // for now, only clicks
-    public void sendEventToApp() {
-        AseTestBridge.incNumUIBlocks();  // posts event (runnable to click) into UI thread
-        handlerToUI.post(new Runnable() {
-            public void run() {
-                AseEvent event = eventList.get(inputsDispatched);
-                AseTestBridge.waitMyTurn();
-
-                if(!event.isFirable()) {
-                    if (trials > 10) return;
-                    handlerToUI.post(this);
-                    trials ++;
-                    Log.i("Repeater", "Sending again " + Integer.toHexString(event.viewId));
-                    AseTestBridge.notifyScheduler();    
-                    return;
-                }
-
-                // counter provides invoking the events in order
-                incrementInputsDispatched();
-                trials = 0;
-
-                // call event's listener
-                event.injectEvent();
-
-                AseTestBridge.decNumUIBlocks(); // runnable to click consumed
-                AseTestBridge.notifyScheduler();
-            }
-        });
+    public boolean readyToInjectInput() {
+        if(numDispatchedEvents >= numAllEvents) 
+            return false;
+        return !terminationFlag && eventList.get(numDispatchedEvents).isFirable();
     }
-
-    public void incrementInputsDispatched(){
-        inputsDispatched ++;
+    
+    public void sendEventToApp(AseEvent event) {
+        Message m = handler.obtainMessage();
+        m.obj = event;
+        handler.sendMessage(m);
     }
 
     public void reset() {
-        inputsToGo=eventList.size();
-        inputsDispatched = 0;
+        terminationFlag = false;
+        numDispatchedEvents = 0;
+        numHandledEvents = 0;
+        Log.i("Repeater", "Is reset");
+    }
+
+    public boolean hasMoreInputs() {
+        return (numAllEvents > numDispatchedEvents) && !terminationFlag;
     }
     
-    // no possible race on inputsToGo
-    // scheduler thread calls it mutually exclusively
-    public boolean hasMoreInputs() {
-        return inputsToGo > 0;
+    public int numInputsLeft() {
+        return (numAllEvents - numDispatchedEvents);
+    }
+    
+    /**
+     * Returns true if there are posted events in main looper
+     * waiting to be processed
+     */
+    public boolean hasEventsToHandle() {
+        return numDispatchedEvents > numHandledEvents;
+    }
+    
+    public int numEventsToHandle() {
+        return numDispatchedEvents - numHandledEvents;
+    }
+    
+    public static void increaseNumHandledEvents() {
+        numHandledEvents ++;
+    }
+    
+    private static class InputInjectionHandler extends Handler {
+        
+        public InputInjectionHandler(Looper mainLooper) {
+            super(mainLooper);
+        }
+
+        @Override
+        public void handleMessage(Message message) {
+            AseTestBridge.waitForDispatch();  
+
+            // execute pending fragment transactions (run by the UI thread)
+            AppRunTimeData.getInstance().executeFragmentTransactions(); 
+            
+            AseEvent event = (AseEvent) message.obj;
+            event.injectEvent();
+            Log.i("Repeated", "" + event.toString());
+            fileLog.i("Repeated", "" + event.toString());
+            
+            increaseNumHandledEvents();
+            
+            //execute asynchronous transactions that load fragments 
+            //AppRunTimeData.getInstance().executeFragmentTransactions();         
+            AseTestBridge.notifyDispatcher();
+        }
+        
+        public String toString(){
+            return "Ase Handler for Event Injection";
+        }
     }
 }
