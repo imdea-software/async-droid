@@ -30,7 +30,6 @@ public class RepeatingMode implements ExecutionMode, Runnable {
     // Thread id of the currently scheduled thread
     private static long scheduled = 0L;    
     
-
     private final boolean schedulingLogs = true;
     private Logger fileLog;
     
@@ -107,7 +106,6 @@ public class RepeatingMode implements ExecutionMode, Runnable {
         Thread inputThread = new Thread(inputRepeater);
         inputThread.setName("InputRepeater");
         inputThread.start();
-        // If comes after InputRepeater is registered, problematic
         threads.captureThread(inputThread); // Register this before scheduler runs since it may wait earlier
     }
     

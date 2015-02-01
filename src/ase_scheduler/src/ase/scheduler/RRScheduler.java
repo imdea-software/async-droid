@@ -1,28 +1,19 @@
 package ase.scheduler;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-
-import android.os.AsyncTask;
 import android.util.Log;
 import ase.repeater.InputRepeater;
 import ase.scheduler.PendingThreads.ThreadType;
-import ase.util.LooperReader;
 import ase.util.ReflectionUtils;
 import ase.util.log.Logger;
 
-public class RRScheduler extends Scheduler {   
-    private int taskToProcess = 1;
-    
+public class RRScheduler extends Scheduler {    
     private DelaySequence delaySeq;
     boolean isDelaying = true;
     int numDelays;
     int numCompletedTests = 0;
     
     private int idleTypes = 0;
-    // default schedule: InputRepeater MainThread AsyncTaskSerialThread AsyncTaskPoolThreads HandlerThreads
+    // default schedule: AsyncTaskSerialThread AsyncTaskPoolThreads HandlerThreads InputRepeater MainThread 
     private int typeToSchedule = 2;
     private ThreadType[] types = {ThreadType.INPUTREPEATER, ThreadType.MAIN, ThreadType.ASYNCTASK_SERIAL, ThreadType.ASYNCTASK_POOL, ThreadType.HANDLERTHREAD};
     boolean onPool= false;
@@ -48,11 +39,10 @@ public class RRScheduler extends Scheduler {
         if(delaySeq != null) { // null for the first test
             delaySeq.next();
             Log.i("DelayInfo", "Current delay indices:" + delaySeq.toString());
-            logger.i("DelayInfo", "Current delay indices:" + delaySeq.toString());  /////
+            logger.i("DelayInfo", "Current delay indices:" + delaySeq.toString());
         }     
     }
         
-    // add all events are executed
     @Override
     public boolean isEndOfTestCase() {
         return !hasAvailableThreads() && !inputRepeater.hasEventsToHandle() && (taskToProcess > 1);
@@ -86,9 +76,9 @@ public class RRScheduler extends Scheduler {
         // Reschedule the main thread if it still has events to handle
         if(scheduled != null && scheduled.getId()==1 && inputRepeater.hasEventsToHandle()) {
             typeToSchedule --;
-        }
-        
+        }    
     }
+    
     /**
      * Returns the thread to be scheduled
      * Returns null if no threads is scheduled
@@ -123,37 +113,6 @@ public class RRScheduler extends Scheduler {
         } 
         
         // current is the task to be dispatched
-        // current is null if no task is selected, i.e. it is the end of the test
-        
-        // get the stats: How many tasks do each thread have?
-        int numMainTasks = numInputsInMainLooper() + numAsyncTasksInMainLooper();
-        if(threads.getThreadById(1).isWaiting()) numMainTasks++;
-        
-        int numInputTasks = inputRepeater.numInputsLeft();
-        
-        int numAsyncSerialTasks = ReflectionUtils.getAsyncTaskSerialExecutorTasks().size();
-        boolean isSerialActive = ReflectionUtils.isAsyncTaskSerialThreadActive();
-        if(isSerialActive) numAsyncSerialTasks ++;
-        
-        int numAsyncPoolTasks = getAsyncTaskPoolQueue().size() + getAsyncTaskPoolActiveCount();
-        if(isSerialActive) numAsyncPoolTasks --;
-        
-        Map<Long, Integer> numHandlerThreadTasks = new HashMap<Long, Integer>();
-        Object[] handlerThreads = threads.getThreads(ThreadType.HANDLERTHREAD);
-        for(int i=0; i<handlerThreads.length; i++) {
-            ThreadData td = (ThreadData) handlerThreads[i];
-            int taskCount = LooperReader.getInstance().getMessages(td.getThread()).size();
-            if(td.isWaiting()) taskCount++;
-            // if isActive, increment
-            numHandlerThreadTasks.put(td.getId(), taskCount);
-        }
-        
-        Log.v("Stat", " " + numMainTasks + " " + numInputTasks + " " + numAsyncSerialTasks + " " + numAsyncPoolTasks);
-        logger.i("Stat", " " + numMainTasks + " " + numInputTasks + " " + numAsyncSerialTasks + " " + numAsyncPoolTasks);
-     
-        Log.v("RRScheduler", "Scheduled: " + current.getName() + " Task to process: " + taskToProcess);
-        logger.i("RRScheduler", "Scheduled " + current.getName() + " Task to process: " + taskToProcess);
-        
         taskToProcess ++;  
         return scheduled = current;
     }
@@ -256,63 +215,7 @@ public class RRScheduler extends Scheduler {
         }
         return current;
     }
-    
-    /**
-     * @return the number of active asyncTask threads (on serial executor and on thread pool executor)
-     */
-    private int getAsyncTaskPoolActiveCount() {
-        ThreadPoolExecutor executor = ((ThreadPoolExecutor)AsyncTask.THREAD_POOL_EXECUTOR);
-        if(executor != null) {
-            return executor.getActiveCount();
-        }
-        return 0;
-    }
-    
-    private BlockingQueue getAsyncTaskPoolQueue() {
-        ThreadPoolExecutor executor = ((ThreadPoolExecutor)AsyncTask.THREAD_POOL_EXECUTOR);
-        if(executor != null) {
-            return executor.getQueue();
-        }
-        return null;
-    }
-        
-    private boolean isOnSerialExecutor(Thread t) {
-        if(t == null) return false;
-        
-        StackTraceElement[] calls = t.getStackTrace();
-        for(StackTraceElement call: calls) {
-            if(call.toString().contains("android.os.AsyncTask$SerialExecutor")){
-                return true;
-            }
-        }
-        return false;
-    }
-    
-    private boolean isOnThreadPoolExecutor(Thread t) {
-        StackTraceElement[] calls = t.getStackTrace();
-        for(StackTraceElement call: calls) {
-            if(call.toString().contains("android.os.AsyncTask$SerialExecutor")){
-                return false;
-            }
-        }
-        return true;
-    }
-    
-    private void refreshThreadList() {
-        threads.captureAllThreads();
-        threads.sortThreadsByName();
-    }
-    
-    private void logThreads(ThreadData current) {
-      //List<Message> mainLooperMessages =  LooperReader.getInstance().getMessages(threads.getThreadById(1).getThread());
-        //logger.i("Main Looper Contents:", LooperReader.getInstance().dumpQueue(threads.getThreadById(1).getThread()));
-        logger.i("RRScheduler", threads.toString());
-        if(current != null) {
-            logger.i("RRScheduler", "Current: " + current.getName() + " Next Task#: " + taskToProcess);
-            //Log.v("RRScheduler", "Current: " + current.getName() + " Next Task#: " + taskToProcess);
-        }
-    }
-    
+         
     private int getNextTaskIndexToDelay() {
         if (numCompletedTests == 0) return -1;
         return delaySeq.getNextDelayIndex();

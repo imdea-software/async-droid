@@ -1,11 +1,18 @@
 package ase.scheduler;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 
+import android.os.AsyncTask;
 import android.os.Message;
+import android.util.Log;
 import ase.repeater.InputRepeater;
 import ase.scheduler.PendingThreads.ThreadType;
 import ase.util.LooperReader;
+import ase.util.ReflectionUtils;
 import ase.util.log.Logger;
 
 public abstract class Scheduler {
@@ -15,6 +22,7 @@ public abstract class Scheduler {
     protected ThreadData scheduledThread;
     protected Logger logger;
 
+    protected int taskToProcess = 1;
     
     public Scheduler (PendingThreads threads, InputRepeater inputRepeater, Logger logger) {
         this.threads = threads;
@@ -51,7 +59,7 @@ public abstract class Scheduler {
         // if already went into waitMyTurn() and will notify (was not in monitor)
         if(current.isWaiting())
             return true;
-        // if an event is sent to main thread (user input, publishProgress or postExecute)
+        //if an event is sent to main thread (user input, publishProgress or postExecute)
         //if(current.getId() == 1 && ((numInputsInMainLooper() > 0) || ( numAsyncTasksInMainLooper() > 0)))
         if(current.getId() == 1 && inputRepeater.hasEventsToHandle())
             return true;
@@ -74,15 +82,14 @@ public abstract class Scheduler {
         return false;
     }
     
- // removed reading messages of the main looper
+    
     protected int numInputsInMainLooper() {
-        List<Message> messages = LooperReader.getInstance().getMessages(threads.getThreadById(1).getThread());
-        int count = 0;
-        for(Message m: messages) {
-            if(m.getTarget() != null && m.getTarget().getClass().getName().startsWith("ase.repeater.InputRepeater"))
-                count ++;
-        }
-        return count; 
+        return inputRepeater.numEventsToHandle();
+    }
+    
+    protected void refreshThreadList() {
+        threads.captureAllThreads();
+        threads.sortThreadsByName();
     }
 
     //TODO take asyncTask type as parameter (e.g. do not count onPublishProgress's ..)
@@ -97,5 +104,82 @@ public abstract class Scheduler {
                 count ++;
         }
         return count;
+    }
+    
+    /**
+     * @return the number of active asyncTask threads (on serial executor and on thread pool executor)
+     */
+    protected int getAsyncTaskPoolActiveCount() {
+        ThreadPoolExecutor executor = ((ThreadPoolExecutor)AsyncTask.THREAD_POOL_EXECUTOR);
+        if(executor != null) {
+            return executor.getActiveCount();
+        }
+        return 0;
+    }
+    
+    protected BlockingQueue getAsyncTaskPoolQueue() {
+        ThreadPoolExecutor executor = ((ThreadPoolExecutor)AsyncTask.THREAD_POOL_EXECUTOR);
+        if(executor != null) {
+            return executor.getQueue();
+        }
+        return null;
+    }
+        
+    protected boolean isOnSerialExecutor(Thread t) {
+        if(t == null) return false;
+        
+        StackTraceElement[] calls = t.getStackTrace();
+        for(StackTraceElement call: calls) {
+            if(call.toString().contains("android.os.AsyncTask$SerialExecutor")){
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    protected boolean isOnThreadPoolExecutor(Thread t) {
+        StackTraceElement[] calls = t.getStackTrace();
+        for(StackTraceElement call: calls) {
+            if(call.toString().contains("android.os.AsyncTask$SerialExecutor")){
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    protected void logThreads(ThreadData current) {
+        //List<Message> mainLooperMessages =  LooperReader.getInstance().getMessages(threads.getThreadById(1).getThread());
+        //logger.i("Main Looper Contents:", LooperReader.getInstance().dumpQueue(threads.getThreadById(1).getThread()));
+        logger.i("RRScheduler", threads.toString());
+        if(current != null) {
+            Log.v("RRScheduler", "Scheduled: " + current.getName() + " Task to process: " + taskToProcess);
+            logger.i("RRScheduler", "Scheduled " + current.getName() + " Task to process: " + taskToProcess);
+        }
+        
+        // get the stats: How many tasks do each thread have?
+        int numMainTasks = numInputsInMainLooper() + numAsyncTasksInMainLooper();
+        if(threads.getThreadById(1).isWaiting()) numMainTasks++;
+        
+        int numInputTasks = inputRepeater.numInputsLeft();
+        
+        int numAsyncSerialTasks = ReflectionUtils.getAsyncTaskSerialExecutorTasks().size();
+        boolean isSerialActive = ReflectionUtils.isAsyncTaskSerialThreadActive();
+        if(isSerialActive) numAsyncSerialTasks ++;
+        
+        int numAsyncPoolTasks = getAsyncTaskPoolQueue().size() + getAsyncTaskPoolActiveCount();
+        if(isSerialActive) numAsyncPoolTasks --;
+        
+        Map<Long, Integer> numHandlerThreadTasks = new HashMap<Long, Integer>();
+        Object[] handlerThreads = threads.getThreads(ThreadType.HANDLERTHREAD);
+        for(int i=0; i<handlerThreads.length; i++) {
+            ThreadData td = (ThreadData) handlerThreads[i];
+            int taskCount = LooperReader.getInstance().getMessages(td.getThread()).size();
+            if(td.isWaiting()) taskCount++;
+            // if isActive, increment
+            numHandlerThreadTasks.put(td.getId(), taskCount);
+        }
+        
+        Log.v("Stat", " " + numMainTasks + " " + numInputTasks + " " + numAsyncSerialTasks + " " + numAsyncPoolTasks);
+        logger.i("Stat", " " + numMainTasks + " " + numInputTasks + " " + numAsyncSerialTasks + " " + numAsyncPoolTasks);      
     }
 }
