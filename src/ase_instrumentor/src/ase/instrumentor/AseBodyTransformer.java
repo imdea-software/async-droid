@@ -1,15 +1,12 @@
 package ase.instrumentor;
 
-
 import java.util.Iterator;
 import java.util.Map;
 
 import soot.Body;
 import soot.BodyTransformer;
-import soot.Local;
 import soot.PackManager;
 import soot.PatchingChain;
-import soot.RefType;
 import soot.Scene;
 import soot.SootClass;
 import soot.SootMethod;
@@ -105,9 +102,9 @@ public class AseBodyTransformer extends BodyTransformer {
         } else if (className.startsWith("com.google.gson")) {
             // skip
         } else if (methodName.equals("onCreate")) {
-            if (hasParentClass(clazz, activityClass))
+            if (SootUtils.hasParentClass(clazz, activityClass))
                 instrumentOnCreateMethod(b, true); // instrument for UI traversing
-            else if (hasParentClass(clazz, applicationClass))
+            else if (SootUtils.hasParentClass(clazz, applicationClass))
                 instrumentOnCreateMethod(b, false);
 
         } else if (methodName.equals("onCreateView")) {
@@ -128,7 +125,7 @@ public class AseBodyTransformer extends BodyTransformer {
         } else if (methodName.equals("onItemClick")) {  
             instrumentOnItemClickMethod(b);
             
-        } else if (methodName.equals("getView") && hasParentClass(clazz, adapterClass)) { 
+        } else if (methodName.equals("getView") && SootUtils.hasParentClass(clazz, adapterClass)) { 
             instrumentGetViewMethod(b);
             
         } else if (methodName.equals("doInBackground") ||
@@ -141,16 +138,7 @@ public class AseBodyTransformer extends BodyTransformer {
 
             System.out.println("===========Instrumenting " + methodName + "..");
             instrumentMethod(b);
-
         }
-    }
-
-    private boolean hasParentClass(SootClass clazz, SootClass ancestor) {
-        if(clazz == ancestor)
-            return true;
-        if(clazz.getName().equalsIgnoreCase("java.lang.Object"))
-            return false;
-        return hasParentClass(clazz.getSuperclass(), ancestor);
     }
     
     /**
@@ -165,7 +153,7 @@ public class AseBodyTransformer extends BodyTransformer {
         // initiate scheduler as the first statement
         // since the latter statements may call async tasks
         Stmt stmt = ((JimpleBody) b).getFirstNonIdentityStmt();
-        units.insertBefore(staticInvocation(initiateTesting, b.getThisLocal()), stmt);
+        units.insertBefore(SootUtils.staticInvocation(initiateTesting, b.getThisLocal()), stmt);
         System.out.println("===========Initiate Scheduler stmt added..");
 
         // if it is an Activity onCreate, than instrument for UI traversal
@@ -173,12 +161,11 @@ public class AseBodyTransformer extends BodyTransformer {
             while (iter.hasNext()) {
                 Unit u = iter.next();
                 u.apply(new AbstractStmtSwitch() {
-
-                public void caseReturnVoidStmt(ReturnVoidStmt stmt) {
-                        units.insertBefore(staticInvocation(setActivityViewTraverser, b.getThisLocal()), stmt);
+                    
+                    public void caseReturnVoidStmt(ReturnVoidStmt stmt) {
+                        units.insertBefore(SootUtils.staticInvocation(setActivityViewTraverser, b.getThisLocal()), stmt);
                         System.out.println("===========ActivityViewTraversal stmt added..");
                     }
-
             });
             }
         }
@@ -193,17 +180,14 @@ public class AseBodyTransformer extends BodyTransformer {
         Iterator<Unit> iter = units.snapshotIterator();
 
         while (iter.hasNext()) {
-
             iter.next().apply(new AbstractStmtSwitch() {
-
                 public void caseReturnStmt(ReturnStmt stmt) {                   
                     //read to-be-returned value
                     Value returnedView = stmt.getOpBox().getValue();
                     // stmt.getReturnExpr().getArg(0);
                     // insert call to setFragmentViewTraverser
-                    units.insertBefore(staticInvocation(setFragmentViewTraverser, returnedView), stmt);
+                    units.insertBefore(SootUtils.staticInvocation(setFragmentViewTraverser, returnedView), stmt);
                     System.out.println("===========FragmentViewTraversal stmt added..");
-
                 }
             });
         }
@@ -222,11 +206,9 @@ public class AseBodyTransformer extends BodyTransformer {
         final Value paramView = stmt.getLeftOp();
 
         while (iter.hasNext()) {
-
-            iter.next().apply(new AbstractStmtSwitch() {
-                
+            iter.next().apply(new AbstractStmtSwitch() {               
                 public void caseReturnStmt(ReturnStmt stmt) {                                     
-                    units.insertBefore(staticInvocation(setFragmentViewTraverser, paramView), stmt);
+                    units.insertBefore(SootUtils.staticInvocation(setFragmentViewTraverser, paramView), stmt);
                     System.out.println("===========FragmentViewTraversal stmt added..");
                 }
             });
@@ -254,11 +236,9 @@ public class AseBodyTransformer extends BodyTransformer {
         final Value parentParam = stmt.getLeftOp();
         
         while (iter.hasNext()) {
-
             iter.next().apply(new AbstractStmtSwitch() {
-
                 public void caseReturnStmt(ReturnStmt stmt) {               
-                    units.insertBefore(staticInvocation(setAdapterItemViewTraverser, viewParam, parentParam, posParam), stmt);
+                    units.insertBefore(SootUtils.staticInvocation(setAdapterItemViewTraverser, viewParam, parentParam, posParam), stmt);
                     System.out.println("===========ItemViewTraversal stmt added..");
                 }
             });
@@ -290,7 +270,7 @@ public class AseBodyTransformer extends BodyTransformer {
         while (iter.hasNext()) {
             iter.next().apply(new AbstractStmtSwitch() {
                 public void caseReturnVoidStmt(ReturnVoidStmt stmt) {               
-                    units.insertBefore(staticInvocation(setRecorderForItemClick, adapterParam, posParam, indexParam), stmt);
+                    units.insertBefore(SootUtils.staticInvocation(setRecorderForItemClick, adapterParam, posParam, indexParam), stmt);
                     System.out.println("===========Recorder for OnItemClick is added..");
                 }
             });
@@ -309,7 +289,7 @@ public class AseBodyTransformer extends BodyTransformer {
             return;
         
         Unit u = iter.next();
-        units.insertAfter(staticInvocation(waitForDispatch), u);
+        units.insertAfter(SootUtils.staticInvocation(waitForDispatch), u);
         System.out.println("Wait for CPU stmt added..");
 
         while (iter.hasNext()) {
@@ -317,27 +297,27 @@ public class AseBodyTransformer extends BodyTransformer {
             u.apply(new AbstractStmtSwitch() {
 
                 public void caseReturnVoidStmt(ReturnVoidStmt stmt) {
-                    units.insertBefore(staticInvocation(notifyDispatcher), stmt);
+                    units.insertBefore(SootUtils.staticInvocation(notifyDispatcher), stmt);
                     System.out.println("Release CPU stmt added..");
                 }
                 
                 public void caseReturnStmt(ReturnStmt stmt) {
-                    units.insertBefore(staticInvocation(notifyDispatcher), stmt);
+                    units.insertBefore(SootUtils.staticInvocation(notifyDispatcher), stmt);
                     System.out.println("Release CPU stmt added..");
                 }
                 
                 public void caseRetStmt(RetStmt stmt) {
-                    units.insertBefore(staticInvocation(notifyDispatcher), stmt);
+                    units.insertBefore(SootUtils.staticInvocation(notifyDispatcher), stmt);
                     System.out.println("Release CPU stmt added..");
                 }
                 
                 public void caseEnterMonitorStmt(EnterMonitorStmt stmt){
-                    units.insertAfter(staticInvocation(enterMonitor), stmt);
+                    units.insertAfter(SootUtils.staticInvocation(enterMonitor), stmt);
                     System.out.println("Enter monitor stmt added..");
                 }
                 
                 public void caseExitMonitorStmt(ExitMonitorStmt stmt){
-                    units.insertAfter(staticInvocation(exitMonitor), stmt);
+                    units.insertAfter(SootUtils.staticInvocation(exitMonitor), stmt);
                     System.out.println("Exit monitor stmt added..");
                 }
             });
@@ -352,9 +332,8 @@ public class AseBodyTransformer extends BodyTransformer {
         JIdentityStmt stmt = (JIdentityStmt) iter.next(); // the identity statement for the parameter
         Value param = stmt.getLeftOp();
 
-        units.insertAfter(staticInvocation(setActionBarMenu, param), stmt);
+        units.insertAfter(SootUtils.staticInvocation(setActionBarMenu, param), stmt);
         System.out.println("===========Action bar menu is set..");
-
     }
     
     private void instrumentOnOptionsItemSelected(final Body b) {
@@ -365,9 +344,8 @@ public class AseBodyTransformer extends BodyTransformer {
         JIdentityStmt stmt = (JIdentityStmt) iter.next(); // the identity statement for the parameter
         Value param = stmt.getLeftOp();
 
-        units.insertAfter(staticInvocation(setRecorderForActionBar, param), stmt);
+        units.insertAfter(SootUtils.staticInvocation(setRecorderForActionBar, param), stmt);
         System.out.println("===========Action bar recorder is added..");
-
     }
 
     private void instrumentOnTabSelected(final Body b) {
@@ -378,43 +356,7 @@ public class AseBodyTransformer extends BodyTransformer {
         JIdentityStmt stmt = (JIdentityStmt) iter.next(); // the identity statement for the parameter
         Value tabParam = stmt.getLeftOp();
         
-        units.insertAfter(staticInvocation(setRecorderForActionBarTab, tabParam), stmt);
+        units.insertAfter(SootUtils.staticInvocation(setRecorderForActionBarTab, tabParam), stmt);
         System.out.println("===========Action bar tab selection recorder is added..");
-
     }
-    
-    // TODO organize variable/statement methods
-    
-    private Local createLocal(Body body, String name, String type) {
-        Local l = Jimple.v().newLocal(name, RefType.v(type));
-        body.getLocals().add(l);
-        return l;
-    }
-
-    private static Local createLocal(Body body, String name, RefType type) {
-        Local l = Jimple.v().newLocal(name, type);
-        body.getLocals().add(l);
-        return l;
-    } 
-
-    private InvokeStmt staticInvocation(SootMethod m, Value arg1, Value arg2, Value arg3) {
-        return Jimple.v().newInvokeStmt(Jimple.v().newStaticInvokeExpr(m.makeRef(), arg1, arg2, arg3));
-    }
-    
-    private InvokeStmt staticInvocation(SootMethod m, Value arg1, Value arg2) {
-        return Jimple.v().newInvokeStmt(Jimple.v().newStaticInvokeExpr(m.makeRef(), arg1, arg2));
-    }
-    
-    private InvokeStmt staticInvocation(SootMethod m) {
-        return Jimple.v().newInvokeStmt(Jimple.v().newStaticInvokeExpr(m.makeRef()));
-    }
-
-    private InvokeStmt staticInvocation(SootMethod m, Local arg) {
-        return Jimple.v().newInvokeStmt(Jimple.v().newStaticInvokeExpr(m.makeRef(),arg));
-    }
-    
-    private InvokeStmt staticInvocation(SootMethod m, Value arg) {
-        return Jimple.v().newInvokeStmt(Jimple.v().newStaticInvokeExpr(m.makeRef(),arg));
-    }
-
 }
