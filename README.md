@@ -37,7 +37,7 @@ example app in `example/HelloWorldApk.apk`:
 
 Then, test the instrumented application by:
 
-Recording a set of user events: 
+Recording a set of user events (this overwrites the previously recorded events): 
 
 	python bin/aase.py --record build/HelloWorldApp.apk
 	
@@ -46,3 +46,22 @@ Then replaying them for schedules with/without a delay bound.
     python bin/aase.py --replay --delays 1 build/HelloWorldApp.apk
 
 <!-- And see the results in `logcatOutputs`. -->
+
+## Running the sample application
+
+To demonstrate the detection of <a href="https://github.com/ojacquemart/vlilleChecker/issues/60"> a sample concurrency bug</a>, we provide a previous version of <a href="https://github.com/ojacquemart/vlilleChecker"> vlilleChecker</a>  Android App (built from commit 86b22a7).
+
+Instrument the application `.apk` file for testing:
+
+    ant -Dapk=example/sample_vlillechecker.apk -Dandroid.api.version=19
+
+	
+You can replay the user events that trigger the bug (with particular thread interleavings) by running:
+
+    python bin/aase.py --replay --events events.trc build/sample_vlillechecker.apk
+    
+    
+(Optional) You can also record your own a set of user events with the command below and then replay them: 
+
+	python bin/aase.py --record build/sample_vlillechecker.apk     
+
