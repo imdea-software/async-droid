@@ -115,6 +115,10 @@ def create_json_file(mode, delays):
   adb("push parameters.json /data/data/%s/files/parameters.json" % app_name)
   adb("shell chown %s:%s /data/data/%s/files" % (user, user, app_name))
   adb("shell chown %s:%s /data/data/%s/files/parameters.json" % (user, user, app_name))
+  
+  if options.events:
+    adb("push %s /data/data/%s/files/events.trc" % (options.events, app_name))
+    adb("shell chown %s:%s /data/data/%s/files/events.trc" % (user, user, app_name))
 
 def do_record():
   create_json_file(options.mode, 0)
@@ -173,6 +177,10 @@ def parser():
   p.add_argument('--uninstall',
     dest='uninstall', action='store_true', default=False,
     help='uninstall the app after running')
+
+  p.add_argument('--events',
+    dest='events', default=None,
+    help='events file to replay')
 
   return p
 
