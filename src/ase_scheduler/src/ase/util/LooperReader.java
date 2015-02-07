@@ -57,7 +57,7 @@ public class LooperReader {
             try {
                 MessageQueue messageQueue = (MessageQueue) queueField.get(looper);
                 
-                //synchronized(messageQueue) {
+                synchronized(messageQueue) {
                     Message nextMessage = (Message) messagesField.get(messageQueue);   
                     while(nextMessage != null) {
                         if(nextMessage.toString().contains("BinderProxy")) {
@@ -68,7 +68,7 @@ public class LooperReader {
                         }
                     }   
                     //contents = this.dumpQueue(t);
-                //}
+                }
                 if(!empty)
                     Log.i("Reflection", "Main thread has a non-empty message queue");
                   
@@ -108,14 +108,16 @@ public class LooperReader {
 
     public List<Message> getMessages(MessageQueue messageQueue) { 
         List<Message> messages = new ArrayList<Message>(); 
-        try {
-            Message nextMessage = (Message) messagesField.get(messageQueue);          
-            while(nextMessage != null) {
-                messages.add(nextMessage);
-                nextMessage = (Message) nextField.get(nextMessage);
+        synchronized(messageQueue) {
+            try {
+                Message nextMessage = (Message) messagesField.get(messageQueue);          
+                while(nextMessage != null) {
+                    messages.add(nextMessage);
+                    nextMessage = (Message) nextField.get(nextMessage);
+                }
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
             }
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
         }
         
         return messages;
