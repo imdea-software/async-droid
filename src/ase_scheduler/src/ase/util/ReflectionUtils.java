@@ -221,24 +221,38 @@ public class ReflectionUtils {
         String activityClassName = null;
         if(getSuperClassOfType(act.getClass(), CN_ACTIVITY_ACTIONBAR_SUPPORT) != null) {
             activityClassName = CN_ACTIVITY_ACTIONBAR_SUPPORT;
+                      
+            try {
+                Class activityClass = Class.forName(activityClassName);
+                Field mActionBarActDelegateField = activityClass.getDeclaredField("mImpl");
+                mActionBarActDelegateField.setAccessible(true);            
+                Object mActionBarActDelegate = mActionBarActDelegateField.get(act);
+                Class delegateClass = Class.forName(CN_ACT_ACTION_BAR_SUPPORT_DEL);
+                Field mActionBarField = delegateClass.getDeclaredField("mActionBar");
+                mActionBarField.setAccessible(true);
+                Object mActionBar = mActionBarField.get(mActionBarActDelegate);
+                return mActionBar;
+                
+            } catch (Exception ex) {
+                Log.e("Reflection", "Can not read mActionBar of activity " + activityClassName);
+            }      
+            
+
         } else if(getSuperClassOfType(act.getClass(), CN_ACTIVITY) != null) {
             activityClassName = CN_ACTIVITY;
+            
+            try {
+                Class activityClass = Class.forName(activityClassName);
+                Field mActionBarField = activityClass.getDeclaredField("mActionBar");
+                mActionBarField.setAccessible(true);
+                Object mActionBar = mActionBarField.get(act);
+                return mActionBar;
+                
+            } catch (Exception ex) {
+                Log.e("Reflection", "Can not read mActionBar of activity " + activityClassName);
+            }           
         }
 
-        try {
-            Class activityClass = Class.forName(activityClassName);
-            Field mActionBarActDelegateField = activityClass.getDeclaredField("mImpl");
-            mActionBarActDelegateField.setAccessible(true);            
-            Object mActionBarActDelegate = mActionBarActDelegateField.get(act);
-            Class delegateClass = Class.forName(CN_ACT_ACTION_BAR_SUPPORT_DEL);
-            Field mActionBarField = delegateClass.getDeclaredField("mActionBar");
-            mActionBarField.setAccessible(true);
-            Object mActionBar = mActionBarField.get(mActionBarActDelegate);
-            return mActionBar;
-            
-        } catch (Exception ex) {
-            Log.e("Reflection", "Can not read mActionBar of activity " + activityClassName);
-        }      
         return null;
     }
     

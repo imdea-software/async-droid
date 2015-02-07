@@ -11,7 +11,7 @@ public abstract class AseEvent {
     private static Map<EventType, Class> TYPE_MAP;
     
     public enum EventType {
-        CLICK, CHECKBOX, ITEMCLICK, ACTIONBAR, ACTIONBARTAB, NAVIGATEUP
+        CLICK, CHECKBOX, ITEMCLICK, ACTIONBAR, ACTIONBARTAB, NAVIGATEUP, BACK
     }
     public final EventType type;
     public final int viewId;
@@ -49,6 +49,7 @@ public abstract class AseEvent {
             TYPE_MAP.put(EventType.CLICK, AseClickEvent.class);
             TYPE_MAP.put(EventType.ITEMCLICK, AseItemClickEvent.class);
             TYPE_MAP.put(EventType.NAVIGATEUP, AseNavigateUpEvent.class);
+            TYPE_MAP.put(EventType.BACK, AseBackButtonEvent.class);
         }
         return TYPE_MAP;
     }

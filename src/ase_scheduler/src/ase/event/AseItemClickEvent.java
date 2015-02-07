@@ -2,6 +2,7 @@ package ase.event;
 
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ListView;
 import ase.AppRunTimeData;
 
@@ -28,8 +29,16 @@ public class AseItemClickEvent extends AseEvent {
 
     @Override
     public boolean isFirable() {
-        View view = AppRunTimeData.getInstance().getActivityRootView().findViewById(viewId);
-        return super.isFirable() && (view != null); 
+        if(!super.isFirable()) return false;
+
+        View parent = AppRunTimeData.getInstance().getActivityRootView().findViewById(viewId);
+        if(parent == null) return false;
+        
+        if (((AdapterView) parent).getChildCount() <= itemPos)
+                return false;
+        
+        return true; 
+
     }
 
     @Override
