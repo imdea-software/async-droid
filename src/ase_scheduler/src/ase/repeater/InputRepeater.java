@@ -10,25 +10,22 @@ import android.util.Log;
 import ase.AppRunTimeData;
 import ase.AseTestBridge;
 import ase.event.AseEvent;
-import ase.util.log.Logger;
-
+import ase.util.Logger;
 
 public class InputRepeater implements Runnable {
     private List<AseEvent> eventList;
     private int numDispatchedEvents = 0;
     private static int numHandledEvents = 0;
     private int numAllEvents = 0;
-    private static Logger fileLog;    
     
     private final int MAX_RETRIALS = 50;
     private boolean terminationFlag = false;
     
     private Handler handler = new InputInjectionHandler(Looper.getMainLooper());
     
-    public InputRepeater(List<AseEvent> events, Logger file) {
+    public InputRepeater(List<AseEvent> events) {
         eventList = events;
         numAllEvents = eventList.size();
-        fileLog = file;
     }
     
     @Override
@@ -135,8 +132,7 @@ public class InputRepeater implements Runnable {
             
             AseEvent event = (AseEvent) message.obj;
             event.injectEvent();
-            Log.i("Repeated", "" + event.toString());
-            fileLog.i("Repeated", "" + event.toString());
+            Logger.i("Repeated", "" + event.toString());
             
             increaseNumHandledEvents();
             

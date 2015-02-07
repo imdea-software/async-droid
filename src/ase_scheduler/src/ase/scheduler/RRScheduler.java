@@ -5,7 +5,7 @@ import ase.repeater.InputRepeater;
 import ase.scheduler.PendingThreads.ThreadType;
 import ase.util.LooperReader;
 import ase.util.ReflectionUtils;
-import ase.util.log.Logger;
+import ase.util.Logger;
 
 public class RRScheduler extends Scheduler {    
     private DelaySequence delaySeq;
@@ -23,8 +23,8 @@ public class RRScheduler extends Scheduler {
     
     private ThreadData prevThread = scheduledThread = null;
     
-    public RRScheduler(PendingThreads threads, InputRepeater inputRepeater, Logger logger) {
-        super(threads, inputRepeater, logger);
+    public RRScheduler(PendingThreads threads, InputRepeater inputRepeater) {
+        super(threads, inputRepeater);
     }
     
     @Override
@@ -38,8 +38,7 @@ public class RRScheduler extends Scheduler {
         nextTypeToSchedule = 0;
         if(delaySeq != null) { // null for the first test
             delaySeq.next();
-            Log.i("DelayInfo", "Current delay indices:" + delaySeq.toString());
-            logger.i("DelayInfo", "Current delay indices:" + delaySeq.toString());
+            Logger.i("DelayInfo", "Current delay indices:" + delaySeq.toString());
         }  
         refreshThreadList();
         prevThread = scheduledThread = null;
@@ -111,18 +110,16 @@ public class RRScheduler extends Scheduler {
         
         // check if current will be delayed, if so delay
         if(current != null && taskToProcess == getNextTaskIndexToDelay()) { 
-            Log.i("AseScheduler", "Delayed: " + current.getName() + " Consumed Task to process: " + taskToProcess);
-            logger.i("RRScheduler", "Delayed " + current.getName() + " Consumed Task to process: " + taskToProcess);
+            Logger.i("RRScheduler", "Delayed " + current.getName() + " Consumed Task to process: " + taskToProcess);
             Log.i("DelayInfo", "Consumed delay: " + taskToProcess);
             delaySeq.spendCurrentDelayIndex();       
             nextTypeToSchedule = (nextTypeToSchedule + 1) % types.length;
-            Log.i("Hey","Moved to next type: " + types[nextTypeToSchedule]);
+            Log.i("RRScheduler","Moved to next type: " + types[nextTypeToSchedule]);
             current = getNextThread();
         } 
         
         if(current != null) {
-            Log.v("RRScheduler", "Scheduled: " + current.getName() + " Task to process: " + taskToProcess);
-            logger.i("RRScheduler", "Scheduled " + current.getName() + " Task to process: " + taskToProcess);
+            Logger.i("RRScheduler", "Scheduled: " + current.getName() + " Task to process: " + taskToProcess);
         }
 
         return current;
@@ -141,7 +138,7 @@ public class RRScheduler extends Scheduler {
         while(!okToSchedule(current) && idleTypes < types.length) { 
             idleTypes ++;
             nextTypeToSchedule = (nextTypeToSchedule + 1) % types.length;
-            Log.v("Scheduler","Next type: " + types[nextTypeToSchedule]);
+            // Log.v("Scheduler","Next type: " + types[nextTypeToSchedule]);
             current = getNextThreadOfType(types[nextTypeToSchedule]);
         }
         

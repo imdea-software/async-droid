@@ -8,25 +8,24 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 import android.os.AsyncTask;
 import android.os.Message;
-import android.util.Log;
 import ase.repeater.InputRepeater;
 import ase.scheduler.PendingThreads.ThreadType;
+import ase.util.FileUtils;
+import ase.util.IOFactory;
 import ase.util.LooperReader;
-import ase.util.log.Logger;
+import ase.util.Logger;
 
 public abstract class Scheduler {
 
     protected PendingThreads threads;
     protected InputRepeater inputRepeater;    
     protected ThreadData scheduledThread;
-    protected Logger logger;
 
     protected int taskToProcess = 0;
     
-    public Scheduler (PendingThreads threads, InputRepeater inputRepeater, Logger logger) {
+    public Scheduler (PendingThreads threads, InputRepeater inputRepeater) {
         this.threads = threads;
         this.inputRepeater = inputRepeater;
-        this.logger = logger;
     }
     
     public abstract void initiateScheduler(int bound, int numInputs);
@@ -153,9 +152,9 @@ public abstract class Scheduler {
         //logger.i("RRScheduler", threads.toString()
         
         // get the stats: How many tasks do each thread have?
-//        int numUIThreadTasks = numInputsInMainLooper() + numAsyncTasksInMainLooper();
-//        int numAllUIThreadTasks = LooperReader.getInstance().getMessages(main).size();
-        
+        int numUIThreadTasks = numInputsInMainLooper() + numAsyncTasksInMainLooper();
+        int numAllUIThreadTasks = LooperReader.getInstance().getMessages(main).size();
+                
         int numInputTasks = inputRepeater.numInputsLeft();
         
         //int numAsyncSerialTasks = ReflectionUtils.getAsyncTaskSerialExecutorTasks().size();
@@ -175,8 +174,9 @@ public abstract class Scheduler {
             numHandlerThreadTasks.put(td.getId(), taskCount);
         }
         
-        Log.v("Stat", "AsyncTasks:" + numAsyncPoolTasks);
- //       Log.v("Stat", " " + numInputTasks + " " + numUIThreadTasks + " "  + numAllUIThreadTasks + " " + numAsyncPoolTasks);
- //       logger.i("Stat", " " + numInputTasks + " " + numUIThreadTasks + " "  + numAllUIThreadTasks + " " + numAsyncPoolTasks);      
+        TestData runData = new TestData(numInputTasks, numUIThreadTasks, numAllUIThreadTasks, numAsyncPoolTasks);
+        FileUtils.appendObject(IOFactory.STATS_FILE, runData);
+
+        Logger.v("Stat", " " + numInputTasks + " " + numUIThreadTasks + " "  + numAllUIThreadTasks + " " + numAsyncPoolTasks);
     }
 }

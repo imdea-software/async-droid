@@ -36,6 +36,7 @@ public class AseTestBridge {
     public static void initiateTesting(Context context) {
         if (!initiated) {
             initiated = true;
+            IOFactory.initializeLogs();
             AppRunTimeData.createInstance(context);
             setTestParameters(context);
         }
