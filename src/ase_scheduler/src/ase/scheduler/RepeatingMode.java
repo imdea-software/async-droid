@@ -30,7 +30,7 @@ public class RepeatingMode implements ExecutionMode, Runnable {
     // Thread id of the currently scheduled thread
     private static long scheduled = 0L;    
     
-    private final boolean schedulingLogs = true;
+    private final boolean schedulingLogs = false;
     private Logger fileLog;
     
     public RepeatingMode(int numDelays, Context context) {
@@ -125,10 +125,12 @@ public class RepeatingMode implements ExecutionMode, Runnable {
                 continue; // check if end of test
             }
             
-            logSchedulingDecision(current);
-            Log.i("RRScheduler", "SCheduled: " + current.getName() );
+            //logSchedulingDecision(current);
+            //Log.i("RRScheduler", "SCheduled: " + current.getName() );
             notifyThread(current);
             waitForDispatch(ThreadData.SCHEDULER_ID);
+            
+            
         }
 
         Log.i("AseScheduler", "Test has completed.");
@@ -229,8 +231,8 @@ public class RepeatingMode implements ExecutionMode, Runnable {
             return;
         }
 
-        //if (schedulingLogs)
-        fileLog.i("RepeatingMode", "    --- Completed - Thread Id: " + Thread.currentThread().getId());
+        if (schedulingLogs)
+            fileLog.i("RepeatingMode", "    --- Completed - Thread Id: " + Thread.currentThread().getId());
 
         // A thread did not actually wait in corresponding waitMyTurn
         // (either it was already in block (nested wait stmts) or it had monitors)
