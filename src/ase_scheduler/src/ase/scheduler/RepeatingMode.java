@@ -8,6 +8,7 @@ import ase.AppRunTimeData;
 import ase.ExecutionModeType;
 import ase.event.AseEvent;
 import ase.repeater.InputRepeater;
+import ase.util.FileUtils;
 import ase.util.IOFactory;
 import ase.util.Reader;
 import ase.util.Logger;
@@ -106,6 +107,9 @@ public class RepeatingMode implements ExecutionMode, Runnable {
     public void runTestCase() {
         ThreadData current = null;
 
+        // scheduling decisions at each wait/notify point
+        int numSchedulingDecisions = 0;
+        
         while (!scheduler.isEndOfTestCase()) {
             //threads.captureAllThreads();
             scheduler.doOnPreScheduling();
@@ -116,15 +120,15 @@ public class RepeatingMode implements ExecutionMode, Runnable {
                 continue; // check if end of test
             }
             
-            //logSchedulingDecision(current);
-            //Log.i("RRScheduler", "SCheduled: " + current.getName() );
+            numSchedulingDecisions ++;
             notifyThread(current);
             waitForDispatch(ThreadData.SCHEDULER_ID);
             
-            
         }
 
-        Log.i("AseScheduler", "Test has completed.");
+        FileUtils.appendLine(IOFactory.STATS_FILE, "{ \"numSchedulingDecisions\":" + numSchedulingDecisions + " }");
+
+        Logger.i("Scheduler", "Test has completed.");
         ThreadData main = threads.getThreadById(1);
         notifyThread(main);
     }

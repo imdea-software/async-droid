@@ -60,7 +60,7 @@ public class LooperReader {
                 synchronized(messageQueue) {
                     Message nextMessage = (Message) messagesField.get(messageQueue);   
                     while(nextMessage != null) {
-                        if(nextMessage.toString().contains("BinderProxy")) {
+                        if(nextMessage.toString().contains("BinderProxy") || nextMessage.toString().contains("android.widget.Editor$Blink")) {
                             nextMessage = (Message) nextField.get(nextMessage);
                         } else {
                             empty = false;

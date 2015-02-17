@@ -81,7 +81,6 @@ public abstract class Scheduler {
         return false;
     }
     
-    
     protected int numInputsInMainLooper() {
         return inputRepeater.numEventsToHandle();
     }

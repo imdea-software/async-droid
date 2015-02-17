@@ -57,13 +57,15 @@ public class RRScheduler extends Scheduler {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+            //String contents = LooperReader.getInstance().dumpQueue(t);
             empty = LooperReader.getInstance().hasEmptyLooper(t);
+            //Log.i("contents:", contents);
         }
     }
     
     @Override
     public boolean isEndOfTestCase() {
-        return !hasAvailableThreads() && !inputRepeater.hasEventsToHandle() && !inputRepeater.hasMoreInputs() && (taskToProcess > 1);
+        return !hasAvailableThreads() && !inputRepeater.hasEventsToHandle() && !inputRepeater.hasMoreInputs() && (numAsyncTasksInMainLooper() == 0) && (taskToProcess > 1);
     }
     
     @Override
