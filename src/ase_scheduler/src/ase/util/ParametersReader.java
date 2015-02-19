@@ -1,7 +1,7 @@
 package ase.util;
 
-import android.content.Context;
 import android.util.Log;
+import ase.AppRunTimeData;
 import ase.Parameters;
 import com.google.gson.Gson;
 
@@ -14,11 +14,9 @@ import java.io.InputStreamReader;
  */
 public class ParametersReader {
 
-    private final Context context;
     private final String file;
 
-    public ParametersReader(Context context, String file) {
-        this.context = context;
+    public ParametersReader(String file) {
         this.file = file;
     }
 
@@ -27,7 +25,7 @@ public class ParametersReader {
         FileInputStream fIn;
 
         try {
-            fIn = context.openFileInput(file);
+            fIn = AppRunTimeData.getInstance().getAppContext().openFileInput(file);
             BufferedReader inBuff = new BufferedReader(new InputStreamReader(fIn));
             
             parameters = new Gson().fromJson(inBuff, Parameters.class);

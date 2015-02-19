@@ -2,7 +2,6 @@ package ase.recorder;
 
 import java.util.List;
 
-import android.content.Context;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
@@ -23,11 +22,12 @@ public class InstrumentedItemClickListener implements AdapterView.OnItemClickLis
     //private List<Integer> path; // to be recorded
 
     @SuppressWarnings("rawtypes")
-    public InstrumentedItemClickListener(AdapterView view, Context context) {
+    public InstrumentedItemClickListener(AdapterView view) {
         ownListener = ReflectionUtils.getOnItemClickListener(view);
-        recorder = IOFactory.getRecorder(context);
+        recorder = IOFactory.getRecorder();
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     public void onItemClick(AdapterView adapterView, View view, int pos, long id) {
         List<Integer> path = ViewUtils.logViewParents(view.getParent());

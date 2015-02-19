@@ -115,6 +115,7 @@ public abstract class Scheduler {
         return 0;
     }
     
+    @SuppressWarnings("rawtypes")
     protected BlockingQueue getAsyncTaskPoolQueue() {
         ThreadPoolExecutor executor = ((ThreadPoolExecutor)AsyncTask.THREAD_POOL_EXECUTOR);
         if(executor != null) {

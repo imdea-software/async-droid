@@ -29,6 +29,7 @@ public class AseItemClickEvent extends AseEvent {
         return String.format("%s %d %d %d In fragment: %s", type.name(), viewId, itemPos, itemId, fragmentName);
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     public boolean isFirable() {
         if(!super.isFirable()) return false;

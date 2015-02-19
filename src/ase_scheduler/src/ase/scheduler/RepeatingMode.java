@@ -2,7 +2,6 @@ package ase.scheduler;
 
 import java.util.List;
 
-import android.content.Context;
 import android.util.Log;
 import ase.AppRunTimeData;
 import ase.ExecutionModeType;
@@ -23,15 +22,14 @@ public class RepeatingMode implements ExecutionMode, Runnable {
     private InputRepeater inputRepeater;
     private Scheduler scheduler;
 
-    private int numTasksToDispatch = 0;
     private final boolean schedulingLogs = false;
 
     // Thread id of the currently scheduled thread
     private static long scheduled = 0L;    
     
-    public RepeatingMode(int numDelays, Context context) {        
+    public RepeatingMode(int numDelays) {        
         // event list will be read once and be fed into each inputRepeater
-        Reader reader = IOFactory.getReader(context);
+        Reader reader = IOFactory.getReader();
         List<AseEvent> eventsToRepeat = reader.read();
         
         if(eventsToRepeat.size() == 0) {
@@ -180,7 +178,6 @@ public class RepeatingMode implements ExecutionMode, Runnable {
             Logger.i("RepeatingMode", "    --- Waiting - ThreadId: " + threadId);
 
         while (scheduled != threadId) {
-            me.setTaskNum(numTasksToDispatch++); // to be used by the scheduler
             me.waitThread();
         }
 

@@ -11,20 +11,18 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-import android.content.Context;
 import android.util.Log;
+import ase.AppRunTimeData;
 import ase.event.AseEvent;
 
 public class FileReader implements Reader {
 
-    private final Context context;
     private final String file;
     
     private final JsonParser parser;
     private final Gson gson;
     
-    public FileReader(Context context, String file) {
-        this.context = context;
+    public FileReader(String file) {
         this.file = file;
         this.parser = new JsonParser();
         this.gson = new Gson();
@@ -39,7 +37,7 @@ public class FileReader implements Reader {
         String inputLine;
 
         try {
-            fIn = context.openFileInput(file);
+            fIn = AppRunTimeData.getInstance().getAppContext().openFileInput(file);
             InputStreamReader isr = new InputStreamReader(fIn);
             BufferedReader inBuff = new BufferedReader(isr);
 

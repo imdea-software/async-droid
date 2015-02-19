@@ -10,17 +10,6 @@ import android.content.Intent;
 import android.util.Log;
 import android.view.Menu;
 import android.view.View;
-import android.view.View.OnClickListener;
-import android.view.ViewGroup;
-import android.view.ViewParent;
-import android.widget.AdapterView;
-import android.widget.CheckBox;
-import android.widget.ListView;
-import android.widget.Spinner;
-import ase.recorder.InstrumentedCheckBoxClickListener;
-import ase.recorder.InstrumentedItemClickListener;
-import ase.recorder.InstrumentedItemSelectedListener;
-import ase.recorder.InstrumentedListener;
 import ase.util.ReflectionUtils;
 
 public class AppRunTimeData {

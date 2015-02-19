@@ -27,6 +27,7 @@ public class AseCheckBoxEvent extends AseEvent {
         return String.format("%s %d Position: %d In fragment: %s", type.name(), viewId, position, fragmentName);
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     public boolean isFirable() {
         if(!super.isFirable()) return false;
@@ -43,7 +44,6 @@ public class AseCheckBoxEvent extends AseEvent {
         return true;
     }
     
-    @SuppressWarnings("rawtypes")
     @Override
     public void injectEvent() {
         ListView parentView = (ListView) AppRunTimeData.getInstance().getActivityRootView().findViewById(parentId);

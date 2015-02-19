@@ -11,10 +11,6 @@ public class ThreadData {
 
     private long id;
     public static long SCHEDULER_ID = -1;
-
-    // the task number that this waits for dispatching
-    // scheduler uses this number 
-    private int currentTaskNum;
     
     private int currentMonitors = 0;
     // Each waitMyTurn inserts an item stating whether its corresponding
@@ -90,10 +86,6 @@ public class ThreadData {
 
     public void setIsWaiting(boolean b) {
         isWaiting = b;
-    }
-    
-    public void setTaskNum(int num) {
-        currentTaskNum = num;
     }
 
     public boolean hasMsgToHandle() {

@@ -82,6 +82,7 @@ public class ReflectionUtils {
         return listener;
     }
     
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     public static ArrayDeque<Runnable> getAsyncTaskSerialExecutorTasks() {
         try {
             // get the serial executor instance
@@ -102,6 +103,7 @@ public class ReflectionUtils {
         return null;
     }
     
+    @SuppressWarnings({ "rawtypes"})
     public static boolean isAsyncTaskSerialThreadActive() {
         try {
             // get the serial executor instance
@@ -113,7 +115,8 @@ public class ReflectionUtils {
             Field mActiveField = serialExecutorClass.getDeclaredField("mActive");
             mActiveField.setAccessible(true);
             Object mActive = mActiveField.get(serialExecutor);
-
+            return ((Boolean)mActive).booleanValue();
+            
         } catch (Exception ex) {
             Log.e("Reflectionnn", "Can not read AsyncTask serial executor active field");
         }
@@ -129,6 +132,7 @@ public class ReflectionUtils {
      *   - Gets the fragments from: android.support.v4.app.FragmentManagerImpl
      * (FragmentManager is defined in Android API level 11)
      */ 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     public static List<Object> getFragments(Activity act) {
         String activityClassName = null, 
                fragmentManagerClassName = null, 
@@ -217,6 +221,7 @@ public class ReflectionUtils {
      * Returns the mActionBar of the Activity class
      * (This method is used by the InputRepeater to check if it is initialized or not)
      */
+    @SuppressWarnings("rawtypes")
     public static Object getActionBarInstance(Object act) {
         String activityClassName = null;
         if(getSuperClassOfType(act.getClass(), CN_ACTIVITY_ACTIONBAR_SUPPORT) != null) {
@@ -261,6 +266,7 @@ public class ReflectionUtils {
      * Returns the position of the tab in ActionBar
      * (ActionBar is defined in Android API level 11)
      */
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     public static boolean isActionBarShowing(Object bar) {
         String actionBarClassName = null;
         if(getSuperClassOfType(bar.getClass(), CN_ACTION_BAR_SUPPORT) != null) {
@@ -285,6 +291,7 @@ public class ReflectionUtils {
      * Returns the position of the tab in ActionBar
      * (ActionBar is defined in Android API level 11)
      */
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public static int getActionBarTabCount(Object bar) {
         String actionBarClassName = null;
         if(getSuperClassOfType(bar.getClass(), CN_ACTION_BAR_SUPPORT) != null) {
@@ -309,6 +316,7 @@ public class ReflectionUtils {
      * Returns the position of the tab in ActionBar
      * (ActionBar is defined in Android API level 11)
      */
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public static int getActionBarTabPosition(Object tab) {
         String actionBarTabClassName = null;
         if(getSuperClassOfType(tab.getClass(), CN_ACTION_BAR_TAB) != null) {

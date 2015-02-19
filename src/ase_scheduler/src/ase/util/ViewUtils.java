@@ -3,7 +3,6 @@ package ase.util;
 import java.util.ArrayList;
 import java.util.List;
 
-import android.content.Context;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,7 +11,6 @@ import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.CheckBox;
 import android.widget.ListView;
-import ase.AppRunTimeData;
 import ase.recorder.InstrumentedCheckBoxClickListener;
 import ase.recorder.InstrumentedItemClickListener;
 import ase.recorder.InstrumentedListener;
@@ -36,7 +34,6 @@ public class ViewUtils {
 
     @SuppressWarnings("rawtypes")
     private static void traverseChildViewIds(View view) {
-        Context appContext = AppRunTimeData.getInstance().getAppContext();
         
         if(view.getClass().getSimpleName().equals("ActionBarContainer")) {
             Log.i("ViewLogger", "ActionBarContainer Detail: " + view.toString() + " ID: " + Integer.toHexString(view.getId()));
@@ -54,7 +51,7 @@ public class ViewUtils {
                     
                     if(child instanceof ListView) {
                         // add onItemClickListener to the adapter
-                        AdapterView.OnItemClickListener listener = new InstrumentedItemClickListener((AdapterView) child, appContext);
+                        AdapterView.OnItemClickListener listener = new InstrumentedItemClickListener((AdapterView) child);
                         ((AdapterView) child).setOnItemClickListener(listener);
                         
                     }/* else if (child instanceof Spinner) {
@@ -67,7 +64,7 @@ public class ViewUtils {
 
                 } else if (!child.getClass().getSimpleName().contains("Layout")) {      
                     // add onClickListener to the traversed view
-                    OnClickListener listener = new InstrumentedListener(child, appContext);
+                    OnClickListener listener = new InstrumentedListener(child);
                     child.setOnClickListener(listener);
                     //Log.i("ViewLogger", "Recorder set for the view: " + Integer.toHexString(view.getId()));
                 }
@@ -85,7 +82,6 @@ public class ViewUtils {
     }
 
     private static void traverseItemChildren(View view, ViewGroup parent, int pos) {
-        Context appContext = AppRunTimeData.getInstance().getAppContext();
         
         if (view instanceof ViewGroup) {
             ViewGroup group = (ViewGroup) view;
@@ -98,14 +94,15 @@ public class ViewUtils {
         else {
 
             if (view instanceof CheckBox) {                
-                view.setOnClickListener(new InstrumentedCheckBoxClickListener((CheckBox) view, parent, pos, appContext));                
+                view.setOnClickListener(new InstrumentedCheckBoxClickListener((CheckBox) view, parent, pos));                
                 
             } else {
-                view.setOnClickListener(new InstrumentedListener(view, appContext));
+                view.setOnClickListener(new InstrumentedListener(view));
             }
         }
     }
     
+    @SuppressWarnings("rawtypes")
     public static List<Integer> logViewParents(ViewParent p) {
         int parentId = -1;
         List<Integer> ancestors = new ArrayList<Integer>();

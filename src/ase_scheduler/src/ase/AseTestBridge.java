@@ -39,7 +39,7 @@ public class AseTestBridge {
             initiated = true;
             IOFactory.initializeLogs();
             AppRunTimeData.createInstance(context);
-            setTestParameters(context);
+            setTestParameters();
         }
         if(context instanceof Activity)
             AppRunTimeData.getInstance().setCurrentAct((Activity)(context));
@@ -50,16 +50,16 @@ public class AseTestBridge {
      * Also sets the application context 
      * to be used to relaunch mainActivity after each test case
      */
-    private static void setTestParameters(Context context) {
-        Parameters parameters = IOFactory.getParameters(context);
+    private static void setTestParameters() {
+        Parameters parameters = IOFactory.getParameters();
         Log.i("AsyncDroid", "Running in " + parameters.getMode() + " mode...");
         switch (parameters.getSchedulerMode()) {
             case RECORD:
-                executionMode = new RecordingMode(context);
+                executionMode = new RecordingMode();
                 break;
             case REPEAT:
                 Log.i("AsyncDroid", "Number of delays: " + parameters.getNumDelays());
-                executionMode = new RepeatingMode(parameters.getNumDelays(), context);
+                executionMode = new RepeatingMode(parameters.getNumDelays());
                 executionMode.runScheduler();  
                 break;
             case NOP:
@@ -123,12 +123,13 @@ public class AseTestBridge {
      *  This method is called in OnItemClick listener of an item of an AdapterView 
      *  Instruments item click listeners with recorder if in RECORD mode
      */
+    @SuppressWarnings("rawtypes")
     public static void setRecorderForItemClick(AdapterView adapter, int pos, long index) {
         if (executionMode.getExecutionModeType() == ExecutionModeType.RECORD) {
             // get the view and the path
             View view = adapter.getSelectedView();
             AseEvent event = new AseItemClickEvent(adapter.getId(), ViewUtils.logViewParents(view.getParent()), pos, index); /// update event type
-            IOFactory.getRecorder(AppRunTimeData.getInstance().getAppContext()).record(event);
+            IOFactory.getRecorder().record(event);
         }     
     }
            
@@ -167,7 +168,7 @@ public class AseTestBridge {
         } else {
              event = new AseNavigateUpEvent(item.getItemId(), AppRunTimeData.getInstance().getCurrentAct().getComponentName().flattenToString());
         }
-        IOFactory.getRecorder(AppRunTimeData.getInstance().getAppContext()).record(event);
+        IOFactory.getRecorder().record(event);
     }
     
     /**
@@ -186,7 +187,7 @@ public class AseTestBridge {
             }
             
             AseEvent event = new AseActionBarTabEvent(0, pos); 
-            ase.util.IOFactory.getRecorder(AppRunTimeData.getInstance().getAppContext()).record(event);
+            ase.util.IOFactory.getRecorder().record(event);
             Log.v("Recorder", "Recorder is set for tab position: " + pos);
         } else {
             // execute transactions in the initial tab as well

@@ -2,11 +2,9 @@ package ase.recorder;
 
 import java.util.List;
 
-import android.content.Context;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
-
 import ase.event.AseClickEvent;
 import ase.event.AseEvent;
 import ase.util.IOFactory;
@@ -18,13 +16,10 @@ public class InstrumentedListener implements OnClickListener {
 
     private OnClickListener ownListener;
     private Recorder recorder;
-    
-    //private List<Integer> path; // to be recorded
 
-    public InstrumentedListener(View view, Context context) {
+    public InstrumentedListener(View view) {
         ownListener = ReflectionUtils.getOnClickListener(view);
-        recorder = IOFactory.getRecorder(context);
-        //this.path = path;
+        recorder = IOFactory.getRecorder();
     }
 
     @Override

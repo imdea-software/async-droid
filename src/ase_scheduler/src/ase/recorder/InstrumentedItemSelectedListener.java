@@ -2,7 +2,6 @@ package ase.recorder;
 
 import java.util.List;
 
-import android.content.Context;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
@@ -20,11 +19,13 @@ public class InstrumentedItemSelectedListener implements AdapterView.OnItemSelec
     private AdapterView.OnItemSelectedListener ownListener;
     private Recorder recorder;
 
-    public InstrumentedItemSelectedListener(AdapterView view, Context context) {
+    @SuppressWarnings("rawtypes")
+    public InstrumentedItemSelectedListener(AdapterView view) {
         ownListener = ReflectionUtils.getOnItemSelectedListener(view);
-        recorder = IOFactory.getRecorder(context);
+        recorder = IOFactory.getRecorder();
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     public void onItemSelected(AdapterView adapterView, View view, int pos, long id) {
         List<Integer> path = ViewUtils.logViewParents(view.getParent());
@@ -41,6 +42,7 @@ public class InstrumentedItemSelectedListener implements AdapterView.OnItemSelec
     }
 
 
+    @SuppressWarnings("rawtypes")
     @Override
     public void onNothingSelected(AdapterView adapterView) {
         if (ownListener != null) {

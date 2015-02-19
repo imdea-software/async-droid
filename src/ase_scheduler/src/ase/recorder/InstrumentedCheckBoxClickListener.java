@@ -2,7 +2,6 @@ package ase.recorder;
 
 import java.util.List;
 
-import android.content.Context;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,9 +22,9 @@ public class InstrumentedCheckBoxClickListener implements View.OnClickListener {
     private int parentId; // id of the AdapterView that contains the checkbox
     //private List<Integer> path;
 
-    public InstrumentedCheckBoxClickListener(CheckBox view, ViewGroup parent, int pos, Context context) {
+    public InstrumentedCheckBoxClickListener(CheckBox view, ViewGroup parent, int pos) {
         ownListener = ReflectionUtils.getOnClickListener(view);
-        recorder = IOFactory.getRecorder(context);
+        recorder = IOFactory.getRecorder();
         this.pos = pos;
         this.id = view.getId(); // get the id of the containing view
         this.parentId = parent.getId();
@@ -35,6 +34,10 @@ public class InstrumentedCheckBoxClickListener implements View.OnClickListener {
     public void onClick(View v) {
         List<Integer> path = ViewUtils.logViewParents(v.getParent());
         Log.i("Path", path.toString());
+        
+        //AdapterView parent = (AdapterView) AppRunTimeData.getInstance().getActivityRootView().findViewById(parentId);
+        //parent.getChildAt(pos).
+        
         
         AseEvent event = new AseCheckBoxEvent(id, path, parentId, pos);
         recorder.record(event);
