@@ -2,6 +2,8 @@ package ase.event;
 
 import java.util.List;
 
+import org.json.JSONObject;
+
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
@@ -20,6 +22,12 @@ public class AseCheckBoxEvent extends AseEvent {
         super(EventType.CHECKBOX, viewId, path, parentId);
         this.parentId = parentId;
         this.position = pos;      
+    }
+
+    public AseCheckBoxEvent(JSONObject jsonEvent) {
+        super(EventType.CHECKBOX, jsonEvent);
+        this.parentId = jsonEvent.optInt("parentId", -1);
+        this.position = jsonEvent.optInt("position", -1);
     }
 
     @Override
@@ -60,4 +68,11 @@ public class AseCheckBoxEvent extends AseEvent {
         Log.i("Repeater", "In viewgroup: " + parentId + " clicked checkbox: " + Integer.toHexString(view.getId()) + " Position: " + totalPos + " Fragment: " + fragmentName);
     }
 
+    @Override
+    public JSONObject toJson() throws Exception {
+        JSONObject json = super.toJson();
+        json.put("parentId", parentId)
+            .put("position", position);
+        return json;
+    }
 }

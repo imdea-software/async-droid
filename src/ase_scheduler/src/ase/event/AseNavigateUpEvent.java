@@ -2,6 +2,8 @@ package ase.event;
 
 import java.util.ArrayList;
 
+import org.json.JSONObject;
+
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.util.Log;
@@ -22,6 +24,11 @@ public class AseNavigateUpEvent extends AseEvent {
         currentActivityName = actName;
     }
 
+    public AseNavigateUpEvent(JSONObject jsonEvent) {
+        super(EventType.NAVIGATEUP, jsonEvent);
+        currentActivityName = jsonEvent.optString(currentActivityName, "");
+    }
+
     @Override
     public String toString() {
         return String.format("%s %d %s", type.name(), viewId, currentActivityName);
@@ -39,6 +46,13 @@ public class AseNavigateUpEvent extends AseEvent {
         ((HomeMenuItem)item).setItemId(android.R.id.home);
         AppRunTimeData.getInstance().getCurrentAct().onOptionsItemSelected(item);
         Log.i("Repeater", "Navigated to up: " + Integer.toHexString(viewId));
+    }
+    
+    @Override
+    public JSONObject toJson() throws Exception {
+        JSONObject json = super.toJson();
+        json.put("currentActivityName", currentActivityName);
+        return json;
     }
 
     public static class HomeMenuItem implements MenuItem {

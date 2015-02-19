@@ -2,14 +2,19 @@ package ase.event;
 
 import java.util.ArrayList;
 
+import org.json.JSONObject;
+
 import android.util.Log;
 import ase.AppRunTimeData;
 
 public class AseBackButtonEvent extends AseEvent {
 
-    protected AseBackButtonEvent(EventType type, int viewId) {
-        super(type, viewId, new ArrayList<Integer>());
-        // TODO Auto-generated constructor stub
+    public AseBackButtonEvent(int viewId) {
+        super(EventType.BACK, viewId, new ArrayList<Integer>());
+    }
+
+    public AseBackButtonEvent(JSONObject jsonEvent) {
+        super(EventType.BACK, jsonEvent);
     }
 
     @Override

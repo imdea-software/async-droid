@@ -1,4 +1,6 @@
 package ase.scheduler;
+
+import org.json.JSONObject;
  
 public class TestData {
     
@@ -28,6 +30,15 @@ public class TestData {
 
     public int getNumAsyncPoolTasks() {
         return numAsyncPoolTasks;
+    }
+    
+    public JSONObject toJson() throws Exception {
+        JSONObject json = new JSONObject();
+        json.put("numInputTasks", numInputTasks)
+            .put("numUIThreadTasks", numUIThreadTasks)
+            .put("numAllUIThreadTasks", numAllUIThreadTasks)
+            .put("numAsyncPoolTasks", numAsyncPoolTasks);
+        return json;
     }
 }
 

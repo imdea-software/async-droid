@@ -3,11 +3,11 @@ package ase.util;
 import android.util.Log;
 import ase.AppRunTimeData;
 import ase.Parameters;
-import com.google.gson.Gson;
 
-import java.io.BufferedReader;
 import java.io.FileInputStream;
-import java.io.InputStreamReader;
+import java.util.Scanner;
+
+import org.json.JSONObject;
 
 /**
  * Created by burcuozkan on 13/12/14.
@@ -23,15 +23,21 @@ public class ParametersReader {
     public Parameters readObject() {
         Parameters parameters = Parameters.EMPTY;
         FileInputStream fIn;
+        Scanner scanner = null;
 
         try {
             fIn = AppRunTimeData.getInstance().getAppContext().openFileInput(file);
-            BufferedReader inBuff = new BufferedReader(new InputStreamReader(fIn));
-            
-            parameters = new Gson().fromJson(inBuff, Parameters.class);
+            scanner = new Scanner(fIn);  
+            scanner.useDelimiter("\\Z");  
+            String content = scanner.next(); 
+
+            parameters = new Parameters(new JSONObject(content));
 
         } catch (Exception e) {
             Log.w("FileReader", "Could not read from file: " + file);
+        } finally {
+            if (scanner != null)
+                scanner.close();
         }
 
         return parameters;

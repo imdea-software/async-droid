@@ -7,9 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import org.json.JSONObject;
 
 import android.util.Log;
 import ase.AppRunTimeData;
@@ -18,14 +16,9 @@ import ase.event.AseEvent;
 public class FileReader implements Reader {
 
     private final String file;
-    
-    private final JsonParser parser;
-    private final Gson gson;
-    
+        
     public FileReader(String file) {
         this.file = file;
-        this.parser = new JsonParser();
-        this.gson = new Gson();
     }
 
     @Override
@@ -60,10 +53,8 @@ public class FileReader implements Reader {
         return events;
     }
 
-    @SuppressWarnings( {"unchecked", "rawtypes"} )
-    private AseEvent createEventFromLine(String line) {
-        JsonObject eventObj = parser.parse(line).getAsJsonObject();
-        Class eventClass = AseEvent.getEventClass(eventObj.get("type").getAsString());
-        return (AseEvent) gson.fromJson(eventObj, eventClass);
+    private AseEvent createEventFromLine(String line) throws Exception {
+        JSONObject eventObj = new JSONObject(line);
+        return AseEvent.createEvent(eventObj);
     }
 }

@@ -3,18 +3,16 @@ package ase.util;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
 
-import com.google.gson.Gson;
+import org.json.JSONObject;
 
 import android.content.Context;
 import android.util.Log;
 import ase.AppRunTimeData;
 
 public class FileUtils {
-    
-    private static final Gson GSON = new Gson();
-    
-    public static void appendObject(String fileName, Object obj) {
-        appendLine(fileName, GSON.toJson(obj, obj.getClass()));
+        
+    public static void appendObject(String fileName, JSONObject obj) {
+        appendLine(fileName, obj.toString());
     }
     
     public static void appendLine(String fileName, String content) {

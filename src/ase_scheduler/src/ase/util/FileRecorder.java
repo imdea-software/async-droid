@@ -4,8 +4,6 @@ import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 
-import com.google.gson.Gson;
-
 import android.content.Context;
 import android.util.Log;
 import ase.AppRunTimeData;
@@ -14,11 +12,9 @@ import ase.event.AseEvent;
 public class FileRecorder implements Recorder {
 
     private final String file;
-    private final Gson gson;
 
     public FileRecorder(String file) {
         this.file = file;
-        this.gson = new Gson();
     }
 
     @Override
@@ -44,8 +40,8 @@ public class FileRecorder implements Recorder {
         try {
             fOut = AppRunTimeData.getInstance().getAppContext().openFileOutput(file, Context.MODE_APPEND);
             PrintWriter writer = new PrintWriter(fOut);
-            
-            String eventStr = gson.toJson(event, event.getClass());
+                        
+            String eventStr = event.toJson().toString();
             
             writer.println(eventStr);
             writer.flush();

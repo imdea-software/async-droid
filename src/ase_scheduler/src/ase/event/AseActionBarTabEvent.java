@@ -2,6 +2,8 @@ package ase.event;
 
 import java.util.ArrayList;
 
+import org.json.JSONObject;
+
 import android.util.Log;
 import android.app.ActionBar;
 import ase.AppRunTimeData;
@@ -14,10 +16,13 @@ public class AseActionBarTabEvent extends AseEvent {
     // viewId is the id of the ActionBar
     // menuItemId is the id of the Menu item
     public AseActionBarTabEvent(int actionBarId, int tabItemIndex) {
-
         super(EventType.ACTIONBARTAB, actionBarId, new ArrayList<Integer>());
         this.tabItemIndex = tabItemIndex;
-        
+    }
+
+    public AseActionBarTabEvent(JSONObject jsonEvent) {
+        super(EventType.ACTIONBARTAB, jsonEvent);
+        tabItemIndex = jsonEvent.optInt("tabItemIndex", -1);
     }
 
     @Override
@@ -48,4 +53,10 @@ public class AseActionBarTabEvent extends AseEvent {
         Log.i("Repeater", "Clicked action bar tab at index: " + Integer.toHexString(tabItemIndex));
     }
 
+    @Override
+    public JSONObject toJson() throws Exception {
+        JSONObject json = super.toJson();
+        json.put("tabItemIndex", tabItemIndex);
+        return json;
+    }
 }

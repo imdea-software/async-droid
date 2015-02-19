@@ -2,6 +2,8 @@ package ase.event;
 
 import java.util.List;
 
+import org.json.JSONObject;
+
 import android.util.Log;
 import android.view.View;
 import ase.AppRunTimeData;
@@ -13,6 +15,10 @@ public class AseClickEvent extends AseEvent {
 
     public AseClickEvent(int viewId, List<Integer> path) {
         super(EventType.CLICK, viewId, path);
+    }
+
+    public AseClickEvent(JSONObject jsonEvent) {
+        super(EventType.CLICK, jsonEvent);
     }
 
     @Override

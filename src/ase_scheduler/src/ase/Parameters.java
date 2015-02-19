@@ -1,5 +1,7 @@
 package ase;
 
+import org.json.JSONObject;
+
 /**
  * Created by burcuozkan on 13/12/14.
  */
@@ -10,11 +12,16 @@ public class Parameters {
     private String mode;
     private int numDelays;
 
+    private Parameters(ExecutionModeType mode) {
+        this.mode = mode.toString();
+    }
+    
     public Parameters() {
     }
 
-    private Parameters(ExecutionModeType mode) {
-        this.mode = mode.toString();
+    public Parameters(JSONObject json) {
+        mode = json.optString("mode", "NOP");
+        numDelays = json.optInt("numDelays", 0);
     }
 
     public String getMode() {

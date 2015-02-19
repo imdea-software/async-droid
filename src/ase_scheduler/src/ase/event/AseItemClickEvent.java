@@ -2,6 +2,8 @@ package ase.event;
 
 import java.util.List;
 
+import org.json.JSONObject;
+
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
@@ -22,6 +24,12 @@ public class AseItemClickEvent extends AseEvent {
         super(EventType.ITEMCLICK, viewId, path);
         this.itemPos = itemPos;
         this.itemId = id;
+    }
+
+    public AseItemClickEvent(JSONObject jsonEvent) {
+        super(EventType.ITEMCLICK, jsonEvent);
+        this.itemPos = jsonEvent.optInt("itemPos", -1);
+        this.itemId = jsonEvent.optLong("itemId", -1);
     }
 
     @Override
@@ -55,5 +63,13 @@ public class AseItemClickEvent extends AseEvent {
         } else {
             Log.i("Repeater", "Cannot replay adapter views other than ListView");
         }
+    }
+    
+    @Override
+    public JSONObject toJson() throws Exception {
+        JSONObject json = super.toJson();
+        json.put("itemPos", itemPos)
+            .put("itemId", itemId);
+        return json;
     }
 }
