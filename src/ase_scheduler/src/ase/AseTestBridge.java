@@ -20,6 +20,7 @@ import ase.scheduler.RepeatingMode;
 import ase.scheduler.ExecutionMode;
 import ase.util.IOFactory;
 import ase.util.ReflectionUtils;
+import ase.util.ViewUtils;
 
 /**
  *  This class acts as an interface between Ase scheduler and the application under test
@@ -74,6 +75,8 @@ public class AseTestBridge {
         return executionMode.getExecutionModeType();
     }
     
+    /** Methods that traverse a group of views and add instrumented listeners **/
+    
     /**
      *  This method is called in onCreate of an Activity before returning the rootView
      *  Traverses inflated view hierarchy and sets the current activity reference in AppRunTimeData
@@ -83,7 +86,7 @@ public class AseTestBridge {
         View v = act.getWindow().getDecorView().getRootView();
         if (executionMode.getExecutionModeType() == ExecutionModeType.RECORD) {
             AppRunTimeData.getInstance().setActivityRootView(v);
-            AppRunTimeData.getInstance().traverseViewIds(v.getRootView());
+            ViewUtils.traverseViewIds(v.getRootView());
         } else if (executionMode.getExecutionModeType() == ExecutionModeType.REPEAT) {
             AppRunTimeData.getInstance().setActivityRootView(v);
         }
@@ -96,7 +99,7 @@ public class AseTestBridge {
      */
     public static void setFragmentViewTraverser(View rootView) {
         if (executionMode.getExecutionModeType() == ExecutionModeType.RECORD) {
-            AppRunTimeData.getInstance().traverseViewIds(rootView);
+            ViewUtils.traverseViewIds(rootView);
         } else if (executionMode.getExecutionModeType() == ExecutionModeType.REPEAT) {
             Log.v("View","Fragment view created with root: " + Integer.toHexString(rootView.getId()));
         }
@@ -109,10 +112,12 @@ public class AseTestBridge {
      */
     public static void setAdapterItemViewTraverser(View view, ViewGroup parent, int pos) {
         if (executionMode.getExecutionModeType() == ExecutionModeType.RECORD) {
-            AppRunTimeData.getInstance().traverseItemView(view, parent, pos);
+            ViewUtils.traverseItemView(view, parent, pos);
         }
         
     }
+    
+    /** Methods that add instrumented listeners in dynamically set event listener in app **/
     
     /**
      *  This method is called in OnItemClick listener of an item of an AdapterView 
@@ -120,9 +125,10 @@ public class AseTestBridge {
      */
     public static void setRecorderForItemClick(AdapterView adapter, int pos, long index) {
         if (executionMode.getExecutionModeType() == ExecutionModeType.RECORD) {
-            AseEvent event = new AseItemClickEvent(adapter.getId(), pos, index); /// update event type
+            // get the view and the path
+            View view = adapter.getSelectedView();
+            AseEvent event = new AseItemClickEvent(adapter.getId(), ViewUtils.logViewParents(view.getParent()), pos, index); /// update event type
             IOFactory.getRecorder(AppRunTimeData.getInstance().getAppContext()).record(event);
-            Log.e("Hereeee", "Hereee");
         }     
     }
            

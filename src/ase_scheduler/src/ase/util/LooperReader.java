@@ -69,9 +69,7 @@ public class LooperReader {
                     }   
                     //contents = this.dumpQueue(t);
                 }
-                if(!empty)
-                    Log.i("Reflection", "Main thread has a non-empty message queue");
-                  
+   
             } catch (Exception e) {
                 Log.e("Reflection", "Could not check the emptiness of the message queue");
             }

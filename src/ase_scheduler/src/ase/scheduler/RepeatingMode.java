@@ -118,8 +118,8 @@ public class RepeatingMode implements ExecutionMode, Runnable {
             if (current == null) {
                 Log.e("AseScheduler", "No thread is selected.");
                 continue; // check if end of test
-            }
-            
+            } 
+
             numSchedulingDecisions ++;
             notifyThread(current);
             waitForDispatch(ThreadData.SCHEDULER_ID);

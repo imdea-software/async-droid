@@ -1,5 +1,7 @@
 package ase.recorder;
 
+import java.util.List;
+
 import android.content.Context;
 import android.util.Log;
 import android.view.View;
@@ -9,6 +11,7 @@ import ase.event.AseItemClickEvent;
 import ase.util.IOFactory;
 import ase.util.Recorder;
 import ase.util.ReflectionUtils;
+import ase.util.ViewUtils;
 
 /**
  * Created by burcuozkan on 09/12/14.
@@ -23,14 +26,17 @@ public class InstrumentedItemSelectedListener implements AdapterView.OnItemSelec
     }
 
     @Override
-    public void onItemSelected(AdapterView adapterView, View view, int i, long l) {
-
-        AseItemClickEvent event = new AseItemClickEvent(adapterView.getId(), i, l);
+    public void onItemSelected(AdapterView adapterView, View view, int pos, long id) {
+        List<Integer> path = ViewUtils.logViewParents(view.getParent());
+        Log.i("Path", path.toString());
+        
+        AseItemClickEvent event = new AseItemClickEvent(adapterView.getId(), path, pos, id);
         recorder.record(event);
 
-        Log.i("Recorder", "Selected position: " + i + " Long Id: " + l);
+
+        Log.i("Recorder", "Selected position: " + pos + " Long Id: " + id);
         if (ownListener != null) {
-            ownListener.onItemSelected(adapterView, view, i, l);
+            ownListener.onItemSelected(adapterView, view, pos, id);
         }
     }
 

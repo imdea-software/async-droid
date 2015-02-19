@@ -1,5 +1,7 @@
 package ase.event;
 
+import java.util.ArrayList;
+
 import android.util.Log;
 import android.app.ActionBar;
 import ase.AppRunTimeData;
@@ -13,7 +15,7 @@ public class AseActionBarTabEvent extends AseEvent {
     // menuItemId is the id of the Menu item
     public AseActionBarTabEvent(int actionBarId, int tabItemIndex) {
 
-        super(EventType.ACTIONBARTAB, actionBarId);
+        super(EventType.ACTIONBARTAB, actionBarId, new ArrayList<Integer>());
         this.tabItemIndex = tabItemIndex;
         
     }

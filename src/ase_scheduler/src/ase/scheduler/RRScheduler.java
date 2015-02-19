@@ -59,7 +59,10 @@ public class RRScheduler extends Scheduler {
             }
             //String contents = LooperReader.getInstance().dumpQueue(t);
             empty = LooperReader.getInstance().hasEmptyLooper(t);
-            //Log.i("contents:", contents);
+            
+            if(!empty)
+                Log.v("RRScheduler", "Running the main thread.. It has a non-empty message queue..");
+
         }
     }
     

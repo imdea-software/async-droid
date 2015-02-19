@@ -1,5 +1,7 @@
 package ase.event;
 
+import java.util.ArrayList;
+
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.util.Log;
@@ -16,7 +18,7 @@ public class AseNavigateUpEvent extends AseEvent {
     // viewId is the id of the AdapterView
     // pos is the position of the item in the AdapterView
     public AseNavigateUpEvent(int viewId, String actName) {
-        super(EventType.NAVIGATEUP, viewId);
+        super(EventType.NAVIGATEUP, viewId, new ArrayList<Integer>());
         currentActivityName = actName;
     }
 
@@ -27,7 +29,7 @@ public class AseNavigateUpEvent extends AseEvent {
 
     @Override
     public boolean isFirable() {
-        return super.isFirable() && AppRunTimeData.getInstance().getCurrentAct().getComponentName().flattenToString().equals(currentActivityName);
+        return AppRunTimeData.getInstance().getCurrentAct().getComponentName().flattenToString().equals(currentActivityName);
     }
 
     @Override
@@ -37,7 +39,6 @@ public class AseNavigateUpEvent extends AseEvent {
         ((HomeMenuItem)item).setItemId(android.R.id.home);
         AppRunTimeData.getInstance().getCurrentAct().onOptionsItemSelected(item);
         Log.i("Repeater", "Navigated to up: " + Integer.toHexString(viewId));
-
     }
 
     public static class HomeMenuItem implements MenuItem {
