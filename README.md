@@ -58,7 +58,7 @@ Instrument the application `.apk` file for testing:
 	
 You can replay the user events that trigger the bug (with particular thread interleavings) by running:
 
-    python bin/aase.py --replay --events events.trc build/sample_vlillechecker.apk
+    python bin/aase.py --replay --delays 1 --events events.trc build/sample_vlillechecker.apk
     
     
 (Optional) You can also record your own a set of user events with the command below and then replay them: 
