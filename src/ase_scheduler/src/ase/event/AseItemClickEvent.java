@@ -1,7 +1,12 @@
 package ase.event;
 
+import java.util.List;
+
+import org.json.JSONObject;
+
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ListView;
 import ase.AppRunTimeData;
 
@@ -15,10 +20,16 @@ public class AseItemClickEvent extends AseEvent {
 
     // viewId is the id of the AdapterView
     // pos is the position of the item in the AdapterView
-    public AseItemClickEvent(int viewId, int itemPos, long id) {
-        super(EventType.ITEMCLICK, viewId);
+    public AseItemClickEvent(int viewId, List<Integer> path, int itemPos, long id) {
+        super(EventType.ITEMCLICK, viewId, path);
         this.itemPos = itemPos;
         this.itemId = id;
+    }
+
+    public AseItemClickEvent(JSONObject jsonEvent) {
+        super(EventType.ITEMCLICK, jsonEvent);
+        this.itemPos = jsonEvent.optInt("itemPos", -1);
+        this.itemId = jsonEvent.optLong("itemId", -1);
     }
 
     @Override
@@ -26,17 +37,25 @@ public class AseItemClickEvent extends AseEvent {
         return String.format("%s %d %d %d In fragment: %s", type.name(), viewId, itemPos, itemId, fragmentName);
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     public boolean isFirable() {
-        View view = AppRunTimeData.getInstance().getActivityRootView().findViewById(viewId);
-        return super.isFirable() && (view != null); 
+        if(!super.isFirable()) return false;
+
+        View parent = AppRunTimeData.getInstance().getActivityRootView().findViewById(viewId);
+        if(parent == null) return false;
+        
+        if (((AdapterView) parent).getChildCount() <= itemPos)
+            return false;
+        
+        return true; 
+
     }
 
     @Override
     public void injectEvent() {
         View view = AppRunTimeData.getInstance().getActivityRootView().findViewById(viewId);
         
-        Log.i("Repeater", "LOG: INjecting: " + toString());
         if(view instanceof ListView) {
             ((ListView) view).smoothScrollToPosition(itemPos);
             ((ListView) view).performItemClick(view, itemPos, itemId);
@@ -44,5 +63,13 @@ public class AseItemClickEvent extends AseEvent {
         } else {
             Log.i("Repeater", "Cannot replay adapter views other than ListView");
         }
+    }
+    
+    @Override
+    public JSONObject toJson() throws Exception {
+        JSONObject json = super.toJson();
+        json.put("itemPos", itemPos)
+            .put("itemId", itemId);
+        return json;
     }
 }

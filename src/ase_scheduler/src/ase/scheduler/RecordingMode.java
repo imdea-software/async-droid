@@ -1,14 +1,13 @@
 package ase.scheduler;
 
-import android.content.Context;
 import ase.ExecutionModeType;
 import ase.util.IOFactory;
 import ase.util.Recorder;
 
 public class RecordingMode implements ExecutionMode {
 
-    public RecordingMode(Context context) {
-        Recorder recorder = IOFactory.getRecorder(context);
+    public RecordingMode() {
+        Recorder recorder = IOFactory.getRecorder();
         recorder.clear();
     }
 

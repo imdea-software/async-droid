@@ -20,6 +20,7 @@ import ase.scheduler.RepeatingMode;
 import ase.scheduler.ExecutionMode;
 import ase.util.IOFactory;
 import ase.util.ReflectionUtils;
+import ase.util.ViewUtils;
 
 /**
  *  This class acts as an interface between Ase scheduler and the application under test
@@ -36,8 +37,9 @@ public class AseTestBridge {
     public static void initiateTesting(Context context) {
         if (!initiated) {
             initiated = true;
+            IOFactory.initializeLogs();
             AppRunTimeData.createInstance(context);
-            setTestParameters(context);
+            setTestParameters();
         }
         if(context instanceof Activity)
             AppRunTimeData.getInstance().setCurrentAct((Activity)(context));
@@ -48,16 +50,16 @@ public class AseTestBridge {
      * Also sets the application context 
      * to be used to relaunch mainActivity after each test case
      */
-    private static void setTestParameters(Context context) {
-        Parameters parameters = IOFactory.getParameters(context);
+    private static void setTestParameters() {
+        Parameters parameters = IOFactory.getParameters();
         Log.i("AsyncDroid", "Running in " + parameters.getMode() + " mode...");
         switch (parameters.getSchedulerMode()) {
             case RECORD:
-                executionMode = new RecordingMode(context);
+                executionMode = new RecordingMode();
                 break;
             case REPEAT:
                 Log.i("AsyncDroid", "Number of delays: " + parameters.getNumDelays());
-                executionMode = new RepeatingMode(parameters.getNumDelays(), context);
+                executionMode = new RepeatingMode(parameters.getNumDelays());
                 executionMode.runScheduler();  
                 break;
             case NOP:
@@ -73,6 +75,8 @@ public class AseTestBridge {
         return executionMode.getExecutionModeType();
     }
     
+    /** Methods that traverse a group of views and add instrumented listeners **/
+    
     /**
      *  This method is called in onCreate of an Activity before returning the rootView
      *  Traverses inflated view hierarchy and sets the current activity reference in AppRunTimeData
@@ -82,7 +86,7 @@ public class AseTestBridge {
         View v = act.getWindow().getDecorView().getRootView();
         if (executionMode.getExecutionModeType() == ExecutionModeType.RECORD) {
             AppRunTimeData.getInstance().setActivityRootView(v);
-            AppRunTimeData.getInstance().traverseViewIds(v.getRootView());
+            ViewUtils.traverseViewIds(v.getRootView());
         } else if (executionMode.getExecutionModeType() == ExecutionModeType.REPEAT) {
             AppRunTimeData.getInstance().setActivityRootView(v);
         }
@@ -95,7 +99,7 @@ public class AseTestBridge {
      */
     public static void setFragmentViewTraverser(View rootView) {
         if (executionMode.getExecutionModeType() == ExecutionModeType.RECORD) {
-            AppRunTimeData.getInstance().traverseViewIds(rootView);
+            ViewUtils.traverseViewIds(rootView);
         } else if (executionMode.getExecutionModeType() == ExecutionModeType.REPEAT) {
             Log.v("View","Fragment view created with root: " + Integer.toHexString(rootView.getId()));
         }
@@ -108,20 +112,24 @@ public class AseTestBridge {
      */
     public static void setAdapterItemViewTraverser(View view, ViewGroup parent, int pos) {
         if (executionMode.getExecutionModeType() == ExecutionModeType.RECORD) {
-            AppRunTimeData.getInstance().traverseItemView(view, parent, pos);
+            ViewUtils.traverseItemView(view, parent, pos);
         }
         
     }
+    
+    /** Methods that add instrumented listeners in dynamically set event listener in app **/
     
     /**
      *  This method is called in OnItemClick listener of an item of an AdapterView 
      *  Instruments item click listeners with recorder if in RECORD mode
      */
+    @SuppressWarnings("rawtypes")
     public static void setRecorderForItemClick(AdapterView adapter, int pos, long index) {
         if (executionMode.getExecutionModeType() == ExecutionModeType.RECORD) {
-            AseEvent event = new AseItemClickEvent(adapter.getId(), pos, index); /// update event type
-            IOFactory.getRecorder(AppRunTimeData.getInstance().getAppContext()).record(event);
-            Log.e("Hereeee", "Hereee");
+            // get the view and the path
+            View view = adapter.getSelectedView();
+            AseEvent event = new AseItemClickEvent(adapter.getId(), ViewUtils.logViewParents(view.getParent()), pos, index); /// update event type
+            IOFactory.getRecorder().record(event);
         }     
     }
            
@@ -160,7 +168,7 @@ public class AseTestBridge {
         } else {
              event = new AseNavigateUpEvent(item.getItemId(), AppRunTimeData.getInstance().getCurrentAct().getComponentName().flattenToString());
         }
-        IOFactory.getRecorder(AppRunTimeData.getInstance().getAppContext()).record(event);
+        IOFactory.getRecorder().record(event);
     }
     
     /**
@@ -179,7 +187,7 @@ public class AseTestBridge {
             }
             
             AseEvent event = new AseActionBarTabEvent(0, pos); 
-            ase.util.IOFactory.getRecorder(AppRunTimeData.getInstance().getAppContext()).record(event);
+            ase.util.IOFactory.getRecorder().record(event);
             Log.v("Recorder", "Recorder is set for tab position: " + pos);
         } else {
             // execute transactions in the initial tab as well

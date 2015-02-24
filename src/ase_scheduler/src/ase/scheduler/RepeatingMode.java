@@ -1,19 +1,16 @@
 package ase.scheduler;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
 
-import android.content.Context;
 import android.util.Log;
 import ase.AppRunTimeData;
 import ase.ExecutionModeType;
 import ase.event.AseEvent;
 import ase.repeater.InputRepeater;
+import ase.util.FileUtils;
 import ase.util.IOFactory;
 import ase.util.Reader;
-import ase.util.log.LogManager;
-import ase.util.log.Logger;
+import ase.util.Logger;
 
 /*
  * Schedules the application threads using a particular number of delays
@@ -25,20 +22,14 @@ public class RepeatingMode implements ExecutionMode, Runnable {
     private InputRepeater inputRepeater;
     private Scheduler scheduler;
 
-    private int numTasksToDispatch = 0;
-    
+    private final boolean schedulingLogs = false;
+
     // Thread id of the currently scheduled thread
     private static long scheduled = 0L;    
     
-    private final boolean schedulingLogs = true;
-    private Logger fileLog;
-    
-    public RepeatingMode(int numDelays, Context context) {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH-mm-ss");
-        fileLog = LogManager.getFileLog(String.format("TestLogs-%s.log", dateFormat.format(new Date())));
-        
+    public RepeatingMode(int numDelays) {        
         // event list will be read once and be fed into each inputRepeater
-        Reader reader = IOFactory.getReader(context);
+        Reader reader = IOFactory.getReader();
         List<AseEvent> eventsToRepeat = reader.read();
         
         if(eventsToRepeat.size() == 0) {
@@ -46,8 +37,8 @@ public class RepeatingMode implements ExecutionMode, Runnable {
             AppRunTimeData.getInstance().finishCurrentActivity();
             
         } else {
-            inputRepeater = new InputRepeater(eventsToRepeat, fileLog);
-            scheduler = new RRScheduler(threads, inputRepeater, fileLog);
+            inputRepeater = new InputRepeater(eventsToRepeat);
+            scheduler = new RRScheduler(threads, inputRepeater);
             scheduler.initiateScheduler(numDelays, eventsToRepeat.size()); 
         }
     }
@@ -64,8 +55,7 @@ public class RepeatingMode implements ExecutionMode, Runnable {
 
     @Override
     public void run() {
-        Log.i("AseScheduler", "Scheduler has started in thread: "
-                + Thread.currentThread().getName() + " Id: "
+        Log.i("AseScheduler", "Scheduler has started in thread: " + Thread.currentThread().getName() + " Id: "
                 + Thread.currentThread().getId());
 
         // must wait until the main (UI) thread wakes it
@@ -76,7 +66,7 @@ public class RepeatingMode implements ExecutionMode, Runnable {
             setUpTestCase();
             runTestCase();
             tearDownTestCase();
-            fileLog.i("End", "End of test");
+            Logger.i("End", "End of test");
         }
 
         Log.i("AseScheduler", "All tests has completed.");
@@ -115,6 +105,9 @@ public class RepeatingMode implements ExecutionMode, Runnable {
     public void runTestCase() {
         ThreadData current = null;
 
+        // scheduling decisions at each wait/notify point
+        int numSchedulingDecisions = 0;
+        
         while (!scheduler.isEndOfTestCase()) {
             //threads.captureAllThreads();
             scheduler.doOnPreScheduling();
@@ -123,21 +116,19 @@ public class RepeatingMode implements ExecutionMode, Runnable {
             if (current == null) {
                 Log.e("AseScheduler", "No thread is selected.");
                 continue; // check if end of test
-            }
-            
-            logSchedulingDecision(current);
-            Log.i("RRScheduler", "SCheduled: " + current.getName() );
+            } 
+
+            numSchedulingDecisions ++;
             notifyThread(current);
             waitForDispatch(ThreadData.SCHEDULER_ID);
+            
         }
 
-        Log.i("AseScheduler", "Test has completed.");
+        FileUtils.appendLine(IOFactory.STATS_FILE, "{ \"numSchedulingDecisions\":" + numSchedulingDecisions + " }");
+
+        Logger.i("Scheduler", "Test has completed.");
         ThreadData main = threads.getThreadById(1);
         notifyThread(main);
-    }
-    
-    private void logSchedulingDecision(ThreadData current) {
-        fileLog.i("Scheduled", "--- " + current.getName());
     }
     
     /*
@@ -184,15 +175,14 @@ public class RepeatingMode implements ExecutionMode, Runnable {
         }
 
         if (schedulingLogs)
-            fileLog.i("RepeatingMode", "    --- Waiting - ThreadId: " + threadId);
+            Logger.i("RepeatingMode", "    --- Waiting - ThreadId: " + threadId);
 
         while (scheduled != threadId) {
-            me.setTaskNum(numTasksToDispatch++); // to be used by the scheduler
             me.waitThread();
         }
 
         if (schedulingLogs)
-            fileLog.i("RepeatingMode", "    --- Executing - ThreadId: " + threadId);
+            Logger.i("RepeatingMode", "    --- Executing - ThreadId: " + threadId);
     }
     
     public void waitForDispatch() {
@@ -229,8 +219,8 @@ public class RepeatingMode implements ExecutionMode, Runnable {
             return;
         }
 
-        //if (schedulingLogs)
-        fileLog.i("RepeatingMode", "    --- Completed - Thread Id: " + Thread.currentThread().getId());
+        if (schedulingLogs)
+            Logger.i("RepeatingMode", "    --- Completed - Thread Id: " + Thread.currentThread().getId());
 
         // A thread did not actually wait in corresponding waitMyTurn
         // (either it was already in block (nested wait stmts) or it had monitors)
@@ -245,7 +235,7 @@ public class RepeatingMode implements ExecutionMode, Runnable {
         // thread consumes the notification block
         me.setIsWaiting(false);
         if (schedulingLogs)
-            fileLog.i("RepeatingMode", "    --- Notifying - Thread Id: " + Thread.currentThread().getId());
+            Logger.i("RepeatingMode", "    --- Notifying - Thread Id: " + Thread.currentThread().getId());
         
         schedulerThreadData.notifyThread();
     }
@@ -279,7 +269,6 @@ public class RepeatingMode implements ExecutionMode, Runnable {
     public ExecutionModeType getExecutionModeType() {
         return ExecutionModeType.REPEAT;
     }
-
 }
 
 // scheduled and currentIndex are guaranteed to be not accessed by more than one threads concurrently

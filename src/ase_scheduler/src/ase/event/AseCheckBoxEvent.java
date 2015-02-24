@@ -1,5 +1,9 @@
 package ase.event;
 
+import java.util.List;
+
+import org.json.JSONObject;
+
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
@@ -14,10 +18,16 @@ public class AseCheckBoxEvent extends AseEvent {
     private int parentId;
 
     // parentId here is the component's listview id
-    public AseCheckBoxEvent(int viewId, int parentId, int pos) {
-        super(EventType.CHECKBOX, viewId, parentId);
+    public AseCheckBoxEvent(int viewId, List<Integer> path, int parentId, int pos) {
+        super(EventType.CHECKBOX, viewId, path, parentId);
         this.parentId = parentId;
         this.position = pos;      
+    }
+
+    public AseCheckBoxEvent(JSONObject jsonEvent) {
+        super(EventType.CHECKBOX, jsonEvent);
+        this.parentId = jsonEvent.optInt("parentId", -1);
+        this.position = jsonEvent.optInt("position", -1);
     }
 
     @Override
@@ -25,22 +35,23 @@ public class AseCheckBoxEvent extends AseEvent {
         return String.format("%s %d Position: %d In fragment: %s", type.name(), viewId, position, fragmentName);
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     public boolean isFirable() {
-        View view = AppRunTimeData.getInstance().getActivityRootView().findViewById(viewId);
-        if(view == null) return false;
+        if(!super.isFirable()) return false;
 
         View parent = AppRunTimeData.getInstance().getActivityRootView().findViewById(parentId);
-        if(parent != null) {
-            if(parent instanceof AdapterView)
-                //Log.i("Repeater", "an adapter view with child count: " + ((AdapterView) parent).getChildCount());
+        if(parent == null) return false;
+            
+        if(parent instanceof AdapterView) {
+            //Log.i("Repeater", "an adapter view with child count: " + ((AdapterView) parent).getChildCount());
             if (((AdapterView) parent).getChildCount() <= position)
                 return false;
         }
-        return super.isFirable();
+        
+        return true;
     }
     
-    @SuppressWarnings("rawtypes")
     @Override
     public void injectEvent() {
         ListView parentView = (ListView) AppRunTimeData.getInstance().getActivityRootView().findViewById(parentId);
@@ -57,4 +68,11 @@ public class AseCheckBoxEvent extends AseEvent {
         Log.i("Repeater", "In viewgroup: " + parentId + " clicked checkbox: " + Integer.toHexString(view.getId()) + " Position: " + totalPos + " Fragment: " + fragmentName);
     }
 
+    @Override
+    public JSONObject toJson() throws Exception {
+        JSONObject json = super.toJson();
+        json.put("parentId", parentId)
+            .put("position", position);
+        return json;
+    }
 }

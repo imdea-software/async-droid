@@ -1,5 +1,9 @@
 package ase.event;
 
+import java.util.ArrayList;
+
+import org.json.JSONObject;
+
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -13,7 +17,11 @@ public class AseActionBarEvent extends AseEvent {
 
     // viewId is the menu item id
     public AseActionBarEvent(int menuItemId) {
-        super(EventType.ACTIONBAR, menuItemId);
+        super(EventType.ACTIONBAR, menuItemId, new ArrayList<Integer>());
+    }
+
+    public AseActionBarEvent(JSONObject jsonEvent) {
+        super(EventType.ACTIONBAR, jsonEvent);
     }
 
     @Override

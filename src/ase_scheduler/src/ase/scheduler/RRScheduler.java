@@ -3,8 +3,9 @@ package ase.scheduler;
 import android.util.Log;
 import ase.repeater.InputRepeater;
 import ase.scheduler.PendingThreads.ThreadType;
+import ase.util.LooperReader;
 import ase.util.ReflectionUtils;
-import ase.util.log.Logger;
+import ase.util.Logger;
 
 public class RRScheduler extends Scheduler {    
     private DelaySequence delaySeq;
@@ -14,18 +15,16 @@ public class RRScheduler extends Scheduler {
     
     private int idleTypes = 0;
     // default schedule: AsyncTaskSerialThread AsyncTaskPoolThreads HandlerThreads InputRepeater MainThread 
-    private int typeToSchedule = 2;
+    private int nextTypeToSchedule = 0;
     private ThreadType[] types = {ThreadType.INPUTREPEATER, ThreadType.MAIN, ThreadType.ASYNCTASK_SERIAL, ThreadType.ASYNCTASK_POOL, ThreadType.HANDLERTHREAD};
     boolean onPool= false;
     private int handlerThreadIndex = 0;
     private int poolThreadIndex = 0;
     
-    private ThreadData scheduled = null;
-    private int inputCount;
+    private ThreadData prevThread = scheduledThread = null;
     
-    public RRScheduler(PendingThreads threads, InputRepeater inputRepeater, Logger logger) {
-        super(threads, inputRepeater, logger);
-        inputCount = inputRepeater.numInputsLeft();
+    public RRScheduler(PendingThreads threads, InputRepeater inputRepeater) {
+        super(threads, inputRepeater);
     }
     
     @Override
@@ -35,25 +34,51 @@ public class RRScheduler extends Scheduler {
 
     @Override
     public void setUpTestCase() {
-        taskToProcess = 1;
+        taskToProcess = 0;
+        nextTypeToSchedule = 0;
         if(delaySeq != null) { // null for the first test
             delaySeq.next();
-            Log.i("DelayInfo", "Current delay indices:" + delaySeq.toString());
-            logger.i("DelayInfo", "Current delay indices:" + delaySeq.toString());
-        }     
+            Logger.i("DelayInfo", "Current delay indices:" + delaySeq.toString());
+        }  
+        refreshThreadList();
+        prevThread = scheduledThread = null;
+        // run the main thread until there are no more messages
+        runMainToCompletionOrToWait();
     }
         
+    public synchronized void runMainToCompletionOrToWait() {
+        ThreadData td = threads.getThreadById(1);
+        
+        Thread t = td.getThread();
+        boolean empty = false;
+        while (!empty && !td.isWaiting()) {
+            try {
+                this.wait(500);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            //String contents = LooperReader.getInstance().dumpQueue(t);
+            empty = LooperReader.getInstance().hasEmptyLooper(t);
+            
+            if(!empty)
+                Log.v("RRScheduler", "Running the main thread.. It has a non-empty message queue..");
+
+        }
+    }
+    
     @Override
     public boolean isEndOfTestCase() {
-        return !hasAvailableThreads() && !inputRepeater.hasEventsToHandle() && (taskToProcess > 1);
+        return !hasAvailableThreads() && !inputRepeater.hasEventsToHandle() && !inputRepeater.hasMoreInputs() && (numAsyncTasksInMainLooper() == 0) && (taskToProcess > 1);
     }
     
     @Override
     public boolean hasMoreTestCases() {
-        if(numCompletedTests == 0) return true;
+        if(numCompletedTests == 0) 
+            return true;
+        
         if(isDelaying && numDelays > 0) {
             if(numCompletedTests == 1) { // first test without any delays
-                delaySeq = new DelaySequence(numDelays, taskToProcess-1 );
+                delaySeq = new DelaySequence(numDelays, taskToProcess + 3);
                 return true;
             }else {
                 return delaySeq.hasNext();
@@ -64,19 +89,10 @@ public class RRScheduler extends Scheduler {
  
     @Override
     public void doOnPreScheduling() {
-        // Do not increment task count for the previous round
-        // if inputrepeater is scheduled but it did not inject any events
-        if(scheduled != null && scheduled.getName().equalsIgnoreCase("InputRepeater")) {
-            if(inputRepeater.numInputsLeft() >= this.inputCount)
-                taskToProcess --;
-            inputCount = inputRepeater.numInputsLeft();
-        }
-        
-        // IF MAIN_UNTIL_HAS_EVENT is set to true
-        // Reschedule the main thread if it still has events to handle
-        if(scheduled != null && scheduled.getId()==1 && inputRepeater.hasEventsToHandle()) {
-            typeToSchedule --;
-        }    
+        // if the prev thread was the main thread, execute all tasks in its message queue up to wait
+        if(scheduledThread != null && scheduledThread.getId()==1) {
+            runMainToCompletionOrToWait();
+        }   
     }
     
     /**
@@ -85,70 +101,80 @@ public class RRScheduler extends Scheduler {
      */
     @Override
     public ThreadData selectNextThread() {
-        idleTypes = 0;
-        refreshThreadList();
-        
-        // current is the next thread of type to schedule
-        ThreadData current = getNextThread(types[typeToSchedule]);
+       
+        ThreadData current = getNextThread();
         logThreads(current);
+            
+        // current is the task to be dispatched
+        scheduledThread = current;
         
-        // if current thread is not okToSchedule, get the first available one
-        while(!okToSchedule(current) && idleTypes < types.length) {        
-            idleTypes ++;
-            current = getNextThread(types[typeToSchedule]);
-            logThreads(current);
+        if(prevThread != scheduledThread && scheduledThread != null) {
+            taskToProcess ++;
+            prevThread = current;
         }
-        
-        // added
-        if(!okToSchedule(current) && (idleTypes == types.length)) return scheduled = null;
         
         // check if current will be delayed, if so delay
         if(current != null && taskToProcess == getNextTaskIndexToDelay()) { 
-            Log.i("AseScheduler", "Delayed Thread Id: " + current.getId() + " Last Processed: " + taskToProcess);
-            logger.i("RRScheduler", "Delayed " + current.getName() + " Consumed Task to process: " + taskToProcess);
+            Logger.i("RRScheduler", "Delayed " + current.getName() + " Consumed Task to process: " + taskToProcess);
             Log.i("DelayInfo", "Consumed delay: " + taskToProcess);
             delaySeq.spendCurrentDelayIndex();       
-            taskToProcess ++;
-            return scheduled = selectNextThread(); // terminates since delaySeq is not infinite
+            nextTypeToSchedule = (nextTypeToSchedule + 1) % types.length;
+            Log.i("RRScheduler","Moved to next type: " + types[nextTypeToSchedule]);
+            current = getNextThread();
         } 
         
-        // current is the task to be dispatched
-        taskToProcess ++;  
-        return scheduled = current;
+        if(current != null) {
+            Logger.i("RRScheduler", "Scheduled: " + current.getName() + " Task to process: " + taskToProcess);
+        }
+
+        return current;
     }
 
+
+    public ThreadData getNextThread() {
+        idleTypes = 0;
+        refreshThreadList();
+            
+        // current is the next thread of type to schedule
+        ThreadData current = getNextThreadOfType(types[nextTypeToSchedule]);
+        //logThreads(current);
+        
+        // if current thread is not okToSchedule, get the next available thread
+        while(!okToSchedule(current) && idleTypes < types.length) { 
+            idleTypes ++;
+            nextTypeToSchedule = (nextTypeToSchedule + 1) % types.length;
+            // Log.v("Scheduler","Next type: " + types[nextTypeToSchedule]);
+            current = getNextThreadOfType(types[nextTypeToSchedule]);
+        }
+        
+        if(!okToSchedule(current) && (idleTypes == types.length)) return scheduledThread = null;
+        
+        return current;
+    }
+    
     /**
      * @return okTOSchedule thread of type if exists, null otherwise
      */
-    private ThreadData getNextThread(ThreadType type) {
+    private ThreadData getNextThreadOfType(ThreadType type) {
         ThreadData current = null;
         
         //logger.i("RRScheduler", "Current type: " + type);
-        //Log.w("RRScheduler", "Current type: " + type);
+        Log.v("RRScheduler", "Current type: " + type);
         
-        if(types[typeToSchedule].equals(ThreadType.INPUTREPEATER)) {
-            current = threads.getThreadByName("InputRepeater");  
-            typeToSchedule = (typeToSchedule + 1) % types.length;
+        if(types[nextTypeToSchedule].equals(ThreadType.INPUTREPEATER)) {
+            current = threads.getThreadByName("InputRepeater");    
             
-        } else if(types[typeToSchedule].equals(ThreadType.MAIN)) {
-            current = threads.getThreadById(1);
-            typeToSchedule = (typeToSchedule + 1) % types.length;
+        } else if(types[nextTypeToSchedule].equals(ThreadType.MAIN)) {
+            current = threads.getThreadById(1);            
             
-        } else if(types[typeToSchedule].equals(ThreadType.ASYNCTASK_SERIAL)) {
+        } else if(types[nextTypeToSchedule].equals(ThreadType.ASYNCTASK_SERIAL)) {
             current = getSerialAsyncTaskThread();
-            typeToSchedule = (typeToSchedule + 1) % types.length;
             
-        } else if(types[typeToSchedule].equals(ThreadType.ASYNCTASK_POOL)) {
+        } else if(types[nextTypeToSchedule].equals(ThreadType.ASYNCTASK_POOL)) {
             current = getNextAsyncTaskPoolThread();
-            if(current == null) {
-                typeToSchedule = (typeToSchedule + 1) % types.length;
-            }
            
-        } else if(types[typeToSchedule].equals(ThreadType.HANDLERTHREAD)) {
+        } else if(types[nextTypeToSchedule].equals(ThreadType.HANDLERTHREAD)) {
             current = getNextHandlerThread();
-            if(current == null) {
-                typeToSchedule = (typeToSchedule + 1) % types.length;
-            }
         }   
         
         return current;
@@ -189,12 +215,14 @@ public class RRScheduler extends Scheduler {
             
             // skip if the current AsyncTask thread runs on the serial executor
             if((current != null) && isOnSerialExecutor(current.getThread())) 
-                continue;
+                current = null; // do not schedule serial AsyncTask
         } 
+        
         if(!okToSchedule(current) && poolThreadIndex == size) {
             poolThreadIndex = 0;
             return null; // no available threads are found
         }
+
         return current;
     }
     

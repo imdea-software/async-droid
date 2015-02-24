@@ -8,6 +8,7 @@ import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 import android.os.MessageQueue;
+import android.util.Log;
 
 public class LooperReader {
     
@@ -49,12 +50,32 @@ public class LooperReader {
     }
 
     public boolean hasEmptyLooper(Thread t) {
+        boolean empty = true;
         Looper looper = getLooper(t);
-        if (looper == null)
-            return true;
-
-       return getMessages(t).isEmpty();
         
+        if(looper != null) {
+            try {
+                MessageQueue messageQueue = (MessageQueue) queueField.get(looper);
+                
+                synchronized(messageQueue) {
+                    Message nextMessage = (Message) messagesField.get(messageQueue);   
+                    while(nextMessage != null) {
+                        if(nextMessage.toString().contains("BinderProxy") || nextMessage.toString().contains("android.widget.Editor$Blink")) {
+                            nextMessage = (Message) nextField.get(nextMessage);
+                        } else {
+                            empty = false;
+                            break;
+                        }
+                    }   
+                    //contents = this.dumpQueue(t);
+                }
+   
+            } catch (Exception e) {
+                Log.e("Reflection", "Could not check the emptiness of the message queue");
+            }
+        }
+        
+        return empty;
     }
     
     public String dumpQueue(Thread t) { 
@@ -85,14 +106,16 @@ public class LooperReader {
 
     public List<Message> getMessages(MessageQueue messageQueue) { 
         List<Message> messages = new ArrayList<Message>(); 
-        try {
-            Message nextMessage = (Message) messagesField.get(messageQueue);          
-            while(nextMessage != null) {
-                messages.add(nextMessage);
-                nextMessage = (Message) nextField.get(nextMessage);
+        synchronized(messageQueue) {
+            try {
+                Message nextMessage = (Message) messagesField.get(messageQueue);          
+                while(nextMessage != null) {
+                    messages.add(nextMessage);
+                    nextMessage = (Message) nextField.get(nextMessage);
+                }
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
             }
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
         }
         
         return messages;

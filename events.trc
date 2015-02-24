@@ -1,7 +1,5 @@
-{"tabItemIndex":0,"type":"ACTIONBARTAB","viewId":0}
-{"tabItemIndex":1,"type":"ACTIONBARTAB","viewId":0}
-{"parentId":16908298,"position":0,"fragmentName":"com.vlille.checker.ui.fragment.AllStationsFragment","type":"CHECKBOX","viewId":2131230809}
-{"parentId":16908298,"position":1,"fragmentName":"com.vlille.checker.ui.fragment.AllStationsFragment","type":"CHECKBOX","viewId":2131230809}
-{"tabItemIndex":0,"type":"ACTIONBARTAB","viewId":0}
-{"parentId":16908298,"position":0,"fragmentName":"com.vlille.checker.ui.fragment.StarsListFragment","type":"CHECKBOX","viewId":2131230809}
-{"parentId":16908298,"position":0,"fragmentName":"com.vlille.checker.ui.fragment.StarsListFragment","type":"CHECKBOX","viewId":2131230809}
+{"tabItemIndex":0,"path":[],"type":"ACTIONBARTAB","viewId":0}
+{"tabItemIndex":1,"path":[],"type":"ACTIONBARTAB","viewId":0}
+{"position":0,"path":[-1,-1,16908298,16711683,-1,-1,2131230792,16908290,16909075,-1,-1],"parentId":16908298,"type":"CHECKBOX","fragmentName":"com.vlille.checker.ui.fragment.AllStationsFragment","viewId":2131230809}
+{"tabItemIndex":0,"path":[],"type":"ACTIONBARTAB","viewId":0}
+{"position":0,"path":[-1,-1,16908298,-1,-1,2131230792,16908290,16909075,-1,-1],"parentId":16908298,"type":"CHECKBOX","fragmentName":"com.vlille.checker.ui.fragment.StarsListFragment","viewId":2131230809}
