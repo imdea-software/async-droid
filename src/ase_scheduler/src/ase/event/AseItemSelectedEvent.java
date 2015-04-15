@@ -7,27 +7,27 @@ import org.json.JSONObject;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.ListView;
 import ase.AppRunTimeData;
 
 /**
  * Created by burcuozkan on 05/12/14.
  */
-public class AseItemClickEvent extends AseEvent {
+public class AseItemSelectedEvent extends AseEvent {
 
+    public View itemView;
     public final int itemPos;
     public final long itemId;
 
-    // viewId is the id of the AdapterView
+    // viewId is the id of the AdapterView (parent of itemView)
     // pos is the position of the item in the AdapterView
-    public AseItemClickEvent(int viewId, List<Integer> path, int itemPos, long id) {
-        super(EventType.ITEMCLICK, viewId, path);
+    public AseItemSelectedEvent(int viewId, List<Integer> path, int itemPos, long id) {
+        super(EventType.ITEMSELECTED, viewId, path);
         this.itemPos = itemPos;
         this.itemId = id;
     }
 
-    public AseItemClickEvent(JSONObject jsonEvent) {
-        super(EventType.ITEMCLICK, jsonEvent);
+    public AseItemSelectedEvent(JSONObject jsonEvent) {
+        super(EventType.ITEMSELECTED, jsonEvent);
         this.itemPos = jsonEvent.optInt("itemPos", -1);
         this.itemId = jsonEvent.optLong("itemId", -1);
     }
@@ -49,18 +49,21 @@ public class AseItemClickEvent extends AseEvent {
             return false;
         
         return true; 
+
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     public void injectEvent() {
-        View view = AppRunTimeData.getInstance().getActivityRootView().findViewById(viewId);
+        View adapter = AppRunTimeData.getInstance().getActivityRootView().findViewById(viewId);
         
-        if(view instanceof ListView) {
-            ((ListView) view).smoothScrollToPosition(itemPos);
-            ((ListView) view).performItemClick(view, itemPos, itemId);
-            Log.i("Repeater", "Clicked item view: " + Integer.toHexString(view.getId()) + " Position: " + itemPos);
+        if(adapter instanceof AdapterView) {   
+            View itemView = ((AdapterView)adapter).getChildAt(itemPos);
+            ((AdapterView)adapter).getOnItemSelectedListener().onItemSelected((AdapterView)adapter, itemView, itemPos, itemId);
+            //((AdapterView)view).performItemClick(view, itemPos, itemId);
+            Log.i("Repeater", "Selected item view: " + Integer.toHexString(adapter.getId()) + " Position: " + itemPos);
         } else {
-            Log.i("Repeater", "Cannot replay adapter views other than ListView");
+            Log.i("Repeater", "Cannot replay selected views - AdapterView is null");
         }
     }
     

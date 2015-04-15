@@ -11,6 +11,10 @@ public class SootUtils {
     public static InvokeStmt staticInvocation(SootMethod m, Value arg1, Value arg2, Value arg3) {
         return Jimple.v().newInvokeStmt(Jimple.v().newStaticInvokeExpr(m.makeRef(), arg1, arg2, arg3));
     }
+
+    public static InvokeStmt staticInvocation(SootMethod m, Value arg1, Value arg2, Value arg3, Value arg4) {
+        return Jimple.v().newInvokeStmt(Jimple.v().newStaticInvokeExpr(m.makeRef(), arg1, arg2, arg3, arg4));
+    }
     
     public static InvokeStmt staticInvocation(SootMethod m) {
         return Jimple.v().newInvokeStmt(Jimple.v().newStaticInvokeExpr(m.makeRef()));

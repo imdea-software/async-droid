@@ -20,7 +20,6 @@ public class InstrumentedCheckBoxClickListener implements View.OnClickListener {
     private int pos;
     private int id;
     private int parentId; // id of the AdapterView that contains the checkbox
-    //private List<Integer> path;
 
     public InstrumentedCheckBoxClickListener(CheckBox view, ViewGroup parent, int pos) {
         ownListener = ReflectionUtils.getOnClickListener(view);
@@ -34,10 +33,6 @@ public class InstrumentedCheckBoxClickListener implements View.OnClickListener {
     public void onClick(View v) {
         List<Integer> path = ViewUtils.logViewParents(v.getParent());
         Log.i("Path", path.toString());
-        
-        //AdapterView parent = (AdapterView) AppRunTimeData.getInstance().getActivityRootView().findViewById(parentId);
-        //parent.getChildAt(pos).
-        
         
         AseEvent event = new AseCheckBoxEvent(id, path, parentId, pos);
         recorder.record(event);
