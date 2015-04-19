@@ -3,7 +3,6 @@ package ase.scheduler;
 import android.util.Log;
 import ase.repeater.InputRepeater;
 import ase.scheduler.PendingThreads.ThreadType;
-import ase.util.LooperReader;
 import ase.util.ReflectionUtils;
 import ase.util.Logger;
 
@@ -45,30 +44,27 @@ public class RRScheduler extends Scheduler {
         // run the main thread until there are no more messages
         runMainToCompletionOrToWait();
     }
-        
-    public synchronized void runMainToCompletionOrToWait() {
-        ThreadData td = threads.getThreadById(1);
-        
-        Thread t = td.getThread();
-        boolean empty = false;
-        while (!empty && !td.isWaiting()) {
-            try {
-                this.wait(500);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            //String contents = LooperReader.getInstance().dumpQueue(t);
-            empty = LooperReader.getInstance().hasEmptyLooper(t);
-            
-            if(!empty)
-                Log.v("RRScheduler", "Running the main thread.. It has a non-empty message queue..");
-
-        }
-    }
     
     @Override
     public boolean isEndOfTestCase() {
-        return !hasAvailableThreads() && !inputRepeater.hasEventsToHandle() && !inputRepeater.hasMoreInputs() && (numAsyncTasksInMainLooper() == 0) && (taskToProcess > 1);
+        boolean b = !hasAvailableThreads() && !inputRepeater.hasEventsToHandle() && !inputRepeater.hasMoreInputs() && (numAsyncTasksInMainLooper() == 0) && (taskToProcess > 1); // && (numPendingAsyncTasks() == 0);
+        
+        if(b) { 
+            // allow for the AsyncTask to run and execute its waiting statement
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            if (numAsyncTasksInMainLooper() != 0 || threads.getThreadById(1).isWaiting()) {
+                Log.i("RRScheduler", "Not the end of the test - main looper is not empty - is waiting ");
+                return false;  
+            }
+        }
+        
+        boolean noAsyncSpawned = (ReflectionUtils.getAsyncTaskSerialExecutorTasks().isEmpty());
+        return b && noAsyncSpawned; // recheck conditions
     }
     
     @Override
@@ -89,10 +85,7 @@ public class RRScheduler extends Scheduler {
  
     @Override
     public void doOnPreScheduling() {
-        // if the prev thread was the main thread, execute all tasks in its message queue up to wait
-        if(scheduledThread != null && scheduledThread.getId()==1) {
-            runMainToCompletionOrToWait();
-        }   
+        runMainToCompletionOrToWait(); 
     }
     
     /**
@@ -130,23 +123,24 @@ public class RRScheduler extends Scheduler {
         return current;
     }
 
-
     public ThreadData getNextThread() {
         idleTypes = 0;
         refreshThreadList();
             
         // current is the next thread of type to schedule
         ThreadData current = getNextThreadOfType(types[nextTypeToSchedule]);
-        //logThreads(current);
+        logThreads(current);
         
         // if current thread is not okToSchedule, get the next available thread
         while(!okToSchedule(current) && idleTypes < types.length) { 
+            refreshThreadList();
             idleTypes ++;
             nextTypeToSchedule = (nextTypeToSchedule + 1) % types.length;
             // Log.v("Scheduler","Next type: " + types[nextTypeToSchedule]);
             current = getNextThreadOfType(types[nextTypeToSchedule]);
+            //Log.i("Scheduler", "Retrying next to schedule");
         }
-        
+        // can add if input repeater, move one by one =  skip to next thread after an input
         if(!okToSchedule(current) && (idleTypes == types.length)) return scheduledThread = null;
         
         return current;
@@ -185,25 +179,51 @@ public class RRScheduler extends Scheduler {
      * that runs on the serial executor
      */
     private ThreadData getSerialAsyncTaskThread() {
-        ThreadData selected = null;
-        do {
-            refreshThreadList();
-            Object[] asyncTaskThreads = threads.getThreads(ThreadType.ASYNCTASK);
-            for(Object o: asyncTaskThreads) {
-                ThreadData td = (ThreadData) o;
-                if(okToSchedule(td) && isOnSerialExecutor(td.getThread())) {
-                    selected = td;
-                    break;
+        int size = threads.getThreads(ThreadType.ASYNCTASK).length;
+        ThreadData current = null;
+        int index = 0;
+        
+        while(index < size) {
+            current = threads.getThreadByIndex(index, ThreadType.ASYNCTASK);
+            index ++;
+                       
+            if(isOnSerialExecutor(current.getThread())) {
+                
+                // check if serial AsyncTask is waiting to be scheduled  
+                if(okToSchedule(current)) { 
+                    return current;
+                    
+                // check if it is posted but not executed and is waiting yet
+                } else if (!ReflectionUtils.getAsyncTaskSerialExecutorTasks().isEmpty()) { 
+                    Log.e("ASYNC", "There exists an AsyncTask posted but not waited yet..");
+
+                    while(!ReflectionUtils.getAsyncTaskSerialExecutorTasks().isEmpty()) {
+                        // allow for the AsyncTask to run and execute its waiting statement
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+    
+                        for(int i=0; i<threads.getThreads(ThreadType.ASYNCTASK).length; i++) {
+                            ThreadData td = threads.getThreadByIndex(i, ThreadType.ASYNCTASK);
+                            if(okToSchedule(td) && isOnSerialExecutor(td.getThread())) {
+                                return td;
+                            } 
+                        }
+                        
+                    }
                 }
             }
-        } while (selected == null && !ReflectionUtils.getAsyncTaskSerialExecutorTasks().isEmpty());
-         
-        return selected;
+        } 
+
+        return null;
     }
 
     /**
      * Gets the next okToSchedule AsyncTask thread (indexed by poolThreadIndex)
      * that does not run on the serial executor
+     * poolThreadIndex keeps the index of the pool thread to be scheduled next
      */
     private ThreadData getNextAsyncTaskPoolThread() {
         int size = threads.getThreads(ThreadType.ASYNCTASK).length;
@@ -220,7 +240,7 @@ public class RRScheduler extends Scheduler {
         
         if(!okToSchedule(current) && poolThreadIndex == size) {
             poolThreadIndex = 0;
-            return null; // no available threads are found
+            return null; // no available threads are found in this round
         }
 
         return current;
@@ -250,7 +270,12 @@ public class RRScheduler extends Scheduler {
     }
     
     @Override
+    public void doOnPostScheduling() {
+        // TODO Auto-generated method stub
+    }
+    
+    @Override
     public void tearDownTestCase() {
-        numCompletedTests ++;     
+        numCompletedTests ++; 
     }
 }

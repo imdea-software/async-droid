@@ -49,10 +49,12 @@ public class ThreadData {
     }
 
     public synchronized void waitThread() {
-        try {
-            this.wait();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        while (RepeatingMode.getScheduled() != id) {
+            try {
+                this.wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 
