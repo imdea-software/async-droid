@@ -66,6 +66,7 @@ public class InputRepeater implements Runnable {
                 Log.i("Repeater", "InputsToHandle: " + (numAllEvents - numHandledEvents)); 
                 retrials = 0;
             }  else {
+                Log.i("Repeater", "View not available, will try in next turn.");
                 retrials ++; 
             }
             Log.i("InputRep", "Notifies the scheduler");

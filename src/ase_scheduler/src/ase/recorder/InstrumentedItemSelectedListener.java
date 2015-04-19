@@ -20,7 +20,6 @@ public class InstrumentedItemSelectedListener implements AdapterView.OnItemSelec
 
     @SuppressWarnings("rawtypes")
     public InstrumentedItemSelectedListener(AdapterView parent, View view) {
-        //ownListener = ReflectionUtils.getOnItemSelectedListener(view);
         ownListener = parent.getOnItemSelectedListener();
         recorder = IOFactory.getRecorder();
     }
