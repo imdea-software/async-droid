@@ -22,7 +22,7 @@ public class AseBodyTransformer extends BodyTransformer {
     private static SootMethod initiateTesting, waitForDispatch, notifyDispatcher, enterMonitor, exitMonitor;
     private static SootMethod setActivityViewTraverser, setFragmentViewTraverser, setAdapterItemViewTraverser; 
     private static SootMethod setActionBarMenu, setRecorderForActionBar, setRecorderForActionBarTab;
-    private static SootMethod setRecorderForItemClick, setRecorderForItemSelected, setRecorderForTouchEvent;
+    private static SootMethod setRecorderForItemClick, /*setRecorderForItemSelected,*/ setRecorderForTouchEvent;
 
     public static void main(String[] args) {
         // args[0]: directory from which to process classes
@@ -59,7 +59,7 @@ public class AseBodyTransformer extends BodyTransformer {
         setAdapterItemViewTraverser = aseTestBridgeClass.getMethod("void setAdapterItemViewTraverser(android.view.View,android.view.ViewGroup,int)");
         setRecorderForActionBarTab = aseTestBridgeClass.getMethod("void setRecorderForActionBarTab(java.lang.Object)");
         setRecorderForItemClick = aseTestBridgeClass.getMethod("void setRecorderForItemClick(android.widget.AdapterView,android.view.View,int,long)");
-        setRecorderForItemSelected = aseTestBridgeClass.getMethod("void setRecorderForItemSelected(android.widget.AdapterView,android.view.View,int,long)");
+        // setRecorderForItemSelected = aseTestBridgeClass.getMethod("void setRecorderForItemSelected(android.widget.AdapterView,android.view.View,int,long)");
         setRecorderForTouchEvent = aseTestBridgeClass.getMethod("void setRecorderForTouchEvent(android.view.MotionEvent)");
     }
 
@@ -131,8 +131,8 @@ public class AseBodyTransformer extends BodyTransformer {
         } else if (methodName.equals("onItemClick")) {  
             instrumentOnItemClickMethod(b);
             
-        } else if (methodName.equals("onItemSelected")) {  
-            instrumentOnItemSelectedMethod(b);
+        //} else if (methodName.equals("onItemSelected")) {  
+        //    instrumentOnItemSelectedMethod(b);
            
         } else if (methodName.equals("onTouchEvent")) {  
             instrumentOnTouchEventMethod(b);
@@ -294,7 +294,7 @@ public class AseBodyTransformer extends BodyTransformer {
      * Adds call to getView of an AdapterView to traverse the views in a list item
      * to enable record/replay
      */
-    private void instrumentOnItemSelectedMethod(final Body b) {
+    /*private void instrumentOnItemSelectedMethod(final Body b) {
         final PatchingChain<Unit> units = b.getUnits();
         Iterator<Unit> iter = units.snapshotIterator();
         // method: public void onItemClick(AdapterView adapter, View view, int position, long index)
@@ -321,7 +321,7 @@ public class AseBodyTransformer extends BodyTransformer {
                 }
             });
         }
-    }
+    }*/
     
     /**
      * Adds call to getView of an AdapterView to traverse the views in a list item
