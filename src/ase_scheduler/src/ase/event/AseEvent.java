@@ -14,7 +14,7 @@ import ase.util.ViewUtils;
 public abstract class AseEvent {    
     
     public enum EventType {
-        CLICK, CHECKBOX, ITEMCLICK, ACTIONBAR, ACTIONBARTAB, NAVIGATEUP, BACK
+        MOTIONEVENT, CLICK, CHECKBOX, ITEMCLICK, ITEMSELECTED, ACTIONBAR, ACTIONBARTAB, NAVIGATEUP, BACK
     }
     
     public final EventType type;
@@ -22,19 +22,23 @@ public abstract class AseEvent {
     // ids of the views on the full path to the event view 
     public final List<Integer> path;
     
-    /*
+    /**
      * If the view is inflated inside a fragment, keep the name of that fragment
      * An event is firable only if that fragment is visible 
      * (A view with the same id may exist in more than one fragments)
      */
     public final String fragmentName;
 
+ 
+    /**
+     * The parameters viewId and path are irrelevant for TouchEvent
+     */
     protected AseEvent(EventType type, int viewId, List<Integer> path) {
         this.type = type;
         this.viewId = viewId;
         this.path = path;
         
-        if(type == EventType.ACTIONBAR || type == EventType.ACTIONBARTAB)
+        if(type == EventType.ACTIONBAR || type == EventType.ACTIONBARTAB || type == EventType.BACK)
             fragmentName = null;
         else
             fragmentName = AppRunTimeData.getInstance().getFragmentNameByViewId(viewId);
@@ -62,19 +66,27 @@ public abstract class AseEvent {
     }
     
     public boolean isFirable() {
+                
         // check root view
         AppRunTimeData appData = AppRunTimeData.getInstance();
         if(appData.getActivityRootView() == null)
             return false;
 
+        String s = appData.getFragmentNameByViewId(viewId);
+        
+        // MotionEvent is firable if its fragment is loaded
+        if(type == EventType.MOTIONEVENT && (fragmentName.equals("") || fragmentName.equals(s))) 
+            return true;
+        
         // check if the view id is loaded
         View curView = AppRunTimeData.getInstance().getActivityRootView().findViewById(viewId);
         if(curView == null)
             return false;
-            
+        
         // check if the full path of the recorded path match with current view path
         if(path.size() > 0) {
             List<Integer> curPath = ViewUtils.logViewParents(curView.getParent());
+
             if (path.size() != curPath.size()) 
                 return false;
             
@@ -84,13 +96,8 @@ public abstract class AseEvent {
             }
         }
         
-        // check the fragment
-        String s = appData.getFragmentNameByViewId(viewId);
-        if(fragmentName != null)
-            Log.i("Event's", fragmentName);
-        if(s != null)
-            Log.i("Current", s);
-        return (fragmentName == null) || fragmentName.equals(s);
+        // event with null String fragmentName is created with String "" from Json
+        return (fragmentName == null) || (fragmentName.equals("")) || fragmentName.equals(s);
     }
 
     abstract public void injectEvent();
@@ -130,14 +137,20 @@ public abstract class AseEvent {
             case ITEMCLICK: 
                 event = new AseItemClickEvent(jsonEvent);
                 break;
+            case ITEMSELECTED: 
+                event = new AseItemSelectedEvent(jsonEvent);
+                break;
             case NAVIGATEUP: 
                 event = new AseNavigateUpEvent(jsonEvent);
                 break;
             case BACK:
                 event = new AseBackButtonEvent(jsonEvent);
                 break;
+            case MOTIONEVENT:
+                event = new AseMotionEvent(jsonEvent);
+                break;
             default:
-                // Log unimplemented type
+                Log.e("AseEvent", "Unrecognized event type");
                 break;
         }
         

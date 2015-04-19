@@ -2,7 +2,9 @@ package ase.util;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import android.os.HandlerThread;
 import android.os.Looper;
@@ -17,7 +19,7 @@ public class LooperReader {
     private final Field messagesField;
     private final Field nextField;
     private final Field queueField;
-
+    
     private LooperReader() {
         try {
             queueField = Looper.class.getDeclaredField("mQueue");
@@ -60,9 +62,16 @@ public class LooperReader {
                 synchronized(messageQueue) {
                     Message nextMessage = (Message) messagesField.get(messageQueue);   
                     while(nextMessage != null) {
-                        if(nextMessage.toString().contains("BinderProxy") || nextMessage.toString().contains("android.widget.Editor$Blink")) {
+                        // TODO: Get recurring messages for the app from the user
+                        if(nextMessage.toString().contains("BinderProxy") || nextMessage.toString().contains("barrier") || nextMessage.toString().contains("android.widget.Editor$Blink")
+                                // for radio player
+                                || nextMessage.toString().contains("android.widget.TextView$Marquee") || nextMessage.toString().contains("com.teleca.jamendo.media.PlayerEngineImpl$1")
+                                        || nextMessage.toString().contains("com.teleca.jamendo.widget.ReflectiveSurface")
+                                // for comics reader
+                                || nextMessage.toString().contains("com.android.org.chromium.base.SystemMessageHandler")) {
                             nextMessage = (Message) nextField.get(nextMessage);
                         } else {
+                            //Log.i("LooperReader", "Breaking here..");
                             empty = false;
                             break;
                         }
@@ -80,10 +89,21 @@ public class LooperReader {
     
     public String dumpQueue(Thread t) { 
         StringBuilder sb = new StringBuilder();
-        List<Message> messages = getMessages(t);
         
-        for(Message m: messages) {
-            sb.append("\n\t" + m.toString());
+        Looper looper = getLooper(t);      
+        if(looper != null) {
+            try {
+                MessageQueue messageQueue = (MessageQueue) queueField.get(looper);
+                List<Message> messages = getMessages(t);
+        
+                synchronized(messageQueue) {
+                    for(Message m: messages) {
+                        sb.append("\n\t" + m.toString());
+                    }
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
         
         return sb.toString();

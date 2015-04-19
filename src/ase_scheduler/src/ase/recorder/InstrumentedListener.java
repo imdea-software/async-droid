@@ -41,4 +41,8 @@ public class InstrumentedListener implements OnClickListener {
         if (ownListener != null)
             ownListener.onClick(v);
     }
+    
+    public OnClickListener getOwnListener() {
+        return ownListener;
+    }
 }

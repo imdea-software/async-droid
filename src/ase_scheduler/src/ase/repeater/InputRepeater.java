@@ -66,6 +66,7 @@ public class InputRepeater implements Runnable {
                 Log.i("Repeater", "InputsToHandle: " + (numAllEvents - numHandledEvents)); 
                 retrials = 0;
             }  else {
+                Log.i("Repeater", "View not available, will try in next turn.");
                 retrials ++; 
             }
             Log.i("InputRep", "Notifies the scheduler");
@@ -131,9 +132,13 @@ public class InputRepeater implements Runnable {
             AppRunTimeData.getInstance().executeFragmentTransactions(); 
             
             AseEvent event = (AseEvent) message.obj;
-            event.injectEvent();
-            Logger.i("Repeated", "" + event.toString());
-            
+            if(event.isFirable()) {
+                event.injectEvent();
+                Logger.i("Repeated", "" + event.toString()); 
+            } else {
+                Logger.i("Not Repeated", "Event not available: " + event.toString()); 
+            }
+               
             increaseNumHandledEvents();
             
             //execute asynchronous transactions that load fragments 

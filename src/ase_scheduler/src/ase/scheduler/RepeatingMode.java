@@ -2,6 +2,7 @@ package ase.scheduler;
 
 import java.util.List;
 
+import android.app.Application;
 import android.util.Log;
 import ase.AppRunTimeData;
 import ase.ExecutionModeType;
@@ -9,14 +10,16 @@ import ase.event.AseEvent;
 import ase.repeater.InputRepeater;
 import ase.util.FileUtils;
 import ase.util.IOFactory;
+import ase.util.LooperReader;
 import ase.util.Reader;
 import ase.util.Logger;
+import ase.util.ReflectionUtils;
 
 /*
  * Schedules the application threads using a particular number of delays
  */
 public class RepeatingMode implements ExecutionMode, Runnable {
-    
+
     private PendingThreads threads = new PendingThreads();
     private ThreadData schedulerThreadData = new ThreadData(ThreadData.SCHEDULER_ID, null);
     private InputRepeater inputRepeater;
@@ -25,24 +28,26 @@ public class RepeatingMode implements ExecutionMode, Runnable {
     private final boolean schedulingLogs = false;
 
     // Thread id of the currently scheduled thread
-    private static long scheduled = 0L;    
-    
-    public RepeatingMode(int numDelays) {        
+    private static long scheduled = 0L;
+    // max number of idle thread schedules
+    private static int MAX_TRIALS = 20; 
+
+    public RepeatingMode(int numDelays) {
         // event list will be read once and be fed into each inputRepeater
         Reader reader = IOFactory.getReader();
         List<AseEvent> eventsToRepeat = reader.read();
-        
-        if(eventsToRepeat.size() == 0) {
+
+        if (eventsToRepeat.size() == 0) {
             Log.e("Repeater", "No inputs to repeat");
             AppRunTimeData.getInstance().finishCurrentActivity();
-            
+
         } else {
             inputRepeater = new InputRepeater(eventsToRepeat);
             scheduler = new RRScheduler(threads, inputRepeater);
-            scheduler.initiateScheduler(numDelays, eventsToRepeat.size()); 
+            scheduler.initiateScheduler(numDelays, eventsToRepeat.size());
         }
     }
-    
+
     @Override
     public void runScheduler() {
         Thread t = new Thread(this);
@@ -62,19 +67,19 @@ public class RepeatingMode implements ExecutionMode, Runnable {
         waitForDispatch(ThreadData.SCHEDULER_ID);
 
         while (scheduler.hasMoreTestCases()) {
-            AppRunTimeData.getInstance().launchMainActivity(); 
+            AppRunTimeData.getInstance().launchMainActivity();
             setUpTestCase();
             runTestCase();
             tearDownTestCase();
             Logger.i("End", "End of test");
         }
 
-        Log.i("AseScheduler", "All tests has completed.");
-        Log.i("DelayInfo", "All tests has completed.");
+        Logger.i("AseScheduler", "All tests has completed.");
+        Logger.i("DelayInfo", "All tests has completed.");
 
         // TODO now the app closes but we still need to rearrange this
         // create a new activity - clear top and and get the activity reference
-        //AseTestBridge.launchMainActivity();
+        // AseTestBridge.launchMainActivity();
 
         // sleep until the new activity is created
         try {
@@ -84,13 +89,13 @@ public class RepeatingMode implements ExecutionMode, Runnable {
         }
 
         // finish the created activity
-        //AseTestBridge.finishCurrentActivity();
+        // AseTestBridge.finishCurrentActivity();
     }
 
     /*
      * Set up single test parameters
      */
-    public void setUpTestCase() {       
+    public void setUpTestCase() {
         scheduler.setUpTestCase();
         inputRepeater.reset();
         Thread inputThread = new Thread(inputRepeater);
@@ -98,7 +103,7 @@ public class RepeatingMode implements ExecutionMode, Runnable {
         inputThread.start();
         threads.captureThread(inputThread); // Register this before scheduler runs since it may wait earlier
     }
-    
+
     /*
      * A single test executing a particular thread schedule
      */
@@ -107,39 +112,69 @@ public class RepeatingMode implements ExecutionMode, Runnable {
 
         // scheduling decisions at each wait/notify point
         int numSchedulingDecisions = 0;
-        
-        while (!scheduler.isEndOfTestCase()) {
-            //threads.captureAllThreads();
+        int trials = 0;
+
+        while (!scheduler.isEndOfTestCase() && trials < MAX_TRIALS) {
+            // threads.captureAllThreads();
             scheduler.doOnPreScheduling();
             current = scheduler.selectNextThread();
 
             if (current == null) {
+                trials++;
                 Log.e("AseScheduler", "No thread is selected.");
                 continue; // check if end of test
-            } 
+            }
 
-            numSchedulingDecisions ++;
+            numSchedulingDecisions++;
             notifyThread(current);
             waitForDispatch(ThreadData.SCHEDULER_ID);
-            
+
+            scheduler.doOnPostScheduling();
         }
 
         FileUtils.appendLine(IOFactory.STATS_FILE, "{ \"numSchedulingDecisions\":" + numSchedulingDecisions + " }");
-
+        
         Logger.i("Scheduler", "Test has completed.");
-        ThreadData main = threads.getThreadById(1);
-        notifyThread(main);
+        scheduler.logThreads(current); // //////
+
     }
-    
+
     /*
      * Clean test case data
      */
     public void tearDownTestCase() {
+        final Application app = AppRunTimeData.getInstance().getCurrentAct().getApplication();
+        
+        // Call the programmer implemented test case finalizer in the app
+        // Run it in the main thread in case it has view components
+        AppRunTimeData.getInstance().getCurrentAct().runOnUiThread( new Runnable() {
+            @Override
+            public void run() {
+                ReflectionUtils.callMethod((Object)app, "finalizeTestCase");               
+            }            
+        });
+
+        // allow the main thread to run (in case it is in blocking runnables)
+        ThreadData main = threads.getThreadById(1);
+        notifyThread(main);
+        scheduled = 1L;
+        
+        while(!LooperReader.getInstance().hasEmptyLooper(main.getThread())) {
+            try {
+                Thread.sleep(500);
+            } catch (Exception e){
+                
+            }
+            Log.i("RepeatMode", "Waiting to empty the main thread");
+        }
+            
+        // tear down test case, that also calls programmer-implemented tear down
+        // (e.g. restores app state for a new test, removes callbacks, etc)
         scheduler.tearDownTestCase();
         scheduled = 0L;
-        threads.clearThreads();
+        threads.clearThreads();       
     }
-    
+
     /*
      * Worker (or scheduler) thread waits for its signal to execute
      */
@@ -158,15 +193,15 @@ public class RepeatingMode implements ExecutionMode, Runnable {
             if (me.getCurrentMonitors() > 0) {
                 // will not be blocked by scheduler and will not notify the scheduler after completion
                 Log.v("AseScheduler", "Thread has acquired monitor(s), is not suspended.. Id:" + me.getId());
-                me.pushWaitBlock(false); // corresponding notifyScheduler will not actually notify
+                me.pushWaitBlock(false); // corresponding notifyScheduler will // not actually notify
                 return;
             }
 
             // If thread is already in its block
             if (me.isWaiting()) {
-                me.pushWaitBlock(false); // corresponding notifyScheduler will not actually notify
+                me.pushWaitBlock(false); // corresponding notifyScheduler will // not actually notify
             } else {
-                me.pushWaitBlock(true); // corresponding notifyScheduler WILL notify
+                me.pushWaitBlock(true); // corresponding notifyScheduler WILL // notify
                 me.setIsWaiting(true); // further blocks will not notify
             }
 
@@ -184,9 +219,9 @@ public class RepeatingMode implements ExecutionMode, Runnable {
         if (schedulingLogs)
             Logger.i("RepeatingMode", "    --- Executing - ThreadId: " + threadId);
     }
-    
+
     public void waitForDispatch() {
-        Thread current =  Thread.currentThread();
+        Thread current = Thread.currentThread();
         threads.captureThread(current); // add thread to the scheduling list in case it executes before capturing
         waitForDispatch(current.getId());
     }
@@ -196,9 +231,8 @@ public class RepeatingMode implements ExecutionMode, Runnable {
      */
     private void notifyThread(ThreadData current) {
         scheduled = current.getId();
-        //if (schedulingLogs)
-            //logStream += "Scheduled thread id: " + scheduled + " Index: "
-            //        + threads.getWalkerIndex() + " NumUIBlocks:" + AseTestBridge.getNumUIBlocks()) + "\n";
+        // if (schedulingLogs)
+        // logStream += "Scheduled thread id: " + scheduled + " Index: " + threads.getWalkerIndex() + " NumUIBlocks:" + AseTestBridge.getNumUIBlocks()) + "\n";
 
         current.notifyThread();
     }
@@ -214,8 +248,7 @@ public class RepeatingMode implements ExecutionMode, Runnable {
         // if already notified the scheduler, me is null
         // I should not hit this statement:
         if (me == null) {
-            Log.e("AseScheduler",
-                    "THREAD NOTIFYING SCHEDULER NOT IN THE LIST!!!");
+            Log.e("AseScheduler", "THREAD NOTIFYING SCHEDULER NOT IN THE LIST!!!");
             return;
         }
 
@@ -225,8 +258,7 @@ public class RepeatingMode implements ExecutionMode, Runnable {
         // A thread did not actually wait in corresponding waitMyTurn
         // (either it was already in block (nested wait stmts) or it had monitors)
         if (!me.popWaitBlock()) {
-            Log.v("AseScheduler", "NOTT notifying - Thread Id: "
-                            + Thread.currentThread().getId());
+            Log.v("AseScheduler", "NOTT notifying - Thread Id: " + Thread.currentThread().getId());
             return;
         }
 
@@ -236,13 +268,12 @@ public class RepeatingMode implements ExecutionMode, Runnable {
         me.setIsWaiting(false);
         if (schedulingLogs)
             Logger.i("RepeatingMode", "    --- Notifying - Thread Id: " + Thread.currentThread().getId());
-        
+
         schedulerThreadData.notifyThread();
     }
 
     /*
-     * To be called by UI thread in initiateScheduler
-     * Enables scheduler thread to run
+     * To be called by UI thread in initiateScheduler Enables scheduler thread to run
      */
     public void wakeScheduler() {
         scheduled = ThreadData.SCHEDULER_ID;
@@ -252,7 +283,7 @@ public class RepeatingMode implements ExecutionMode, Runnable {
 
     public void yield() {
         // to be implemented
-        // use the stack of wait blocks of a thread 
+        // use the stack of wait blocks of a thread
     }
 
     public void enterMonitor() {
@@ -268,6 +299,10 @@ public class RepeatingMode implements ExecutionMode, Runnable {
     @Override
     public ExecutionModeType getExecutionModeType() {
         return ExecutionModeType.REPEAT;
+    }
+
+    public static long getScheduled() {
+        return scheduled;
     }
 }
 

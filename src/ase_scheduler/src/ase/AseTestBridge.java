@@ -6,6 +6,7 @@ import android.os.HandlerThread;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -13,6 +14,8 @@ import ase.event.AseActionBarEvent;
 import ase.event.AseActionBarTabEvent;
 import ase.event.AseEvent;
 import ase.event.AseItemClickEvent;
+import ase.event.AseItemSelectedEvent;
+import ase.event.AseMotionEvent;
 import ase.event.AseNavigateUpEvent;
 import ase.scheduler.RecordingMode;
 import ase.scheduler.NopMode;
@@ -124,15 +127,58 @@ public class AseTestBridge {
      *  Instruments item click listeners with recorder if in RECORD mode
      */
     @SuppressWarnings("rawtypes")
-    public static void setRecorderForItemClick(AdapterView adapter, int pos, long index) {
+    public static void setRecorderForItemClick(AdapterView adapter, View view, int pos, long index) {
         if (executionMode.getExecutionModeType() == ExecutionModeType.RECORD) {
-            // get the view and the path
-            View view = adapter.getSelectedView();
-            AseEvent event = new AseItemClickEvent(adapter.getId(), ViewUtils.logViewParents(view.getParent()), pos, index); /// update event type
+            if(adapter == null) {
+                Log.e("Recorder", "Cannot record item - adapter is null - setRecorderForItemClick");
+                return;
+            }
+
+            AseEvent event = new AseItemClickEvent(adapter.getId(), ViewUtils.logViewParents(adapter.getParent()), pos, index); /// update event type
+            Log.i("Here", "Inside recorder");
+
             IOFactory.getRecorder().record(event);
         }     
     }
-           
+               
+    /**
+     *  This method is called in OnItemClick listener of an item of an AdapterView 
+     *  Instruments item click listeners with recorder if in RECORD mode
+     */
+    @SuppressWarnings("rawtypes")
+    public static void setRecorderForItemSelected(AdapterView adapter, View view, int pos, long index) {
+        if (executionMode.getExecutionModeType() == ExecutionModeType.RECORD) {
+            if(adapter == null) {
+                Log.e("Recorder", "Cannot record item - adapter is null - setRecorderForSelected");
+                return;
+            }
+            // get the view and the path
+            // View view = adapter.getSelectedView();
+            AseEvent event = new AseItemSelectedEvent(adapter.getId(), ViewUtils.logViewParents(adapter.getParent()), pos, index); /// update event type
+            IOFactory.getRecorder().record(event);
+        }     
+    }
+    
+    /**
+     *  This method is called in OnItemClick listener of an item of an AdapterView 
+     *  Instruments item click listeners with recorder if in RECORD mode
+     */
+    @SuppressWarnings("rawtypes")
+    public static void setRecorderForTouchEvent(MotionEvent motionEvent) {
+        if (executionMode.getExecutionModeType() == ExecutionModeType.RECORD) {
+            if(motionEvent == null) {
+                Log.e("Recorder", "Cannot record motion event - MotionEvent is null");
+                return;
+            }
+            //long downTime, long eventTime, int action, float x, float y, int metaState
+            AseEvent event = new AseMotionEvent(0, null, motionEvent.getDownTime(), motionEvent.getEventTime(), 
+                    motionEvent.getAction(), motionEvent.getX(), motionEvent.getY(), motionEvent.getMetaState() ); 
+            IOFactory.getRecorder().record(event);
+
+        }     
+    }
+    
+    
     /**
      * Set the reference for the action bar menu
      * To be used in the REPEAT mode

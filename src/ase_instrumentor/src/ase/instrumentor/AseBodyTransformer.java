@@ -22,7 +22,7 @@ public class AseBodyTransformer extends BodyTransformer {
     private static SootMethod initiateTesting, waitForDispatch, notifyDispatcher, enterMonitor, exitMonitor;
     private static SootMethod setActivityViewTraverser, setFragmentViewTraverser, setAdapterItemViewTraverser; 
     private static SootMethod setActionBarMenu, setRecorderForActionBar, setRecorderForActionBarTab;
-    private static SootMethod setRecorderForItemClick;
+    private static SootMethod setRecorderForItemClick, /*setRecorderForItemSelected,*/ setRecorderForTouchEvent;
 
     public static void main(String[] args) {
         // args[0]: directory from which to process classes
@@ -58,7 +58,9 @@ public class AseBodyTransformer extends BodyTransformer {
         setRecorderForActionBar = aseTestBridgeClass.getMethod("void setRecorderForActionBar(android.view.MenuItem)");
         setAdapterItemViewTraverser = aseTestBridgeClass.getMethod("void setAdapterItemViewTraverser(android.view.View,android.view.ViewGroup,int)");
         setRecorderForActionBarTab = aseTestBridgeClass.getMethod("void setRecorderForActionBarTab(java.lang.Object)");
-        setRecorderForItemClick = aseTestBridgeClass.getMethod("void setRecorderForItemClick(android.widget.AdapterView,int,long)");   
+        setRecorderForItemClick = aseTestBridgeClass.getMethod("void setRecorderForItemClick(android.widget.AdapterView,android.view.View,int,long)");
+        // setRecorderForItemSelected = aseTestBridgeClass.getMethod("void setRecorderForItemSelected(android.widget.AdapterView,android.view.View,int,long)");
+        setRecorderForTouchEvent = aseTestBridgeClass.getMethod("void setRecorderForTouchEvent(android.view.MotionEvent)");
     }
 
     @Override
@@ -85,6 +87,8 @@ public class AseBodyTransformer extends BodyTransformer {
             // skip
         } else if (className.startsWith("org.droidparts")) {
             // skip
+        } else if (className.startsWith("org.joda")) {
+            // skip
         } else if (className.startsWith("org.osmdroid")) {
             // skip
         } else if (className.startsWith("uk.co.senab")) {
@@ -100,6 +104,8 @@ public class AseBodyTransformer extends BodyTransformer {
         } else if (className.startsWith("org.json")) {
             // skip
         } else if (className.startsWith("com.google.gson")) {
+            // skip
+        } else if (className.startsWith("com.actionbarsherlock")) {
             // skip
         } else if (methodName.equals("onCreate")) {
             if (SootUtils.hasParentClass(clazz, activityClass))
@@ -124,6 +130,12 @@ public class AseBodyTransformer extends BodyTransformer {
         
         } else if (methodName.equals("onItemClick")) {  
             instrumentOnItemClickMethod(b);
+            
+        //} else if (methodName.equals("onItemSelected")) {  
+        //    instrumentOnItemSelectedMethod(b);
+           
+        } else if (methodName.equals("onTouchEvent")) {  
+            instrumentOnTouchEventMethod(b);
             
         } else if (methodName.equals("getView") && SootUtils.hasParentClass(clazz, adapterClass)) { 
             instrumentGetViewMethod(b);
@@ -260,6 +272,7 @@ public class AseBodyTransformer extends BodyTransformer {
         final Value adapterParam = stmt.getLeftOp();    
         // the identity statement for the second parameter - view
         stmt = (JIdentityStmt) iter.next(); 
+        final Value viewParam = stmt.getLeftOp(); 
         // the identity statement for the third parameter - position
         stmt = (JIdentityStmt) iter.next(); 
         final Value posParam = stmt.getLeftOp();
@@ -270,8 +283,73 @@ public class AseBodyTransformer extends BodyTransformer {
         while (iter.hasNext()) {
             iter.next().apply(new AbstractStmtSwitch() {
                 public void caseReturnVoidStmt(ReturnVoidStmt stmt) {               
-                    units.insertBefore(SootUtils.staticInvocation(setRecorderForItemClick, adapterParam, posParam, indexParam), stmt);
+                    units.insertBefore(SootUtils.staticInvocation(setRecorderForItemClick, adapterParam, viewParam, posParam, indexParam), stmt);
                     System.out.println("===========Recorder for OnItemClick is added..");
+                }
+            });
+        }
+    }
+    
+    /**
+     * Adds call to getView of an AdapterView to traverse the views in a list item
+     * to enable record/replay
+     */
+    /*private void instrumentOnItemSelectedMethod(final Body b) {
+        final PatchingChain<Unit> units = b.getUnits();
+        Iterator<Unit> iter = units.snapshotIterator();
+        // method: public void onItemClick(AdapterView adapter, View view, int position, long index)
+        
+        iter.next(); // the identity statement for the method
+        // the identity statement for the first parameter - adapter
+        JIdentityStmt stmt = (JIdentityStmt) iter.next(); 
+        final Value adapterParam = stmt.getLeftOp();    
+        // the identity statement for the second parameter - view
+        stmt = (JIdentityStmt) iter.next(); 
+        final Value viewParam = stmt.getLeftOp(); 
+        // the identity statement for the third parameter - position
+        stmt = (JIdentityStmt) iter.next(); 
+        final Value posParam = stmt.getLeftOp();
+        // the identity statement for the fourth parameter - index
+        stmt = (JIdentityStmt) iter.next(); 
+        final Value indexParam = stmt.getLeftOp();
+        
+        while (iter.hasNext()) {
+            iter.next().apply(new AbstractStmtSwitch() {
+                public void caseReturnVoidStmt(ReturnVoidStmt stmt) {               
+                    units.insertBefore(SootUtils.staticInvocation(setRecorderForItemSelected, adapterParam, viewParam, posParam, indexParam), stmt);
+                    System.out.println("===========Recorder for OnItemSelected is added..");
+                }
+            });
+        }
+    }*/
+    
+    /**
+     * Adds call to getView of an AdapterView to traverse the views in a list item
+     * to enable record/replay
+     */
+    private void instrumentOnTouchEventMethod(final Body b) {
+        final PatchingChain<Unit> units = b.getUnits();
+        Iterator<Unit> iter = units.snapshotIterator();
+        // method: public void onMotionEvent(MotionEvent motionEvent)
+        
+        iter.next(); // the identity statement for the method
+        // the identity statement for the first parameter - motionEvent
+        JIdentityStmt stmt = (JIdentityStmt) iter.next(); 
+        final Value eventParam = stmt.getLeftOp();    
+        
+        while (iter.hasNext()) {
+            iter.next().apply(new AbstractStmtSwitch() {
+                public void caseReturnStmt(ReturnStmt stmt) {               
+                    units.insertBefore(SootUtils.staticInvocation(setRecorderForTouchEvent, eventParam), stmt);
+                    
+                    //EqExpr eq = Jimple.v().newEqExpr(lss.getKey(), IntConstant.v(i));
+                    //Stmt ifStmt = Jimple.v().newIfStmt(eq, pos);
+                    
+                    //Value op = Jimple.v().newVariableBox(value)  Value(true);
+                    //ReturnStmt retStmt = Jimple.v().newReturnStmt(op);
+                    //units.add(Jimple.v().newReturnVoidStmt());
+                    //units.insertBefore(SootUtils.staticInvocation(setRecorderForTouchEvent, eventParam), stmt); 
+                    System.out.println("===========Recorder for OnTouchEvent is added..");
                 }
             });
         }

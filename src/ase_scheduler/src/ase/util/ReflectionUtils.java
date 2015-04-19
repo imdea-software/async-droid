@@ -1,11 +1,13 @@
 package ase.util;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayDeque;
 import java.util.List;
 
 import android.app.Activity;
+import android.app.Application;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -53,35 +55,7 @@ public class ReflectionUtils {
         }
         return listener;
     }
-    
-    @SuppressWarnings("rawtypes")
-    public static AdapterView.OnItemClickListener getOnItemClickListener(AdapterView view) {
-        AdapterView.OnItemClickListener listener = null;
-        try {
-            Field listenerField = null;
-            listenerField = getSuperClassOfType(view.getClass(), AdapterView.class.getName()).getDeclaredField("mOnItemClickListener");
-            listenerField.setAccessible(true);
-            listener = (AdapterView.OnItemClickListener) listenerField.get(view);
-        } catch (Exception ex) {
-            listener = null;
-        }
-        return listener;
-    }
 
-    @SuppressWarnings("rawtypes")
-    public static AdapterView.OnItemSelectedListener getOnItemSelectedListener(AdapterView view) {
-        AdapterView.OnItemSelectedListener listener = null;
-        try {
-            Field listenerField = null;
-            listenerField = getSuperClassOfType(view.getClass(), AdapterView.class.getName()).getDeclaredField("mOnItemSelectedListener");
-            listenerField.setAccessible(true);
-            listener = (AdapterView.OnItemSelectedListener) listenerField.get(view);
-        } catch (Exception ex) {
-            listener = null;
-        }
-        return listener;
-    }
-    
     @SuppressWarnings({ "rawtypes", "unchecked" })
     public static ArrayDeque<Runnable> getAsyncTaskSerialExecutorTasks() {
         try {
@@ -103,19 +77,25 @@ public class ReflectionUtils {
         return null;
     }
     
-    @SuppressWarnings({ "rawtypes"})
+    @SuppressWarnings({ "rawtypes", "unchecked"})
     public static boolean isAsyncTaskSerialThreadActive() {
         try {
             // get the serial executor instance
             Field serialExecutorField = Class.forName(CN_ASYNC_TASK).getDeclaredField("SERIAL_EXECUTOR");
             Object serialExecutor = serialExecutorField.get(null);
-
-            // get mTasks field
+            
+            // check mActive field
             Class serialExecutorClass = Class.forName(CN_ASYNC_TASK_SERIAL_EXECUTOR);
             Field mActiveField = serialExecutorClass.getDeclaredField("mActive");
             mActiveField.setAccessible(true);
             Object mActive = mActiveField.get(serialExecutor);
-            return ((Boolean)mActive).booleanValue();
+            if(mActive != null) return true;
+            
+            // check mTasks field
+            Field mTasksField = serialExecutorClass.getDeclaredField("mTasks");
+            mTasksField.setAccessible(true);
+            ArrayDeque<Runnable> mTasks = (ArrayDeque<Runnable>) mTasksField.get(serialExecutor);
+            if(!mTasks.isEmpty()) return true;
             
         } catch (Exception ex) {
             Log.e("Reflectionnn", "Can not read AsyncTask serial executor active field");
@@ -345,6 +325,17 @@ public class ReflectionUtils {
         }
 
         return tempClass;
+    }
+    public static void callMethod(Object object, String methodName) {
+        try {
+            Method method = object.getClass().getDeclaredMethod(methodName);
+            method.invoke(object, (Object[]) null);
+            Log.i("Reflection", "CallMethod Success " + methodName);
+        } catch (NoSuchMethodException ne) {
+            Log.i("Reflection", "CallMethod no such method " + methodName);
+        } catch (Exception e) {
+            Log.i("Reflection", "CallMethod Failed " + methodName);
+        }  
     }
 
 }
