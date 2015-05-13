@@ -44,7 +44,7 @@ public class ThreadData {
        return null;
     }
 
-    public synchronized void notifyThread() {
+    /*public synchronized void notifyThread() {
         this.notify();
     }
 
@@ -56,7 +56,7 @@ public class ThreadData {
                 e.printStackTrace();
             }
         }
-    }
+    }*/
 
     public void enteredMonitor() {
         currentMonitors++;

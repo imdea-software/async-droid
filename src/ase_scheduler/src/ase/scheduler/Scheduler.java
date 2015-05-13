@@ -79,7 +79,15 @@ public abstract class Scheduler {
     public boolean hasAvailableThreads() {
         for(int i=0; i<threads.getSize(); i++) {
             if(okToSchedule(threads.getThreadByIndex(i, ThreadType.ANY)))
-                    return true;
+                return true;
+        }
+        return false;
+    }
+    
+    public boolean hasAvailableAsyncTaskThreads() {
+        for(int i=0; i<threads.getThreads(ThreadType.ASYNCTASK_POOL).length; i++) { // not helpful if AsyncTask is added meanwhile
+            if(okToSchedule(threads.getThreadByIndex(i, ThreadType.ASYNCTASK_POOL)))
+                return true;
         }
         return false;
     }

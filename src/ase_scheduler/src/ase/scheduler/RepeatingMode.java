@@ -82,14 +82,14 @@ public class RepeatingMode implements ExecutionMode, Runnable {
         // AseTestBridge.launchMainActivity();
 
         // sleep until the new activity is created
-        try {
+        /*try {
             Thread.sleep(3000);
         } catch (InterruptedException e) {
             e.printStackTrace();
-        }
+        }*/
 
         // finish the created activity
-        // AseTestBridge.finishCurrentActivity();
+        AppRunTimeData.getInstance().finishCurrentActivity();
     }
 
     /*
@@ -145,6 +145,13 @@ public class RepeatingMode implements ExecutionMode, Runnable {
     public void tearDownTestCase() {
         final Application app = AppRunTimeData.getInstance().getCurrentAct().getApplication();
         
+        // allow the main thread to run (in case it is in blocking runnables)
+        /* synchronized(this) {
+            scheduled = 1L;
+        }*/
+        ThreadData main = threads.getThreadById(1);
+        notifyThread(main);
+        
         // Call the programmer implemented test case finalizer in the app
         // Run it in the main thread in case it has view components
         AppRunTimeData.getInstance().getCurrentAct().runOnUiThread( new Runnable() {
@@ -153,25 +160,25 @@ public class RepeatingMode implements ExecutionMode, Runnable {
                 ReflectionUtils.callMethod((Object)app, "finalizeTestCase");               
             }            
         });
-
-        // allow the main thread to run (in case it is in blocking runnables)
-        ThreadData main = threads.getThreadById(1);
-        notifyThread(main);
-        scheduled = 1L;
-        
+ 
         while(!LooperReader.getInstance().hasEmptyLooper(main.getThread())) {
+         // when a blocking UI thread message completes, it notifies back the scheduler and sets scheduled = -1
+            notifyThread(main); 
             try {
                 Thread.sleep(500);
             } catch (Exception e){
                 
             }
-            Log.i("RepeatMode", "Waiting to empty the main thread");
+            Log.i("RepeatMode", "Waiting to empty the main thread Scheduled: " + scheduled);
+            Log.i("Contents", LooperReader.getInstance().dumpQueue(main.getThread()));
         }
             
         // tear down test case, that also calls programmer-implemented tear down
         // (e.g. restores app state for a new test, removes callbacks, etc)
         scheduler.tearDownTestCase();
-        scheduled = 0L;
+        synchronized(this) {
+            scheduled = 0L;
+        }
         threads.clearThreads();       
     }
 
@@ -212,10 +219,18 @@ public class RepeatingMode implements ExecutionMode, Runnable {
         if (schedulingLogs)
             Logger.i("RepeatingMode", "    --- Waiting - ThreadId: " + threadId);
 
+        synchronized(me) {  //////////////
         while (scheduled != threadId) {
-            me.waitThread();
+            // me.waitThread();
+            try {
+                me.wait();
+            } catch (InterruptedException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
         }
-
+        } /////////////////
+        
         if (schedulingLogs)
             Logger.i("RepeatingMode", "    --- Executing - ThreadId: " + threadId);
     }
@@ -230,11 +245,13 @@ public class RepeatingMode implements ExecutionMode, Runnable {
      * Scheduler notifies the next task to be scheduled
      */
     private void notifyThread(ThreadData current) {
-        scheduled = current.getId();
+        synchronized(current) {
+            scheduled = current.getId();
+            //current.notifyThread(); /////
+            current.notify();
+        }
         // if (schedulingLogs)
-        // logStream += "Scheduled thread id: " + scheduled + " Index: " + threads.getWalkerIndex() + " NumUIBlocks:" + AseTestBridge.getNumUIBlocks()) + "\n";
-
-        current.notifyThread();
+        // logStream += "Scheduled thread id: " + scheduled + " Index: " + threads.getWalkerIndex() + " NumUIBlocks:" + AseTestBridge.getNumUIBlocks()) + "\n";   
     }
 
     /*
@@ -262,23 +279,25 @@ public class RepeatingMode implements ExecutionMode, Runnable {
             return;
         }
 
-        scheduled = ThreadData.SCHEDULER_ID;
+        //scheduled = ThreadData.SCHEDULER_ID;  //////
 
         // thread consumes the notification block
         me.setIsWaiting(false);
         if (schedulingLogs)
             Logger.i("RepeatingMode", "    --- Notifying - Thread Id: " + Thread.currentThread().getId());
 
-        schedulerThreadData.notifyThread();
+        //schedulerThreadData.notifyThread(); /////
+        notifyThread(schedulerThreadData);
     }
 
     /*
      * To be called by UI thread in initiateScheduler Enables scheduler thread to run
      */
     public void wakeScheduler() {
-        scheduled = ThreadData.SCHEDULER_ID;
+        //scheduled = ThreadData.SCHEDULER_ID; /////
         Log.i("AseScheduler", "Waky waky!");
-        schedulerThreadData.notifyThread();
+        //schedulerThreadData.notifyThread(); /////
+        notifyThread(schedulerThreadData);
     }
 
     public void yield() {
@@ -301,10 +320,8 @@ public class RepeatingMode implements ExecutionMode, Runnable {
         return ExecutionModeType.REPEAT;
     }
 
-    public static long getScheduled() {
+    /*public static synchronized long getScheduled() {
         return scheduled;
-    }
+    }*/
 }
 
-// scheduled and currentIndex are guaranteed to be not accessed by more than one threads concurrently
-// either one of the application threads or the scheduler thread can access it

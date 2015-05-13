@@ -19,6 +19,9 @@ public class RRScheduler extends Scheduler {
     boolean onPool= false;
     private int handlerThreadIndex = 0;
     private int poolThreadIndex = 0;
+    private int consecutiveMainTasks = 0;
+    // MAX_CONSECUTIVEMAINTASKS can be modified depending on the nature of the app under test in the programmer implemented scheduler
+    private final int MAX_CONSECUTIVEMAINTASKS = 5; // allows for more if there are events to handle or asynctasks in it
     
     private ThreadData prevThread = scheduledThread = null;
     
@@ -47,24 +50,34 @@ public class RRScheduler extends Scheduler {
     
     @Override
     public boolean isEndOfTestCase() {
-        boolean b = !hasAvailableThreads() && !inputRepeater.hasEventsToHandle() && !inputRepeater.hasMoreInputs() && (numAsyncTasksInMainLooper() == 0) && (taskToProcess > 1); // && (numPendingAsyncTasks() == 0);
+        boolean b = !hasAvailableThreads() && !inputRepeater.hasEventsToHandle() && !inputRepeater.hasMoreInputs() 
+                && (numAsyncTasksInMainLooper() == 0) && (numPendingAsyncTasks() == 0) && (taskToProcess > 1);
         
         if(b) { 
-            // allow for the AsyncTask to run and execute its waiting statement
+            // allow for the AsyncTask to run and execute its waiting statement (e.g. in comics app, music app)
+            // PROBLEM: We still have a nondeterminism here as we cannot guess exactly when an AsyncTask thread becomes busy
+            // Problematic if the execution of an AsyncTask task is leftover to a next test
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
 
-            if (numAsyncTasksInMainLooper() != 0 || threads.getThreadById(1).isWaiting()) {
+            // clear AsyncTask messages in the UI thread
+            // if the UI thread consecutively gets scheduled, it might indicate that it posts recurring tasks to itself, end the test in this case
+            if (numAsyncTasksInMainLooper() != 0 || (threads.getThreadById(1).isWaiting() && (consecutiveMainTasks < MAX_CONSECUTIVEMAINTASKS))) { // eliminate recurring messages, only allow postexecutes 
                 Log.i("RRScheduler", "Not the end of the test - main looper is not empty - is waiting ");
                 return false;  
             }
+            
+            // check whether newly spawned AsyncTasks spawned
+            if (!ReflectionUtils.getAsyncTaskSerialExecutorTasks().isEmpty() && (numPendingAsyncTasks() != 0) && !hasAvailableAsyncTaskThreads()) { 
+                Log.i("RRScheduler", "Not the end of the test - AsyncTask thread is not idle ");
+                return false;  
+            }
         }
-        
-        boolean noAsyncSpawned = (ReflectionUtils.getAsyncTaskSerialExecutorTasks().isEmpty());
-        return b && noAsyncSpawned; // recheck conditions
+       
+        return b;
     }
     
     @Override
@@ -117,7 +130,12 @@ public class RRScheduler extends Scheduler {
         } 
         
         if(current != null) {
-            Logger.i("RRScheduler", "Scheduled: " + current.getName() + " Task to process: " + taskToProcess);
+            Logger.i("RRScheduler", "Scheduled: " + current.getName() + " Task to process: " + taskToProcess + " # of consecutive main tasks: " + consecutiveMainTasks);
+
+            if(current.getId() == 1) 
+                consecutiveMainTasks ++;
+            else
+                consecutiveMainTasks = 0;
         }
 
         return current;
@@ -196,6 +214,7 @@ public class RRScheduler extends Scheduler {
                 // check if it is posted but not executed and is waiting yet
                 } else if (!ReflectionUtils.getAsyncTaskSerialExecutorTasks().isEmpty()) { 
                     Log.e("ASYNC", "There exists an AsyncTask posted but not waited yet..");
+                    Log.e("ASYNC", "Check if all tasks are executed in the previous test, otherwise it might be a leftover..");
 
                     while(!ReflectionUtils.getAsyncTaskSerialExecutorTasks().isEmpty()) {
                         // allow for the AsyncTask to run and execute its waiting statement
@@ -271,7 +290,9 @@ public class RRScheduler extends Scheduler {
     
     @Override
     public void doOnPostScheduling() {
-        // TODO Auto-generated method stub
+        // clean the main thread after getting the last input, etc 
+        // important for the last turn with the input, before checking the end of the test
+        runMainToCompletionOrToWait(); 
     }
     
     @Override
