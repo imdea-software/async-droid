@@ -71,7 +71,6 @@ public class LooperReader {
                                 || nextMessage.toString().contains("com.android.org.chromium.base.SystemMessageHandler")) {
                             nextMessage = (Message) nextField.get(nextMessage);
                         } else {
-                            //Log.i("LooperReader", "Breaking here..");
                             empty = false;
                             break;
                         }

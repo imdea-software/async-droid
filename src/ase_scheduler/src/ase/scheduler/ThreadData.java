@@ -44,20 +44,6 @@ public class ThreadData {
        return null;
     }
 
-    /*public synchronized void notifyThread() {
-        this.notify();
-    }
-
-    public synchronized void waitThread() {
-        while (RepeatingMode.getScheduled() != id) {
-            try {
-                this.wait();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-    }*/
-
     public void enteredMonitor() {
         currentMonitors++;
     }

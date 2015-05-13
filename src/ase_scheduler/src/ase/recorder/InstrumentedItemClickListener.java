@@ -17,8 +17,6 @@ import ase.util.ViewUtils;
 public class InstrumentedItemClickListener implements AdapterView.OnItemClickListener {
     private AdapterView.OnItemClickListener ownListener;
     private Recorder recorder;
-    
-    //private List<Integer> path; // to be recorded
 
     @SuppressWarnings("rawtypes")
     public InstrumentedItemClickListener(AdapterView view) {
